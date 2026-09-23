@@ -1,0 +1,6 @@
+# The frozen chunk set is a shared artifact: Pelorus's pre-canned extracts and
+# clusters and RAGauge's pre-canned dataset are all built against these exact
+# ids and offsets. Pin it to LF so the file is byte-identical on every checkout
+# and in every built artifact, rather than whatever this machine's autocrlf
+# setting makes of it.
+src/rag_connector/corpus/*.chunks.jsonl text eol=lf

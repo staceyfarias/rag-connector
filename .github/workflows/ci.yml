@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev,reference]"
+      - run: python -m pytest
+      - run: python -m ruff check .
+
+  # A green suite says nothing about what ships: every consumer of this package
+  # installs it editable, an editable install resolves package data off `src/`
+  # on disk, and so a declaration that fails to carry the corpus, the frozen
+  # chunk set or `py.typed` is invisible from the job above. Build the real
+  # artifacts and look inside them.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip build
+      # setuptools reuses a stale SOURCES.txt when one is present, which has
+      # already hidden a MANIFEST.in change once. Build from a clean tree.
+      - run: rm -rf src/*.egg-info build dist
+      - run: python -m build
+      - run: python tools/verify_artifact.py dist/*.whl dist/*.tar.gz

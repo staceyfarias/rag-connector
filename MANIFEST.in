@@ -1,0 +1,34 @@
+# AGENTS.md and CONTRIBUTING.md ship: an sdist is a source distribution, and
+# someone building or contributing from it wants the guidance.
+#
+# Development notes deliberately do NOT ship — status, plans, roadmaps, anything
+# written for whoever picks the work up next rather than for someone installing
+# the package. They are not tracked at all (see .gitignore), because a tracked
+# file in a public repo is a published file whatever this file says. What
+# remains under docs/ is reference a reader of the package needs, and it is
+# included wholesale below on that basis.
+include AGENTS.md
+include CONTRIBUTING.md
+recursive-include docs *.md
+recursive-include examples *.py
+# The suite ships, in full and on purpose. Someone building from an sdist --
+# a distro packager, a security reviewer, anyone who does not trust a wheel --
+# runs the tests, and this package's whole claim is that a connector's behavior
+# is checkable. Declaring it explicitly also repairs a half-shipped state:
+# setuptools' own sdist default quietly picks up `tests/test*.py` and nothing
+# else, so `conftest.py` was being left behind. That file is the autouse
+# fixture that hides installed third-party connector entry points, so without
+# it the shipped suite's result depends on whatever else is in site-packages --
+# green here, red on someone else's machine, for reasons in neither tree.
+recursive-include tests *.py
+# The bundled corpora are package DATA read at runtime from inside the installed
+# package, so they must be in the WHEEL too -- that is declared in pyproject's
+# [tool.setuptools.package-data]. They are listed here as well so the sdist
+# carries them; without a corpus, `pip install "rag-connector[reference]"`
+# installs a Reference RAG with nothing to point at.
+recursive-include src/rag_connector/corpus *.txt *.md *.pdf *.docx *.rtf
+# The frozen pre-chunked form of each bundled corpus, read at runtime by
+# rag_connector.ingest.load_bundled_chunks. It is the substrate Pelorus's
+# pre-canned extracts and RAGauge's pre-canned dataset both cite, so an
+# install without it can serve the documents but not the ids anyone stored.
+recursive-include src/rag_connector/corpus *.chunks.jsonl

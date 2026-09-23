@@ -1,0 +1,35 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+build/
+dist/
+
+
+# Development notes stay out of the public repo. `docs/` is reference
+# documentation a reader of the package needs -- the contract, the author
+# guide -- and it ships in the sdist. Roadmaps, phase plans, handoff status and
+# current work are none of those: they are written for whoever picks the work
+# up next, they carry local machine paths and open decisions, and they live in
+# the paths below, untracked.
+#
+# Keeping them out of the sdist via MANIFEST.in is not enough on its own. In a
+# public repo a tracked file is a published file, whatever MANIFEST.in says.
+/docs_pm/
+/HANDOFF.md
+
+# Agent tooling is development tooling, whatever it happens to contain. The
+# connector-authoring skill that lived here has been folded into
+# docs/connector-author-guide.md, where a reader without an agent harness can
+# find it; the tree itself now sits under docs_pm/. This entry stops a harness
+# that recreates the directory from quietly re-tracking it.
+/.agents/
+
+# Agent harness state. `.claude/settings.local.json` records one machine's
+# approvals and carries that machine's paths; it is configuration for a tool
+# that reads the repository, not part of the repository. Ignored here rather
+# than relying on a machine-global ignore, because the first `git add -A` on
+# any other machine is what publishes it.
+/.claude/

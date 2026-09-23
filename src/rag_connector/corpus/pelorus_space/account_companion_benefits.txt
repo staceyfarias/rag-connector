@@ -1,0 +1,11 @@
+Pelorus Voyages offers a companion discount for qualifying passengers travelling together on the same itinerary. The companion discount is 15 percent off the lower-priced passenger's voyage package. The discount applies to the base voyage package only; add-ons, excursions, and the Extraction Coverage insurance add-on are not discounted under the companion benefit.
+
+To qualify for the companion discount, both passengers must hold Pathfinder loyalty tier status at the time of booking. The tier check is performed at the time the companion discount is requested; if either passenger is not yet Pathfinder tier, the discount is not available for that booking. A discount applied at booking is not reversed if either passenger's tier changes subsequently; conversely, if a passenger achieves Pathfinder tier after booking, the companion discount cannot be applied retroactively.
+
+Both passengers must also be on the same itinerary and the same departure date. The companion discount is not available for passengers on different itineraries or different departure windows even if they are travelling as companions in some sense. The discount is applied to the lower-priced passenger's fare; if both passengers have the same cabin class, the system applies the discount to the second booking processed.
+
+To apply the companion discount, both passengers must have linked Pelorus Voyages accounts. Account linking is done through the account portal by sending a companion link request to the other passenger's registered email address. Once the link is accepted, the discount appears as an option during checkout when both passengers are booking the same itinerary and departure window.
+
+The companion discount cannot be combined with group booking rates, corporate account discounts, or promotional codes unless the promotion's terms explicitly state otherwise. In most cases the companion discount is more favourable than a standard group rate for two passengers; the booking system will show the best available rate and the applicable conditions.
+
+Companions do not need to share a cabin to access the companion discount. Two Pathfinder tier passengers who prefer separate Pathfinder suites can each receive the discount as long as both are on the same itinerary and departure date.

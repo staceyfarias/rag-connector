@@ -1,0 +1,11 @@
+Orbital Points can be redeemed for voyage credits, cabin class upgrades, excursion purchases, and equipment rental credits. Redemption requires a minimum of 5,000 points per transaction and is processed through the Pelorus Voyages account portal. Points cannot be redeemed for cash, transferred to another passenger's account, or converted directly into Orbital Credits.
+
+To redeem Points toward a new booking, navigate to the booking checkout in the account portal and select the Points redemption option. The portal will display your current balance and the maximum Points you can apply to the booking. Applying Points converts the selected quantity into a voyage credit that reduces the payment amount due. The conversion rate is one point per one USD equivalent of voyage credit; 5,000 points equals a USD 50 voyage credit. Fractional redemptions are permitted above the 5,000-point minimum — you may apply exactly the number of Points you wish, provided the minimum is met.
+
+To redeem Points for a cabin class upgrade on an existing booking, use the Upgrade function in the account portal and select Points as the payment method. Points redemption for upgrades is available until seven days before the departure window opening. After the seven-day cutoff, upgrades must be paid by credit card, debit card, or Orbital Credits — Points are not accepted for upgrades within seven days of departure.
+
+Points redeemed for excursion purchases — including shore excursions, the gondola descent add-on, and The Leap — can be applied when purchasing the excursion through the portal. Points cannot be applied at the excursion desk on the day; all Points-based excursion purchases must be completed before departure from Earth.
+
+Points held as pending (earned on a booked but not yet departed voyage) cannot be redeemed until the voyage departs. If a voyage is cancelled before departure, pending Points are removed. If a voyage is scrubbed by Pelorus Voyages, pending Points are held for 90 days and can be redeemed against a replacement booking made within that period; after 90 days, the Points are released to the general balance.
+
+Points that have been redeemed and applied to a booking are not restored if the booking is subsequently cancelled. The cancellation refund is calculated on the cash component of the payment; the Points portion is not refunded.

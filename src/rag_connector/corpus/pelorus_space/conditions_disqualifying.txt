@@ -1,0 +1,21 @@
+The following medical conditions disqualify a passenger from travelling on any Pelorus Voyages itinerary. A physician must certify that none of these conditions are present or active at the time of medical clearance sign-off. This list is provided as a reference for passengers and physicians; it is not exhaustive, and the certifying physician bears professional responsibility for assessing whether any unlisted condition poses a risk in the spaceflight environment.
+
+Active malignancy currently undergoing treatment is disqualifying. Passengers in remission with no active treatment may be eligible; the clearance letter must specifically address the remission status and treatment history.
+
+Uncontrolled cardiovascular disease is disqualifying. This includes uncontrolled hypertension (systolic above 160 mmHg or diastolic above 100 mmHg on treatment), unstable angina, heart failure classified NYHA Grade II or above, and any cardiac arrhythmia not controlled by medication or ablation. Controlled cardiovascular conditions with stable medication regimens may be cleared; the clearance letter must document the specific condition and the treating cardiologist's assessment of fitness for sustained low-gravity exposure.
+
+Recent myocardial infarction within the preceding 12 months is disqualifying regardless of current clinical status. Percutaneous coronary intervention or bypass surgery within the preceding six months is disqualifying.
+
+Uncontrolled seizure disorder is disqualifying. Passengers with a history of seizures who have been seizure-free for a minimum of two years on a stable medication regimen may be eligible; clearance requires a neurologist's written assessment in addition to the standard physician sign-off.
+
+Severe chronic obstructive pulmonary disease (GOLD Stage III or IV) is disqualifying. Mild to moderate COPD may be clearable with pulmonologist assessment; the reduced partial pressure of oxygen in some vessel sections during high-demand operations must be discussed explicitly.
+
+Active psychiatric conditions requiring in-patient treatment within the preceding 12 months are disqualifying. Passengers with managed psychiatric conditions on stable outpatient treatment may be eligible; the clearance letter should address the specific condition and the prescribing physician's assessment of the passenger's capacity to manage the demands of extended travel in a contained environment.
+
+Pregnancy beyond 12 weeks gestation at the time of departure is disqualifying. Passengers in early pregnancy may travel; see the pregnancy policy document for the complete requirements.
+
+Active tuberculosis or any active contagious respiratory infection is disqualifying at the time of the pre-departure health check. A history of treated tuberculosis is not disqualifying provided clearance is issued after documented treatment completion.
+
+Severe claustrophobia that cannot be managed in the berth and common area environments of a Pelorus Voyages vessel is effectively disqualifying in practice, though it is not a formal medical disqualification. Passengers with claustrophobia are strongly encouraged to discuss the vessel layout and berth dimensions with Pelorus Voyages accessibility support before booking.
+
+Passengers who believe their condition may fall near a disqualification boundary should discuss the specific itinerary and excursion plan with their physician in detail. The standard physician clearance letter should address the specific conditions, not simply state that the passenger is "fit to fly." Pelorus Voyages reserves the right to request additional documentation or specialist clearance letters for conditions that are not addressed with sufficient specificity in the standard clearance.

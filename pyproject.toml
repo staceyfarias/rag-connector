@@ -1,0 +1,132 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-connector"
+version = "0.1.0a1"
+description = "A product-neutral contract and conformance kit for treating RAG pipelines as black boxes."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Stacey Farias" }]
+keywords = [
+    "rag",
+    "retrieval",
+    "retrieval-augmented-generation",
+    "connector",
+    "evaluation",
+    "conformance",
+    "chunking",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+# PyPI renders no project links at all without this table, so the one page
+# most people meet the package on has no route to the source, the issue
+# tracker, or the contract documentation.
+[project.urls]
+Homepage = "https://github.com/staceyfarias/rag-connector"
+Repository = "https://github.com/staceyfarias/rag-connector"
+Issues = "https://github.com/staceyfarias/rag-connector/issues"
+Documentation = "https://github.com/staceyfarias/rag-connector/blob/main/docs/contract.md"
+
+[project.optional-dependencies]
+reference = [
+    "chromadb>=0.4.22",
+    "fastembed>=0.3.0",
+    "pypdf>=4",
+    "python-docx>=1.1",
+    "striprtf>=0.0.26",
+]
+dev = [
+    "pytest>=8",
+    # The suite exercises the registry-mode .env loading path; without this
+    # declaration that test only passes on machines where some other project
+    # happens to have installed dotenv.
+    "python-dotenv>=1",
+    "ruff>=0.9",
+]
+
+[project.scripts]
+rag-connector = "rag_connector.cli:main"
+
+[project.entry-points."rag_connector.connectors"]
+# Connector packages register ConnectorSpec objects here.
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# PEP 561: ``py.typed`` is what tells a consumer's type checker that the
+# annotations in this package are real and should be used. It is declared
+# EXPLICITLY rather than left to include-package-data, because a marker file
+# that silently fails to ship is invisible from the only place it is normally
+# exercised — an editable install always sees it on disk, so every local suite
+# stays green while installed consumers quietly lose type information.
+#
+# The classifiers above already advertise "Typing :: Typed". Without this the
+# metadata would be making a promise the wheel does not keep.
+# ``CONNECTOR-INFO.md`` is the Reference RAG's own long-form help, served to
+# hosts through ``ConnectorSpec.connector_info``. It is package DATA, not
+# documentation: it is read at runtime from inside the installed package, so it
+# has to be in the wheel. Same invisibility as ``py.typed`` — an editable
+# install reads it off ``src/`` and stays green whether or not it ships.
+#
+# ``corpus/`` is the bundled Pelorus Space demo corpus, read at runtime through
+# ``importlib.resources`` by ``rag_connector.ingest.bundled_corpus_path``. Same
+# trap once more, and this one was live until it shipped: the package carried NO
+# corpus, so an installed ``rag-connector[reference]`` had no documents to
+# provision, while every local run of the suite found some on disk.
+#
+# ``*.chunks.jsonl`` is the frozen pre-chunked form of each bundled corpus, read
+# the same way by ``load_bundled_chunks``. It matters more than the documents
+# do: Pelorus's pre-canned extracts and clusters and RAGauge's pre-canned
+# dataset and TestSet all cite these chunk ids, and an install that has to
+# re-chunk to answer is an install that can disagree about what they cite.
+#
+# The corpus globs are recursive (``**``) and cover every extension
+# ``load_documents`` will parse, not just the two the first bundled corpus
+# happens to use. A one-level ``corpus/*/*.txt`` silently drops a corpus with
+# subfolders, and a txt/md-only list silently drops a PDF -- and "silently" is
+# the whole problem: the documents are read through ``importlib.resources``, so
+# the omission is invisible everywhere except an installed wheel.
+[tool.setuptools.package-data]
+rag_connector = [
+    "py.typed",
+    "CONNECTOR-INFO.md",
+    "corpus/**/*.txt",
+    "corpus/**/*.md",
+    "corpus/**/*.pdf",
+    "corpus/**/*.docx",
+    "corpus/**/*.rtf",
+    "corpus/**/*.jsonl",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+# The Reference RAG is an optional implementation, so the tests that stand one
+# up are optional with it: `tests/conftest.py` skips everything carrying this
+# marker when chromadb and fastembed are absent. Declared here so an unmarked
+# typo is a warning rather than a silently unenforced mark.
+markers = [
+    "reference_extra: needs the optional \"reference\" extra (chromadb, fastembed)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
