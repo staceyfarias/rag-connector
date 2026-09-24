@@ -611,6 +611,91 @@ def _unknown_scored_ids(hits: list[RetrievedChunk], pulled_ids: set) -> list:
     return unknown
 
 
+def _check_derived_results(report: Report, hits: list[RetrievedChunk],
+                           pulled_ids: set) -> None:
+    """The derived-result declarations follow docs/contract.md, "Derived results".
+
+    Whether declared covered ids exist in the corpus is the classic-bug check's
+    job (it validates a declaring hit through them); this check covers the rest
+    of the rules a host relies on to read a derived result correctly.
+    """
+    from .derived import (
+        ITEM_COVERED_IDS_KEY,
+        ITEM_INDEX_KEY,
+        ITEM_KEYS,
+        ITEM_KIND_KEY,
+        derived_result_problems,
+        read_derived_result,
+    )
+
+    name = "Derived-result declarations are well-formed"
+    declaring = [h for h in hits
+                 if isinstance(h.metadata, dict)
+                 and any(key in h.metadata for key in ITEM_KEYS)]
+    if not declaring:
+        report.add(name, SKIP,
+                   ["no hit declares item_* metadata: a plain chunk retriever, "
+                    "credited through each row's own chunk_id"])
+        return
+
+    failures: list[str] = []
+    warnings: list[str] = []
+    for hit in declaring:
+        for problem in derived_result_problems(hit):
+            failures.append(f"rank {hit.rank} ({hit.chunk_id!r}): {problem}")
+
+    # Rows sharing an item_index are ONE item; a host reads its covered ids and
+    # kind once, so rows that disagree leave the item's meaning to row order.
+    by_index: dict = {}
+    for hit in declaring:
+        index = hit.metadata.get(ITEM_INDEX_KEY)
+        if not isinstance(index, int) or isinstance(index, bool):
+            continue
+        key = (repr(hit.metadata.get(ITEM_COVERED_IDS_KEY)),
+               hit.metadata.get(ITEM_KIND_KEY))
+        first = by_index.setdefault(index, (hit.rank, key))
+        if first[1] != key:
+            failures.append(
+                f"rows at rank {first[0]} and {hit.rank} share item_index "
+                f"{index} but declare different item_covered_ids or item_kind")
+
+    if not failures:
+        for hit in declaring:
+            result = read_derived_result(hit)
+            if (result.covered_ids == () and not result.is_gap):
+                warnings.append(
+                    f"rank {hit.rank} ({hit.chunk_id!r}) declares zero covered "
+                    f"chunks as kind {result.kind!r}: a host credits it with "
+                    "nothing and does NOT read it as a verified 'no answer' -- "
+                    "declare item_kind='gap' if that is what it is")
+            if (result.kind != "chunk" and hit.chunk_id is not None
+                    and str(hit.chunk_id) in pulled_ids):
+                warnings.append(
+                    f"rank {hit.rank}: a {result.kind} result carries the real "
+                    f"corpus id {hit.chunk_id!r} as its own chunk_id -- give it "
+                    "None or an id in a namespace of its own")
+            if not result.kind_declared:
+                warnings.append(
+                    f"rank {hit.rank} ({hit.chunk_id!r}) declares no item_kind; "
+                    f"read as {result.kind!r} by default -- declare it")
+
+    details = [f"{len(declaring)} of {len(hits)} hit(s) declare a derived result"]
+    if failures:
+        report.add(name, FAIL, details + failures[:8],
+                   "Follow docs/contract.md, 'Derived results': item_covered_ids "
+                   "is a list of distinct chunk-id strings, item_kind is one of "
+                   "chunk / summary / gap ('group' accepted as summary), a gap "
+                   "covers no chunks, a chunk covers exactly itself, and rows "
+                   "sharing an item_index agree. A host that has to guess what a "
+                   "result stands for grades the wrong thing.")
+    elif warnings:
+        report.add(name, WARN, details + warnings[:8],
+                   "Legal, but a host may read these results differently from "
+                   "what you mean; see docs/contract.md, 'Derived results'.")
+    else:
+        report.add(name, PASS, details)
+
+
 def _check_determinism(report: Report, pipeline: RagPipeline,
                        sample_query: str, top_k: int,
                        hits: list[RetrievedChunk]) -> None:
@@ -1450,6 +1535,7 @@ def validate_pipeline(pipeline: RagPipeline, *, target: str,
     pulled_ids = {str(c.chunk_id) for c in chunks}
     hits = _check_query(report, pipeline, probe, top_k, pulled_ids,
                         retrieval_mode)
+    _check_derived_results(report, hits, pulled_ids)
     _check_determinism(report, pipeline, probe, top_k, hits)
     if retrieval_mode == "complete_set":
         _check_cardinality_probe(report, pipeline, probe, top_k)

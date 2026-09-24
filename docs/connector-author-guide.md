@@ -71,6 +71,36 @@ Never borrow a real chunk's id for it. `RetrievedChunk.chunk_id` is optional
 precisely so that this case has an honest representation; a borrowed id makes
 evidence that was never in the corpus indistinguishable from evidence that was.
 
+If such a result stands for corpus chunks — a parent document, a summary
+written from passages, a curated answer — or is a verified "the corpus does not
+answer this", declare it with the four-field derived-result model: the chunk
+ids it covers, the text you served, its kind (`chunk`, `summary` or `gap`), and
+optionally curator notes kept apart from the text. Build the keys with the
+helper rather than by hand:
+
+```python
+from rag_connector.derived import derived_result_metadata
+
+RetrievedChunk(
+    chunk_id="answer:42",                       # its own namespace
+    text="A summary of the refund rules...",
+    score=0.91, rank=0,
+    metadata={
+        **derived_result_metadata(
+            kind="summary",
+            covered_ids=["refunds.md:chunk-0", "refunds.md:chunk-3"],
+            curated="Checked against the 2026 policy.",
+        ),
+        "acme_answer_id": 42,                   # your own extras: acme_*
+    },
+)
+```
+
+Two mistakes the validator will catch: covered ids the corpus does not hold,
+and a "no answer" result that covers nothing but is not declared
+`kind="gap"` — a host will not read it as an abstention. See
+[Derived results](contract.md#derived-results).
+
 See [the contract](contract.md) for the normative rules behind each of these.
 
 ## Optional capabilities
@@ -166,6 +196,10 @@ FAIL per check, with the fix for anything that failed, and verifies:
 - `query()` returns ranked `RetrievedChunk` objects and respects `top_k`
   (except under `complete_set`, where the system owns cardinality);
 - **retrieved IDs all exist in the pulled corpus** — the classic bug;
+- derived-result declarations (`item_covered_ids`, `item_kind`,
+  `item_curated`, `item_index`, `item_label`), where a hit makes one, follow
+  [the rules](contract.md#derived-results) — a hit that declares covered ids
+  is checked through those ids in the classic-bug check above;
 - retrieval is deterministic for a repeated query;
 - scores run higher-is-better down the ranking (skipped under `ordered` and
   `complete_set`, where scores are evidence only, and skipped-with-a-reason when

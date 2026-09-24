@@ -148,6 +148,63 @@ A host's score threshold keeps `score >= threshold`. Unconverted distances would
 therefore keep exactly the wrong half of the results — which is why the
 direction rule is universal rather than per-backend.
 
+## Derived results
+
+Most retrievers return chunks: a returned row *is* the chunk its `chunk_id`
+names. Some return something else — a parent document standing for the chunks
+inside it, a summary written from several passages, a curated answer, or a
+verified "the corpus does not answer this". A host still needs to know which
+corpus chunks such a result stands for, what text was served, and what kind of
+thing it was. A connector says so through `RetrievedChunk.metadata`, using four
+fields:
+
+| Field | Where | Meaning |
+| --- | --- | --- |
+| covered chunk ids | `metadata["item_covered_ids"]` | The corpus chunk ids the result stands for. Id-keyed scoring (which chunks were retrieved) credits the result through these, never through its own row id. |
+| text | `RetrievedChunk.text` | What was served: the chunk's text, or a summary representing the covered chunks. Content-based judgement reads this. |
+| kind | `metadata["item_kind"]` | `chunk`, `summary` or `gap`. `group` is accepted as a synonym of `summary`, because that is what existing connectors emit. |
+| curated (optional) | `metadata["item_curated"]` | Curator notes about the result, kept separate from `text` and never part of it, so a host can report them without grading them as corpus content. |
+
+Two grouping keys already in use are part of the same vocabulary:
+
+| Key | Meaning |
+| --- | --- |
+| `item_index` | Optional non-negative integer: which returned item the row belongs to, 0-based. Rows sharing an index are **one** item occupying one ranked slot, and must declare the same `item_covered_ids` and `item_kind`. Without it, each row is its own item. |
+| `item_label` | Optional string: the connector's own name for what the item is. Recorded and shown verbatim; nothing interprets it. |
+
+The rules:
+
+1. **Declare nothing and nothing changes.** A row without `item_*` keys is a
+   chunk, credited through its own `chunk_id`. Plain chunk retrievers need no
+   changes.
+2. **`item_covered_ids` is a list of distinct chunk-id strings**, every one of
+   which exists in the corpus read — an id the corpus does not hold is left
+   out, not declared. It is a read set, not a ranking. An **empty** list is a
+   declaration of zero coverage (for example, a summary whose citations were
+   all lost); an **absent** key means "credit my own `chunk_id`". The two are
+   different statements.
+3. **Kinds.** A `chunk` row is the corpus chunk it names: its `chunk_id` is a
+   corpus id and, if it declares covered ids, they are exactly `[chunk_id]`. A
+   `summary` row stands for its covered chunks; give it `chunk_id=None` or an id
+   in a namespace of its own, never a real chunk's id. A `gap` is a verified
+   "the corpus does not answer this": it covers no chunks (`item_covered_ids`
+   absent or empty) and its `text` is what was served in place of an answer.
+4. **A gap is read from `item_kind == "gap"`, never from zero coverage.** A
+   result that covers nothing for any other reason is not an abstention.
+5. **Default kind.** When `item_kind` is absent, a row declaring
+   `item_covered_ids` is read as a `summary`, and any other row as a `chunk`.
+   Declare the kind rather than relying on this.
+6. **An unknown kind is refused**, not guessed.
+7. **Vendor extras** go in `<vendor>_*` keys (`acme_extract_id`). This
+   contract never defines or reads them.
+
+`rag_connector.derived` holds the key constants, `derived_result_metadata(...)`
+to build a row's keys, `read_derived_result(hit)` to read one with the defaults
+applied, and `derived_result_problems(hit)` for the structural checks.
+`rag-connector validate` checks every declaring row: malformed declarations
+fail; zero coverage without `gap`, a summary carrying a real corpus id, and an
+undeclared kind warn.
+
 ## Retrieval modes
 
 Declare `retrieval_mode` as a class attribute; it surfaces through `info()` and

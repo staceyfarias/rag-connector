@@ -34,6 +34,21 @@ from .capabilities import (
     supports_chunk_vectors,
     supports_declared_prompts,
 )
+from .derived import (
+    ITEM_COVERED_IDS_KEY,
+    ITEM_CURATED_KEY,
+    ITEM_INDEX_KEY,
+    ITEM_KIND_CHUNK,
+    ITEM_KIND_GAP,
+    ITEM_KIND_KEY,
+    ITEM_KIND_SUMMARY,
+    ITEM_KINDS,
+    ITEM_LABEL_KEY,
+    DerivedResult,
+    derived_result_metadata,
+    derived_result_problems,
+    read_derived_result,
+)
 from .errors import (
     ConnectorContractError,
     ConnectorError,
@@ -86,6 +101,19 @@ from .run_snapshot import (
 )
 
 __all__ = [
+    "ITEM_COVERED_IDS_KEY",
+    "ITEM_CURATED_KEY",
+    "ITEM_INDEX_KEY",
+    "ITEM_KIND_CHUNK",
+    "ITEM_KIND_GAP",
+    "ITEM_KIND_KEY",
+    "ITEM_KIND_SUMMARY",
+    "ITEM_KINDS",
+    "ITEM_LABEL_KEY",
+    "DerivedResult",
+    "derived_result_metadata",
+    "derived_result_problems",
+    "read_derived_result",
     "AnswerGenerator",
     "CACHE_BREAKPOINT_AFTER_RAG_BLOCK",
     "CACHE_BREAKPOINT_BEFORE_RAG_BLOCK",
