@@ -205,6 +205,22 @@ through third-party parsers whose output can change between their own releases.
 A corpus of `.txt`/`.md` reproduces exactly; one full of PDFs reproduces only
 against a pinned parser.
 
+## Datasets
+
+A **Dataset** is a portable folder holding a frozen, chunked corpus — the chunk
+rows, the source list, and a manifest recording how it was split and the hashes
+that let any reader verify it. The format is specified in
+[the Dataset spec](https://github.com/staceyfarias/rag-connector/blob/main/docs/dataset-spec.md)
+(`rag-connector-dataset` 1.0, versioned separately from this package) and
+implemented by `rag_connector.dataset`. Two optional ways to make one:
+
+```bash
+# chunk a folder of documents (no vector store, no model download)
+rag-connector dataset build --folder ./my-documents --out ./my-dataset
+# freeze an existing system's corpus, through its connector
+rag-connector dataset export --connector my-rag --params "{...}" --out ./my-dataset
+```
+
 ## Installed connectors
 
 List every connector registered in the current environment — the bundled

@@ -12,8 +12,10 @@ imports no optional extras. The spec is versioned **independently** of the
 
 Building a Dataset is optional tooling, not part of the connector contract. A
 connector is a read-only view of a system someone else built; a Dataset is
-something a host writes. Any tool that writes the files described here makes a
-conforming Dataset.
+something a host writes. `rag-connector dataset build` and
+`rag-connector dataset export` ([below](#command-line)) are two ways to make
+one, but any tool that writes the files described here makes a conforming
+Dataset.
 
 ## Folder layout
 
@@ -238,6 +240,26 @@ from rag_connector.dataset import (
 | `list_extensions(folder)` | Every envelope, sorted by tool, each with any `problems`. |
 | `write_extension_envelope(folder, tool, *, tool_version, format_version, created_at=None, overwrite=False)` | Creates `extensions/<tool>/extension.json` recording the verified core. |
 | `chunker_chunking(...)`, `exported_chunking(connector_type)` | The two defined `chunking` blocks. |
+
+## Command line
+
+```bash
+# From a folder of documents, with this package's chunker (no vector store):
+rag-connector dataset build --folder ./my-documents --out ./my-dataset \
+  [--chunk-size 1000] [--chunk-overlap 200] [--name "My documents"]
+
+# From a connector's own corpus, as its system chunked it:
+rag-connector dataset export --connector my-rag --params '{"endpoint": "..."}' \
+  --out ./my-dataset [--name "..."]
+```
+
+`export` reads the whole corpus through the connector's corpus read
+(`pull_all_chunks`, which pages through `list_chunks` when that is what the
+connector implements) and drops any embeddings. Both commands refuse an output
+directory that already holds anything, and print the new Dataset's id, chunk
+count and hashes as JSON. The same two operations are library functions:
+`build_dataset_from_folder(folder, out_dir, *, chunk_size, chunk_overlap, name)`
+and `export_dataset_from_connector(pipeline, out_dir, *, connector_type, name)`.
 
 ## About the demo corpus name
 

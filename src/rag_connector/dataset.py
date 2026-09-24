@@ -52,10 +52,12 @@ __all__ = [
     "ExtensionEnvelope",
     "LEGACY_LAYOUT_RAGAUGE_V0",
     "LAYOUT_CORE",
+    "build_dataset_from_folder",
     "chunk_inventory_sha256",
     "chunker_chunking",
     "compute_core_sha256",
     "dataset_id_for_inventory",
+    "export_dataset_from_connector",
     "exported_chunking",
     "list_extensions",
     "read_dataset_folder",
@@ -474,6 +476,71 @@ def write_dataset_folder(
         shutil.rmtree(staging, ignore_errors=True)
         raise
     return read_dataset_folder(target)
+
+
+# ---------------------------------------------------------------------------
+# Creation tools (optional: any conforming writer makes a Dataset)
+# ---------------------------------------------------------------------------
+
+def build_dataset_from_folder(
+    folder: str | os.PathLike[str],
+    out_dir: str | os.PathLike[str],
+    *,
+    chunk_size: int = 1000,
+    chunk_overlap: int = 200,
+    name: str | None = None,
+    created_at: str | None = None,
+) -> Dataset:
+    """Chunk a folder of documents with this package's chunker into a Dataset.
+
+    The ingest kit's :func:`~rag_connector.ingest.load_documents` and
+    :func:`~rag_connector.ingest.chunk_loaded_documents`, exactly — no vector
+    store, no embedding model, nothing downloaded. ``name`` defaults to the
+    folder's name.
+    """
+    from .ingest import chunk_loaded_documents, load_documents
+
+    documents = load_documents(str(folder))
+    if not documents:
+        raise ValueError(f"{folder} holds no supported documents")
+    chunks = chunk_loaded_documents(
+        documents, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+    )
+    return write_dataset_folder(
+        out_dir,
+        chunks,
+        name=name or Path(folder).resolve().name,
+        chunking=chunker_chunking(chunk_size=chunk_size, chunk_overlap=chunk_overlap),
+        created_at=created_at,
+    )
+
+
+def export_dataset_from_connector(
+    pipeline: RagPipeline,
+    out_dir: str | os.PathLike[str],
+    *,
+    connector_type: str,
+    name: str,
+    created_at: str | None = None,
+) -> Dataset:
+    """Freeze a connector's whole corpus, as its system chunked it, into a Dataset.
+
+    Reads through the corpus-read half of the contract — ``pull_all_chunks``,
+    which pages through ``list_chunks`` when that is what the connector
+    implements — so any connector a host can connect can be exported. Embeddings
+    are dropped (a Dataset is a chunking, not an index), as is
+    ``metadata["document_filepath"]``. A connector that cannot read its corpus
+    raises :class:`~rag_connector.errors.UnsupportedCapability`, and a backend
+    failure raises; neither ever produces an empty Dataset.
+    """
+    chunks = pipeline.pull_all_chunks()
+    return write_dataset_folder(
+        out_dir,
+        chunks,
+        name=name,
+        chunking=exported_chunking(connector_type),
+        created_at=created_at,
+    )
 
 
 # ---------------------------------------------------------------------------
