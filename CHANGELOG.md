@@ -2,6 +2,34 @@
 
 Notable changes to rag-connector. Dates are the day the work landed.
 
+## 0.2.0a2 — unreleased
+
+Additive; nothing existing changes meaning.
+
+- **Dataset spec, `rag-connector-dataset` 1.0** (`docs/dataset-spec.md`,
+  versioned separately from this package) and `rag_connector.dataset`. A
+  Dataset folder has a write-once core (`dataset.json`, `data/chunks.jsonl`,
+  `data/sources.json`), a reserved `testsets/` area defined by the Test Set
+  spec, and one `extensions/<tool>/` area per tool behind an `extension.json`
+  envelope. Readers verify `chunk_inventory_sha256` (testset-kit's
+  `chunk-inventory-v1`, adopted exactly) and `core_sha256` and refuse a
+  mismatch; the Dataset id is derived from the chunk inventory, so a re-chunk
+  is a new Dataset. API: `write_dataset_folder`, `read_dataset_folder`,
+  `chunk_inventory_sha256`, `source_manifest_from_chunks`, `list_extensions`,
+  `write_extension_envelope`. RAGauge's pre-spec Dataset folders stay readable
+  through `read_legacy_dataset_folder` (read-only, unverified, never migrated).
+- `CHUNKER_METHOD` / `CHUNKER_VERSION` in the ingest kit name the splitting
+  behaviour a Dataset records.
+- **`rag-connector dataset build`** (chunk a documents folder, no vector store)
+  and **`rag-connector dataset export`** (freeze a connector's corpus, without
+  embeddings), with library forms `build_dataset_from_folder` and
+  `export_dataset_from_connector`.
+- **Derived results** in the contract: the four-field model (covered chunk ids,
+  served text, kind `chunk`/`summary`/`gap` with `group` accepted as
+  `summary`, optional curator notes) plus `item_index` / `item_label`, with the
+  key constants and helpers in `rag_connector.derived`. The validator checks
+  these declarations when a connector makes them.
+
 ## 0.2.0a1 — first public release
 
 The first release published to PyPI, and the first from this public repository.
