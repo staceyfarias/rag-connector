@@ -56,6 +56,8 @@ __all__ = [
     "BUNDLED_CHUNK_OVERLAP",
     "BUNDLED_CHUNK_SIZE",
     "BUNDLED_CORPORA",
+    "CHUNKER_METHOD",
+    "CHUNKER_VERSION",
     "DEFAULT_BUNDLED_CORPUS",
     "LoadedDocument",
     "SUPPORTED_SOURCE_EXTENSIONS",
@@ -86,6 +88,17 @@ DEFAULT_BUNDLED_CORPUS = "pelorus_space"
 #: this kit's preferences -- see :func:`load_bundled_chunks`.
 BUNDLED_CHUNK_SIZE = 1000
 BUNDLED_CHUNK_OVERLAP = 200
+
+#: The name and version of the splitting behaviour in
+#: :func:`chunk_loaded_documents`, recorded in a Dataset manifest's ``chunking``
+#: block (see ``docs/dataset-spec.md``). The boundary rule, the trailing-chunk
+#: rule and the whitespace rule are behaviour, not parameters, so the same
+#: ``chunk_size``/``chunk_overlap`` only reproduce a split under the same
+#: version. **Bump the version in the same change that alters any of them**;
+#: the frozen-chunk drift test in ``tests/test_ingest.py`` is what notices that
+#: the behaviour moved.
+CHUNKER_METHOD = "rag-connector-chunker"
+CHUNKER_VERSION = "1"
 
 #: File extensions :func:`load_documents` will parse. ``.txt``/``.md`` need no
 #: extras; the rest need the ``reference`` extra's parsers.
