@@ -261,9 +261,8 @@ count and hashes as JSON. The same two operations are library functions:
 `build_dataset_from_folder(folder, out_dir, *, chunk_size, chunk_overlap, name)`
 and `export_dataset_from_connector(pipeline, out_dir, *, connector_type, name)`.
 
-## About the demo corpus name
+## About the demo corpus
 
-The corpus bundled with this package is called `pelorus_space` ("Pelorus
-Space"). That is a brand name for a fictional demo, nothing more: nothing in this
-spec or in the Dataset format depends on it or on any product, and the id is not
-being renamed here.
+The corpus bundled with this package, `pelorus_space` ("Pelorus Space"), is an
+MIT-licensed demo corpus, like the rest of this package. Nothing in this spec or
+in the Dataset format depends on it or on any product.
