@@ -1,7 +1,29 @@
 # RAG Connector
 
-RAG Connector is a small, product-neutral Python library for treating a
-Retrieval-Augmented Generation pipeline as a black box.
+RAG Connector is the shared contract that lets **RAGauge** and **Pelorus Query**
+work with the same Retrieval-Augmented Generation pipeline as a black box —
+without either of them knowing how that pipeline is built.
+
+- **RAGauge** evaluates a RAG system: whether it retrieves the right evidence
+  and whether its answers are grounded in it, measured against a frozen corpus
+  and test set.
+- **Pelorus Query** sits on top of a RAG system and serves curated,
+  source-grounded answers (Evidence Extracts), improving them as queries repeat.
+
+Both need the same things from the pipeline underneath: ask it a question and
+get ranked chunks back, read its corpus, know which embedding space and
+retrieval mode produced a score, and cite a chunk by an id that means the same
+thing to both. RAG Connector defines that once. A pipeline that implements the
+contract — or is wrapped by a connector that does — can be measured by RAGauge
+and curated by Pelorus Query, and a chunk one of them cites resolves to the
+same text in the other. The bundled demo corpus and its frozen chunk set exist
+for exactly that: both products are built against the same 605 chunk ids.
+
+Interoperability between those two products is why this library exists, and it
+is why the contract is narrow. Nothing here evaluates or curates: evaluation
+policy belongs to RAGauge, curation behavior to Pelorus Query. Any other tool
+that needs to treat a RAG pipeline as a black box can build on the same
+contract. (RAGauge and Pelorus Query are not public yet.)
 
 It defines:
 
@@ -16,10 +38,8 @@ It defines:
 - an ingest kit (`rag_connector.ingest`) for hosts that build their own corpus —
   deliberately outside the read-only connector contract.
 
-The dependency-light core does **not** evaluate or curate content. Products such
-as RAGauge and Pelorus Query consume the contract and retain ownership of their
-respective evaluation and curation behavior. The bundled Reference RAG is a
-known-good development and learning implementation, not a production service.
+The bundled Reference RAG is a known-good development and learning
+implementation, not a production service.
 
 ## Status
 
@@ -33,7 +53,7 @@ What that means for depending on it: pin a version. The core contract —
 entry point — is the part least likely to move, and a change to it would break
 the authors' own connectors first. The newer optional capabilities are younger
 and may still gain fields. Anything listed under
-[Reserved surface](docs/contract.md#reserved-surface) is exported but unwired:
+[Reserved surface](https://github.com/staceyfarias/rag-connector/blob/main/docs/contract.md#reserved-surface) is exported but unwired:
 nothing produces it, the validator does not check it, and it is not something
 to build against yet.
 
@@ -67,7 +87,7 @@ rag-connector reference provision ./my-documents \
 Add `--normalized true|false` to declare whether the embedding space's vectors
 are L2-normalized. Omit it and the space reports "not stated", which a host
 reads as unverifiable — deliberately distinct from an asserted `false`. See
-[the embedding space descriptor](docs/contract.md#the-embedding-space-descriptor).
+[the embedding space descriptor](https://github.com/staceyfarias/rag-connector/blob/main/docs/contract.md#the-embedding-space-descriptor).
 
 The provision command prints the secret-free connection document needed to
 reopen the same instance. Supported source formats are `.txt`, `.md`, `.pdf`,
@@ -209,7 +229,7 @@ python -m ruff check .
 fastembed. Without it the suite still runs clean — those tests skip, naming the
 install that turns them back on.
 
-See [Contract](docs/contract.md) and the
-[Connector author guide](docs/connector-author-guide.md).
+See [Contract](https://github.com/staceyfarias/rag-connector/blob/main/docs/contract.md) and the
+[Connector author guide](https://github.com/staceyfarias/rag-connector/blob/main/docs/connector-author-guide.md).
 
-RAG Connector is licensed under the [MIT License](LICENSE).
+RAG Connector is licensed under the [MIT License](https://github.com/staceyfarias/rag-connector/blob/main/LICENSE).
