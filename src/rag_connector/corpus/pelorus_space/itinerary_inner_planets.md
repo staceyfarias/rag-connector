@@ -1,5 +1,7 @@
 # Inner Planets Survey (IPS) — itinerary overview
 
+*At a glance · 2042–43 departures*
+
 **Duration:** 18 days total  
 **Departure:** Earth Launch Terminal 7, Gate 22  
 **Drive:** Continuous-thrust fusion, 0.15g sustained acceleration/deceleration
@@ -9,7 +11,7 @@
 | 1–2 | Earth → Moon Base 7 transit | 2 days | — | No | — |
 | 3 | Moon Base 7 layover (IPS — transit only) | ~4 hours | None — transit window too short for shore excursions | No | Moon → Mars, 4 days |
 | 4–7 | Moon → Mars Colony 1 transit | 4 days | — | No | — |
-| 8–10 | Mars Colony 1 stay | 3 nights | Cydonia Highlands; Hellas Basin Overlook; Terraforming Operations Zone | Yes (all surface excursions) | Mars → Venus, 3 days |
+| 8–10 | Mars Colony 1 stay | 3 nights | Cydonia Highlands; Hellas Basin Overlook; Terraforming Operations Zone | Yes (surface EVA) | Mars → Venus, 3 days |
 | 11–13 | Mars → Venus transit | 3 days | — | No | — |
 | 14–16 | Venus — The Aphrodite | 3 nights | Pool and sun deck; Glass Floor Tour; Venus Science Centre | No — pressurised station | Venus → Earth, 2 days |
 | 17–18 | Venus → Earth return transit | 2 days | — | No | — |
@@ -28,4 +30,4 @@ IPS passengers do not visit Ceres, Saturn, Titan, or Enceladus. The Moon Base 7 
 
 ## Total EVA time (IPS)
 
-Surface EVA is available on Mars only — up to three excursions over three days. Each excursion is approximately 4 to 6 hours of EVA time. No EVA is available on any other IPS leg.
+Surface EVA is available on Mars only — up to three excursions over three days. Not every Mars excursion is a full surface EVA: the Hellas Basin Overlook is viewed from an enclosed, pressurised dome, with an optional 30-minute outer EVA on the rim; the Terraforming Operations Zone is reached by pressurised rover, with an EVA helmet required beyond the interpretive centre. No EVA is available on any other IPS leg.

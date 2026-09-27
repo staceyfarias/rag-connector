@@ -1,5 +1,7 @@
 # Welcome Aboard — Passenger Guide to Life on the Perihelion Express
 
+*Pelorus Voyages · Onboard Services · Edition 2 · Issued 14 February 2042*
+
 This guide covers daily life on the vessel: how gravity adapts your body in the first few days, how dining works by cabin class, how to use and care for EVA suits, how to stay in contact with Earth, what entertainment and activities are available, and what the medical bay can and cannot do. Read it before departure and return to it during the voyage.
 
 ## Contents
@@ -16,7 +18,7 @@ This guide covers daily life on the vessel: how gravity adapts your body in the 
 
 ## 1. Adapting to Low Gravity
 
-The Perihelion Express maintains a constant 0.15g acceleration throughout each transit leg — roughly one-seventh of Earth's surface gravity. This is substantially lower than what your body is calibrated for, and lower than any destination you will visit except Ceres. Most passengers notice it immediately on departure: objects feel lighter, liquids behave differently, and your inner ear sends signals that don't quite match what your eyes see.
+The Perihelion Express maintains a constant 0.15g acceleration throughout each transit leg — roughly one-seventh of Earth's surface gravity. This is substantially lower than what your body is calibrated for, and lower than any destination you will visit except Ceres and Titan (0.14g). Most passengers notice it immediately on departure: objects feel lighter, liquids behave differently, and your inner ear sends signals that don't quite match what your eyes see. Passengers adapt within 24 to 72 hours of arriving in each new gravity environment — most within 48 hours.
 
 The most common early symptoms are mild head congestion and facial puffiness from fluid shifting toward the upper body, a subtle sense of floating even while seated, and occasional nausea in the first 12 to 24 hours. These are normal physiological responses, not signs of a medical problem. The medical officer monitors all passengers during the first 72 hours and is available for anyone who develops more severe symptoms. Motion sickness medication is available from the medical bay without an appointment; most passengers who need it find that a single dose on the first evening is sufficient.
 
@@ -24,7 +26,7 @@ During the **first 48 hours** of each new transit leg, access to the outer obser
 
 **Readapting to higher gravity** is also a process. Passengers on the Inner Planets Survey will move through three distinct gravity environments: 0.15g in transit, 0.38g on Mars, and 0.88g at The Aphrodite resort above Venus. The Venus arrival is frequently described as the most physically noticeable transition of the voyage — after days in Mars's lower gravity, 0.88g feels heavy in the arms and legs. Pelorus Voyages provides a gravity re-adaptation orientation at each higher-gravity arrival with stretching guidance, hydration recommendations, and a suggested first-day activity pace. The 24 hours after Venus arrival is not the right time to push physical limits; GST passengers should plan their Venus rest day accordingly.
 
-Passengers with vestibular conditions or a history of motion sickness should declare this in their medical clearance form. The vessel can adjust cabin assignment to minimise vestibular triggers for affected passengers.
+Passengers with vestibular conditions or a history of motion sickness should declare this in their medical clearance form. The vessel carries a full range of antiemetic (anti-nausea) medicines and can adjust cabin assignment to minimise vestibular triggers for affected passengers.
 
 ---
 
@@ -52,8 +54,8 @@ EVA suit orientation is mandatory for all passengers who will participate in any
 
 The session is conducted by the vessel's EVA systems officer:
 - For **GST passengers**: during the Moon Base 7 layover
-- For **IPS passengers**: at the Mars Colony 1 departure gate (first EVA stop)
-- For **ORT passengers**: at the Ceres departure gate (first EVA stop)
+- For **IPS passengers**: in person at the Earth departure gate before launch (first EVA stop: Mars Colony 1)
+- For **ORT passengers**: in person at the Earth departure gate before launch (first EVA stop: Ceres)
 
 **The session takes 90 minutes** and covers:
 1. Suit-up procedure and self-check
@@ -100,11 +102,14 @@ The vessel uses continuous-thrust fusion drives that accelerate for the first ha
 | Mars → Venus | 3 days | 2–15 minutes | IPS and GST only. |
 | Moon → Ceres (ORT outbound) | 4 days | 4–20 minutes | ORT direct; GST connects via Venus. |
 | Venus → Ceres (GST) | 4 days | 4–20 minutes | GST only. Connects inner system to outer system sequence. |
-| Ceres → Saturn | 5 days | 43–84 minutes | Longest single leg. |
+| Ceres → Saturn | 5 days | 43–84 minutes | Longest outbound leg. |
 | Saturn → Titan | 8 hours | ~4 seconds additional | Short hop; Titan orbits Saturn at 1.2 million km. |
 | Titan → Enceladus | 20 hours | ~1 second additional | |
 | Enceladus → Earth (return) | 8–9 days | 43–84 minutes | Does not retrace the outbound route. |
 | Venus → Earth (IPS return) | 2 days | 2–15 minutes | |
+| Mars → Earth (IPS alternative return) | 3 days | 3–22 minutes | Direct return; rarely used. |
+
+All durations are in Earth days. The vessel clock runs on UTC, and all muster times are given in UTC.
 
 **What each leg feels like** — the short Saturn-to-Titan hop (8 hours) feels like a brief connecting flight. The Enceladus-to-Earth return (8 to 9 days) is the longest leg on the ORT and GST and is typically the most relaxed stretch of the voyage — the excursion schedule is complete, social connections among passengers have formed, and the bar hosts the voyage retrospective social event during this return leg.
 
@@ -112,7 +117,7 @@ The vessel uses continuous-thrust fusion drives that accelerate for the first ha
 
 ## 6. Medical Bay — Capabilities and Access
 
-The medical bay is on **Deck 3, Midship**, accessible from both Pioneer and Navigator berth corridors. Pathfinder passengers have priority access for non-emergency visits. All passengers have immediate access for emergencies regardless of class.
+The medical bay is staffed by a licensed flight surgeon and two medical technicians for the whole voyage. It is on **Deck 3, Midship**, accessible from both Pioneer and Navigator berth corridors. Pathfinder passengers have priority access for non-emergency visits. All passengers have immediate access for emergencies regardless of class.
 
 **What the medical bay can do:**
 - Blood work and urinalysis
@@ -121,15 +126,16 @@ The medical bay is on **Deck 3, Midship**, accessible from both Pioneer and Navi
 - Minor surgical procedures (suturing, wound debridement)
 - Pain management including injectable analgesics
 - Intravenous fluid therapy
-- Full pharmaceutical inventory for common acute conditions, antimicrobials, cardiovascular emergencies, and passengers' pre-declared medication requirements
+- Full pharmaceutical inventory for common acute conditions, antimicrobials, cardiovascular emergencies, psychiatric medicines (maintenance prescriptions only), and passengers' pre-declared medication requirements
 
 **What the medical bay cannot do:**
 - Major surgery or intensive care
 - Obstetric delivery
 - Advanced cancer treatment
 - Sustained ICU-level life support
+- Acute psychiatric care beyond stabilisation
 
-In a serious emergency beyond the bay's capacity, the flight surgeon advises the captain on whether diversion to the nearest facility is warranted. See the Departure Planning and Scheduling Guide for diversion points by leg.
+In a serious emergency, the flight surgeon's role is stabilisation and assessment, not definitive treatment. Where a condition is beyond the bay's capacity, the flight surgeon advises the captain on whether diversion to the nearest facility is warranted. See Section 10 of the Medical Clearance and Pre-Voyage Fitness Guide for diversion points by leg.
 
 Medical bay consultation is available **24 hours a day**. Non-urgent consultations should be booked through the vessel's internal communication system. Urgent and emergency presentations proceed directly to the bay at any time. Consultations are documented in your voyage medical record and are held confidentially — records are not shared with Pelorus Voyages administration without your written consent, except in cases of communicable disease or immediate safety risk.
 
@@ -148,3 +154,7 @@ Transit legs range from 8 hours (Saturn to Titan) to 9 days (Enceladus to Earth 
 **Fitness suite** — Deck 2, open to all passengers. Equipment is calibrated for low-gravity conditions and includes resistance training machines, a treadmill with harness for running at simulated higher gravity, and stretching and yoga areas. Fitness classes run twice daily and are open to all cabin classes. Pathfinder passengers have unrestricted suite access; Navigator and Pioneer passengers should book time slots during high-demand periods (early in each transit leg).
 
 **Bar** — open 0800 to 0100 UTC daily on all legs. During the Enceladus-to-Earth return transit, the bar hosts an informal voyage retrospective social event — the timing is set by the expedition coordinator and announced during the leg. This is typically the best-attended social event of any voyage.
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

@@ -1,5 +1,7 @@
 # Inner Planets Survey — Complete Voyage Guide
 
+*Pelorus Voyages Voyage Guides · For 2042–43 departures · Issued 5 April 2042*
+
 The Inner Planets Survey is Pelorus Voyages's 18-day expedition to the Moon, Mars, and Venus. It is the most frequently available itinerary, the shortest, and the best entry point for first-time expedition passengers. This guide covers every leg of the voyage with practical guidance on what to expect, how to prepare, and where the planning decisions are.
 
 ## Contents
@@ -48,7 +50,7 @@ The IPS is not a quick trip — 18 days is a significant commitment. It is, howe
 
 The Earth departure burn is the most intense acceleration phase of the voyage — a 45-minute burn with a peak of 2.2g in the first 8 minutes before the drive throttles to the sustained 0.15g transit level. All passengers must be secured in their berths with acceleration harnesses during the burn. The departure burn schedule is announced 30 minutes in advance by vessel intercom.
 
-After the burn, 0.15g transit gravity takes over. Most passengers notice it immediately — objects feel lighter, liquids need sealed containers, and the inner ear begins its adjustment. The first 48 to 72 hours involve mild adaptation symptoms for many passengers (head congestion, slight nausea, a sensation of floating while seated). These are normal. The outer observation deck and EVA storage area are restricted for the first 48 hours.
+After the burn, 0.15g transit gravity takes over. Most passengers notice it immediately — objects feel lighter, liquids need sealed containers, and the inner ear begins its adjustment. The first 24 to 72 hours involve mild adaptation symptoms for many passengers, and most adapt within 48 hours (head congestion, slight nausea, a sensation of floating while seated). These are normal. The outer observation deck and EVA storage area are restricted for the first 48 hours.
 
 **Earth-to-Moon transit time:** 2 days. **Light delay at lunar arrival:** 1.3 seconds — essentially real-time. Calls home from the Moon Base 7 layover function normally.
 
@@ -60,8 +62,9 @@ The Moon Base 7 layover for IPS passengers is approximately 4 hours — sufficie
 
 **What IPS passengers do at Moon Base 7:**
 - Vessel transfer from Earth-Moon transport to the Perihelion Express
-- EVA suit orientation briefing if booked for Mars surface excursions (for IPS, this typically happens at the Mars Colony 1 departure gate rather than Moon Base 7)
-- Leap waiver signing — if booked as an add-on on the IPS continuation (note: IPS does not visit Ceres, so The Leap is not available on IPS)
+- Processing of any outstanding documents
+
+EVA suit orientation for IPS passengers booked on Mars surface excursions is not done here: it is an in-person session at the Earth departure gate before launch. The IPS does not visit Ceres, so no Leap waiver is needed.
 
 IPS passengers who want Moon shore excursions (Heritage Site, Golf Links, Rover Tour) must book the Grand Solar Tour. Moon surface access is not available on an 18-day Inner Planets Survey.
 
@@ -95,9 +98,9 @@ Three nights at Mars Colony 1. This is the most activity-dense segment of the IP
 
 ## 7. Mars to Venus (Days 11–13)
 
-The Mars-to-Venus transit is 3 days — the shortest inter-planetary leg of the IPS. The dramatic change at the end of this leg (from 0.38g Mars to 0.88g The Aphrodite) is worth anticipating. After days at Martian gravity, Venus feels heavy to most passengers. Pelorus Voyages provides a gravity re-adaptation orientation at Venus arrival.
+The Mars-to-Venus transit is 3 days — the shortest leg between two stops on the IPS. The dramatic change at the end of this leg (from 0.38g Mars to 0.88g The Aphrodite) is worth anticipating. After days at Martian gravity, Venus feels heavy to most passengers. Pelorus Voyages provides a gravity re-adaptation orientation at Venus arrival.
 
-The science officer's Venus destination briefing typically runs on Day 12. If you intend the Gondola Descent but have not yet confirmed your booking, the transit is the last opportunity to secure it before arrival — but note that the gondola typically fills well in advance, so if it is not booked yet, check availability as soon as possible.
+The science officer's Venus destination briefing typically runs on Day 12. The Gondola Descent cannot be booked during the voyage: it must be booked before departure (add-ons close 48 hours before the Earth departure window), and the gondola typically fills well in advance.
 
 ---
 
@@ -141,7 +144,7 @@ The following are restricted or separately purchased on the IPS:
 
 **After booking:**
 - [ ] Book Glass Floor Tour immediately (fills 3 weeks out in peak season)
-- [ ] Book Gondola Descent (8 passengers max; Pathfinder-tier loyalty gets 48-hour priority window)
+- [ ] Book Gondola Descent (8 passengers max; Pathfinder loyalty tier members get a 48-hour priority window)
 - [ ] Register dietary requirements and all medications in account portal
 - [ ] Complete online training programme (14 days before departure deadline)
 
@@ -150,3 +153,7 @@ The following are restricted or separately purchased on the IPS:
 - [ ] Arrive at terminal 4 hours before departure window (5 hours if mobility assistance needed)
 - [ ] Baggage drop complete 4 hours before departure window
 - [ ] Gate 22 check-in: 3 hours before departure window opening
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

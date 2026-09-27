@@ -1,5 +1,7 @@
 # Medical Clearance and Pre-Voyage Fitness Guide
 
+*Pelorus Voyages · Medical Services · Edition 4 · Issued 18 January 2042*
+
 This guide covers everything related to your health and fitness requirements for a Pelorus Voyages expedition. Read it alongside the Passenger Handbook before booking. Medical preparation typically takes longer than passengers expect — physician appointments, specialist letters, and training programme completion all have their own timelines, and several requirements cannot be rushed or obtained during the voyage.
 
 ## Contents
@@ -43,7 +45,7 @@ Standard voyage clearance is required for all itineraries. Several destinations 
 
 | Destination | Standard clearance | Additional clearance | EVA medical check | Cold-suit cardio check | Notes |
 |---|---|---|---|---|---|
-| Earth Launch Terminal | Yes — pre-departure health check within 72 hours | None | No | No | Pre-departure check is conducted by Pelorus Voyages staff at Terminal 7, Medical Suite B. Separate from physician clearance. |
+| Earth Launch Terminal | Yes — pre-departure health check within the 72 hours before departure | None | No | No | Pre-departure check is conducted by Pelorus Voyages staff at Terminal 7, Medical Suite B. Separate from physician clearance. Most passengers take it on departure day. |
 | Moon Base 7 | Yes | None | Yes — if doing EVA surface excursions | No | EVA medical check is a brief fitness confirmation completed at Moon Base 7 on arrival. Not a full clearance; takes approximately 15 minutes. |
 | Tranquility Base Heritage Site | Yes | None | No — pressurised rover only | No | No EVA involved in this excursion. |
 | Lunar Golf Links | Yes | None | No | No | Surface suit worn but considered low-exertion. Suit donning handled by golf facility staff. |
@@ -63,7 +65,7 @@ Standard voyage clearance is required for all itineraries. Several destinations 
 
 **Gondola cardiovascular clearance** — specifically assesses the cardiovascular response to the pressure changes during the 3km descent into the Venusian atmosphere. Passengers with any history of cardiovascular events should discuss the gondola specifically with their physician — not just spaceflight in general — as the pressure differential is the relevant risk factor, not the altitude or gravity.
 
-**Titan cold-suit certification and cardiovascular check** — both conducted at Moon Base 7 and together take approximately half a day. ORT and GST passengers intending to do the Titan surface excursion should plan their Moon Base 7 time around these appointments. Both must be completed before the vessel departs Moon Base 7 for the outer system legs; there is no opportunity to complete them later in the voyage.
+**Titan cold-suit certification and cardiovascular check** — both conducted at Moon Base 7 and together take approximately 3 hours. ORT and GST passengers intending to do the Titan surface excursion should plan their Moon Base 7 time around these appointments. Both must be completed before the vessel departs Moon Base 7 for the outer system legs; there is no opportunity to complete them later in the voyage.
 
 ---
 
@@ -89,7 +91,7 @@ The programme consists of five modules:
 
 ## 4. Disqualifying Medical Conditions
 
-The following conditions disqualify a passenger from travelling on any Pelorus Voyages itinerary. The certifying physician must confirm that none of these are present or active at the time of clearance sign-off.
+The following conditions disqualify a passenger from travelling on any Pelorus Voyages itinerary. The certifying physician must confirm that none of these are present or active at the time of clearance sign-off. The list is not exhaustive: the certifying physician is responsible for judging whether any condition not listed here poses a risk in the spaceflight environment.
 
 **Active malignancy undergoing treatment.** Passengers in complete remission with no active treatment may be eligible; the clearance letter must specifically address remission status and treatment history.
 
@@ -103,7 +105,7 @@ The following conditions disqualify a passenger from travelling on any Pelorus V
 
 **Active psychiatric conditions** requiring in-patient treatment within the preceding 12 months. Passengers with managed psychiatric conditions on stable outpatient treatment may be eligible; the clearance letter should address the specific condition and the physician's assessment of the passenger's capacity to manage extended travel in a contained environment with limited retreat options.
 
-**Pregnancy beyond 12 weeks gestation.** See Section 5 for full pregnancy policy.
+**Pregnancy of 12 weeks gestation or more on the departure date.** Passengers under 12 weeks pregnant at departure may travel with clearance. See Section 5 for full pregnancy policy.
 
 **Active tuberculosis or active contagious respiratory infection** at the time of the pre-departure health check. A history of treated and completed tuberculosis is not disqualifying.
 
@@ -115,9 +117,11 @@ Passengers whose condition falls near a disqualification boundary should ensure 
 
 ## 5. Pregnancy Policy
 
-Passengers who are pregnant at the time of departure may travel provided the pregnancy is **less than 12 weeks gestation on the departure date**. The 12-week limit is calculated from the first day of the last menstrual period as documented in the medical clearance; it is not an estimate. The clearance letter must state the gestational age explicitly and confirm it will be less than 12 weeks on the departure date.
+Passengers who are pregnant at the time of departure may travel with clearance provided the pregnancy is **less than 12 weeks gestation on the departure date**. A pregnancy of 12 weeks or more on the departure date is disqualifying. The 12-week limit is calculated from the first day of the last menstrual period as documented in the medical clearance; it is not an estimate. The clearance letter must state the gestational age explicitly and confirm it will be less than 12 weeks on the departure date.
 
 The 12-week cutoff is absolute and cannot be waived by any physician letter, special clearance, or other mechanism. This policy exists because the vessel's medical infrastructure is not equipped to manage obstetric emergencies beyond very early pregnancy, and because the radiation environment of deep space — while managed for typical passengers — has not been established as safe for fetal development at any gestational stage.
+
+Declare the pregnancy in the medical section of the account portal, and make sure your physician addresses it explicitly in the clearance letter. If a pregnancy is not yet confirmed when you complete the clearance form, note the uncertainty on the form and update it once the pregnancy is confirmed.
 
 If an ultrasound or revised assessment moves the gestational age to 12 weeks or beyond before departure, this constitutes medical disqualification. The passenger is entitled to a full refund of all amounts paid and should not process a standard cancellation — contact bookings support to initiate the medical disqualification claim.
 
@@ -127,7 +131,7 @@ For passengers who become pregnant after booking: if the pregnancy will be at 12
 
 ## 6. Age Requirements by Activity
 
-Age is assessed at the time of the excursion, not at the time of booking. Identification must be presented at excursion check-in for any activity with a minimum age requirement.
+Age is assessed at the time of the excursion, not at the time of booking. Identification must be presented at excursion check-in for any activity with a minimum age requirement. For passengers under 18, a parent or guardian must be present at excursion check-in and must co-sign the activity waiver.
 
 | Activity | Minimum age | Maximum age | Waiver required | Parental consent under 18 | Notes |
 |---|---|---|---|---|---|
@@ -139,18 +143,18 @@ Age is assessed at the time of the excursion, not at the time of booking. Identi
 | Mars Colony 1 general stay | 5 | None | No | Co-passenger parent required | |
 | Mars surface EVA excursions | 12 | None | Yes | Yes | Full EVA suit required; suit sizing available from age 12. |
 | Olympus Mons Caldera Rim hike | 18 | None | Yes | N/A — adults only | Pathfinder class only. Fitness test required; no maximum age. |
-| Venus — Glass Floor Tour | 8 | None | Yes | Yes | Enclosed-toe footwear required. |
-| Venus — Gondola Descent | 16 | None | Yes | Yes (16–17) | Separate cardiovascular clearance required. |
+| Venus — Glass Floor Tour | 8 | None | Yes | Yes | Minimum age 8 is firm. Enclosed-toe footwear required. |
+| Venus — Gondola Descent | 16 | None | Yes | Yes (16–17) | Minimum age 16 is firm. Separate cardiovascular clearance required. |
 | Venus — Pool and Sun Deck | 5 | None | No | Co-passenger parent required | |
 | Venus — Aqua Volleyball | 8 | None | No | Co-passenger parent required | |
-| Ceres Surface Walk (tethered) | 8 | None | Yes | Yes | Tether required at all times. |
-| Ceres — The Leap | 16 | None | Yes — signed at Moon Base 7 | Yes (16–17) | Waiver must be signed at Moon Base 7, not at Ceres. |
+| Ceres Surface Walk (tethered) | 8 | None | Yes | Yes | Tether required at all times; guide-supervised. |
+| Ceres — The Leap | 16 | None | Yes — signed at Moon Base 7 | Yes (16–17) | Minimum age 16 is firm. Waiver must be signed at Moon Base 7, not at Ceres. |
 | Ceres Occator Crater Rim tour | 8 | None | Yes | Yes | Low-g scramble option available from age 16. |
 | Saturn Ring Transit observation | 5 | None | No | Co-passenger parent required | Passive only. |
 | Titan Ice Flats surface sports | 12 | None | Yes | Yes (12–17) | Cold-suit certification and cardio check required regardless of age. |
 | Enceladus Geyser Flyover | 5 | None | No | Co-passenger parent required | Passive only. |
 
-No minimum age is waivable. Ages marked as firm cannot be overridden by parental consent, waiver, or any other mechanism. Passengers presenting at an excursion with a minor below the minimum age will be turned away; the fee is not refunded in such cases.
+No minimum age is waivable. Ages marked as firm cannot be overridden by parental consent, waiver, or any other mechanism. Passengers presenting at an excursion with a minor below the minimum age will be turned away. The excursion fee is not refunded when the passenger does not meet the age limit, except where the Pelorus Voyages booking system accepted a booking it should have refused; contact support if you believe this occurred.
 
 Children aged 5 to 11 must be accompanied by a parent or guardian at all times during surface excursions. Children aged 12 and above may participate in eligible excursions without a parent present if a parent has co-signed the waiver at check-in.
 
@@ -180,7 +184,7 @@ Passengers who take prescription or over-the-counter medications should review t
 
 **Controlled substances** require the original prescription and may need additional transit documentation at interplanetary waypoints. Requirements vary by waypoint authority; check Moon Base 7 and Ceres Waystation customs desk publications well before departure. Pelorus Voyages cannot advise on third-party waypoint controlled substance requirements.
 
-Pack a 14-day supply buffer beyond the voyage duration. The buffer accounts for the possibility of a scrub, diversion, or leg extension. Medications in checked baggage separated from the passenger are not replaceable mid-voyage.
+Pack essential medications in your carry-on, not checked baggage, with a 14-day supply buffer beyond the voyage duration. The buffer accounts for the possibility of a scrub, diversion, or leg extension. Medications in checked baggage separated from the passenger are not replaceable mid-voyage.
 
 ---
 
@@ -202,7 +206,7 @@ The fusion drive maintains a sustained 0.15g acceleration throughout transit —
 
 All passengers must be secured in their berths with acceleration harnesses during departure and arrival burns. The burn schedule is announced 30 minutes before execution via vessel intercom. The observation deck and outer corridors are closed during burns.
 
-**Sustained transit gravity** (0.15g) — approximately one-seventh of Earth's surface gravity. Walking, eating, and all normal activities function with minor adjustments. Liquids require sealed containers; unsecured objects drift slowly toward the stern. Most passengers adapt fully within 48 hours. The outer deck is restricted for the first 48 hours after departure to allow adaptation.
+**Sustained transit gravity** (0.15g) — approximately one-seventh of Earth's surface gravity. Walking, eating, and all normal activities function with minor adjustments. Liquids require sealed containers; unsecured objects drift slowly toward the stern. Passengers adapt within 24 to 72 hours of arriving in each new gravity environment — most within 48 hours. The outer deck is restricted for the first 48 hours after departure to allow adaptation.
 
 ---
 
@@ -216,7 +220,7 @@ The check takes approximately 20 minutes and covers: blood pressure, resting hea
 
 The check result is transmitted directly to the vessel's flight surgeon. Passengers are told verbally whether they passed or failed but do not receive a copy of the result.
 
-**Arrival timing:** Plan to arrive at Terminal 7 four hours before the departure window. This provides time for the health check, biometric check-in, and Gate 22 muster. Passengers with mobility requirements that slow terminal transit should arrive five hours in advance. Accessibility assistance is available on request through the portal.
+**Arrival timing:** Most passengers take the check on departure day. Plan to arrive at Terminal 7 four hours before the departure window. This provides time for the health check, biometric check-in, and Gate 22 muster. Passengers with mobility requirements that slow terminal transit should arrive five hours in advance. Accessibility assistance is available on request through the portal.
 
 ---
 
@@ -224,12 +228,22 @@ The check result is transmitted directly to the vessel's flight surgeon. Passeng
 
 Medical emergencies during a transit leg — between destinations — are handled by the vessel's medical bay as the first response. The flight surgeon assesses whether the condition can be managed aboard or whether the vessel needs to divert to the nearest appropriate facility. The captain makes the final diversion decision on the flight surgeon's recommendation.
 
-Diversion is a serious decision affecting all passengers on board. The threshold is a condition that cannot be safely managed by the medical bay for the expected transit duration and that poses a serious risk to the passenger's life or long-term health without higher-level care.
+Diversion is a serious decision affecting all passengers on board: it extends the voyage for everyone and can cause missed downstream transfer windows. The threshold is a condition that cannot be safely managed by the medical bay for the expected transit duration and that poses a serious risk to the passenger's life or long-term health without higher-level care.
 
 **Nearest diversion points by leg:**
 
-- *Earth–Moon–Mars legs*: reverse to last stop or continue to next stop, whichever is closer at the time of the event.
+- *Moon–Mars and Mars–Venus legs*: reverse to last stop or continue to next stop, whichever is closer at the time of the event.
 - *Ceres–Enceladus legs*: Ceres Waystation maintains a permanent emergency medical dock and is the primary diversion point for the outer system sequence. The Ceres facility provides stabilisation and telemedicine consultation with Earth-based specialists and can hold a patient up to 30 days while awaiting medical repatriation.
+
+**Diversion options by leg:**
+
+| Leg | Diversion options |
+|---|---|
+| Earth–Moon | Return to Earth (2 days) or Moon Base 7 (less than 1 day on most of the transit) |
+| Moon–Mars | Moon Base 7 (up to 4 days back) or Mars Colony 1 (up to 4 days forward) |
+| Mars–Venus | Mars Colony 1 (up to 3 days back) or The Aphrodite (up to 3 days forward; limited medical capability) |
+| Outer system legs beyond Ceres | Ceres Waystation emergency medical dock — 1 to 8 days away from the Ceres–Saturn leg, depending on position |
+| Saturn–Enceladus | The vessel may continue to Enceladus for emergency pickup coordination rather than reversing to Ceres; the flight surgeon and captain assess case by case |
 
 Diversion costs and unused voyage days are covered by standard travel insurance when the flight surgeon documents the event as a genuine medical emergency. Passengers who are diverted receive a proportional refund of unused voyage days under the trip interruption coverage.
 
@@ -284,3 +298,7 @@ Two thresholds are frequently assumed to move with the standards in this section
 **The departure-burn tolerance screen is identical on every Pelorus Voyages itinerary.** The Earth departure burn peaks at 2.2g regardless of where the vessel is going, so the screen for it does not vary by itinerary, by cabin class, or by the benchmarks above. It is covered in Section 8 and is assessed as part of the physician clearance.
 
 **The pre-departure health check threshold is also fleet-wide.** Oxygen saturation below 95 percent bars boarding on every Pelorus Voyages itinerary without exception, and meeting or missing any benchmark in this section changes nothing about it. A passenger who meets all three standards comfortably and presents at Terminal 7 with an acute respiratory infection does not board.
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

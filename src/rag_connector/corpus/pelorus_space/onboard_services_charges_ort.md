@@ -1,5 +1,7 @@
 # Onboard Services and Charges — Outer Reaches Tour (ORT)
 
+*Pelorus Voyages · Onboard Services · Outer Reaches Tour edition · Issued 1 August 2042*
+
 **This sheet covers the Outer Reaches Tour only.** Every charge, allowance, and package price set out below is the ORT edition and is priced against the ORT's supply, relay, and crewing costs. The Inner Planets Survey and the Grand Solar Tour are charged on their own separate sheets, published alongside this one in your account portal under **Voyage Documents → Onboard Services**. Figures are not transferable between itineraries, and quoting a figure from one sheet against another booking is the most common billing query Pelorus Voyages receives. If you are not certain which itinerary you hold, the itinerary code appears on the first line of your booking confirmation: IPS, ORT, or GST.
 
 Prices are quoted in USD and are current for departures in the present booking season. Pelorus Voyages reviews this sheet once per season; a change takes effect for bookings confirmed after the publication date and never mid-voyage.
@@ -102,7 +104,7 @@ Passengers who expect to drink lightly are usually better served buying individu
 
 Non-emergency care is charged. A routine consultation with the flight surgeon is USD 95. Dispensing from the medical bay's own pharmacy stock is USD 40 per item, over and above the consultation. Medication a passenger brought aboard and then lost or damaged generally cannot be replaced mid-voyage; the bay's own inventory is limited and is not a substitute for a passenger's supply.
 
-Extraction Coverage, where the passenger holds it, is claimed after the voyage rather than settled against the onboard account. Keep the itemised medical receipt issued at the bay; a claim without it takes considerably longer.
+Standard travel insurance, where the passenger holds it, is claimed after the voyage rather than settled against the onboard account. Keep the itemised medical receipt issued at the bay; a claim without it takes considerably longer.
 
 ---
 

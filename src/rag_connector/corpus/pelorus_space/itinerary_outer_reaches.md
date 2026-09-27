@@ -1,5 +1,7 @@
 # Outer Reaches Tour (ORT) — itinerary overview
 
+*At a glance · 2042–43 departures*
+
 **Duration:** 24 days total  
 **Departure:** Earth Launch Terminal 7, Gate 22  
 **Drive:** Continuous-thrust fusion, 0.15g sustained acceleration/deceleration
@@ -7,7 +9,7 @@
 | Day | Stop / Leg | Duration | Included excursions (NCL/PFL) | EVA available | Transit to next stop |
 |---|---|---|---|---|---|
 | 1–2 | Earth → Moon Base 7 transit | 2 days | — | No | — |
-| 3 | Moon Base 7 layover (ORT — transit only) | ~4 hours | None — transit window too short for shore excursions | Yes (certifications and waiver signing only, no surface tours) | Moon → Ceres, 4 days |
+| 3 | Moon Base 7 layover (ORT — transit only) | ~4 hours | None — transit window too short for shore excursions | No | Moon → Ceres, 4 days |
 | 4–7 | Moon → Ceres transit | 4 days | — | No | — |
 | 8 | Ceres Waystation stop | 6 hours | Surface Gravity Walk; Occator Crater Rim tour | Yes (tethered surface walk) | Ceres → Saturn, 5 days |
 | 9–13 | Ceres → Saturn transit | 5 days | — | No | — |
@@ -31,10 +33,10 @@ ORT does not visit Mars or Venus. The Moon Base 7 layover is 4 hours (transit + 
 
 ## Important scheduling notes
 
-- **Moon Base 7 (Day 3):** The 4-hour layover must accommodate Titan cold-suit certification + cardiovascular check (approximately 3.5 hours combined) AND Leap waiver signing. These are sequential. Passengers should proceed directly to the medical certification suite on arrival at Moon Base 7; do not spend time in the commercial concourse if you intend to do both Titan and The Leap.
+- **Moon Base 7 (Day 3):** The 4-hour layover must accommodate Titan cold-suit certification + cardiovascular check (approximately 3 to 3.5 hours combined) AND Leap waiver signing. These are sequential. Passengers should proceed directly to the medical certification suite on arrival at Moon Base 7; do not spend time in the commercial concourse if you intend to do both Titan and The Leap.
 - **Ceres (Day 8):** Leap waiver must already be on file. The Leap platform closes 60 minutes before the departure window.
-- **Titan (Day 15):** Cold-suit decontamination adds 20 minutes. Plan return at 95 minutes before departure, not 75.
+- **Titan (Day 15):** The muster deadline is 75 minutes before departure. Cold-suit decontamination adds 20 minutes, so plan return at 95 minutes before departure, not 75.
 
 ## Total EVA time (ORT)
 
-Surface EVA is available at Ceres (6-hour stop, surface walk portion approximately 3 hours) and Titan (8-hour excursion, surface time approximately 5 hours). No EVA at Saturn or Enceladus — passive observation only at both.
+Surface EVA is available at Ceres (6-hour stop, surface excursion approximately 1.5 to 2.5 hours) and Titan (8-hour excursion, surface time approximately 5 hours). No EVA at Saturn or Enceladus — passive observation only at both.

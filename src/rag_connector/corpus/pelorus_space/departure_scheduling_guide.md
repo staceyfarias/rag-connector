@@ -1,5 +1,7 @@
 # Departure Planning and Scheduling Guide
 
+*Pelorus Voyages · Voyage Operations · Revised 22 April 2042*
+
 This guide explains how Pelorus Voyages departure schedules work, what you need to do to meet muster deadlines at each stop, what happens if you miss a departure, and what the Outer Space Transport Compact means for passengers in an emergency. Understanding these rules before you travel is not optional — the vessel will not wait, and the costs of a missed departure are substantial.
 
 ## Contents
@@ -14,9 +16,9 @@ This guide explains how Pelorus Voyages departure schedules work, what you need 
 
 ## 1. Why Departures Cannot Wait
 
-Pelorus Voyages departure schedules are determined by orbital mechanics, not policy. Each leg of an expedition operates within a planetary transfer window — a period when the relative positions of two bodies allow an efficient trajectory between them. Outside that window, a transfer either requires substantially more fuel, takes significantly longer, or is not practically achievable within the voyage's fuel budget.
+Pelorus Voyages departure schedules are determined by orbital mechanics, not policy. Each leg of an expedition operates within a planetary transfer window — a period when the relative positions of two bodies allow an efficient trajectory between them. Outside that window, a transfer either requires substantially more fuel, takes significantly longer, or is not practically achievable within the voyage's fuel budget. The vessel cannot hold station while it waits for late passengers; every hour of delay burns fuel budgeted for the transit itself.
 
-The Earth-Mars synodic period is approximately 26 months — that is how often Earth and Mars reach the right relative position for an efficient transfer. Pelorus Voyages schedules Inner Planets Survey and Grand Solar Tour departures during favourable alignment periods within those windows, but these are not arbitrary calendar dates. Missing the Mars departure from Moon Base 7 does not mean catching the next ship in a few days. The next scheduled Pelorus Voyages departure from Mars Colony 1 may be weeks or months away, depending on where you are in the alignment cycle.
+The Earth-Mars synodic period is approximately 26 months — that is how often Earth and Mars reach the right relative position for an efficient transfer. Pelorus Voyages publishes Inner Planets Survey and Grand Solar Tour departure dates quarterly. The departures fall in favourable alignment periods within those windows; they are not arbitrary calendar dates. Missing the Mars departure from Moon Base 7 does not mean catching the next ship in a few days. The next scheduled Pelorus Voyages departure from Mars Colony 1 may be weeks or months away, depending on where you are in the alignment cycle.
 
 Within a multi-stop itinerary, each leg depends on the one before it. A two-hour hold at the Mars departure ripples forward: the Venus transfer window narrows, the Ceres approach timing shifts, and the Saturn ring transit — which requires the vessel to be positioned precisely relative to the ring plane — may be missed entirely. The schedule is not padded; every connection is load-bearing.
 
@@ -32,11 +34,11 @@ All times are in minutes **before the published departure window opening**. Miss
 
 | Stop | Check-in / muster deadline | Muster point | Critical notes |
 |---|---|---|---|
-| Earth Launch Terminal | 180 minutes | Terminal 7, Gate 22 | Baggage drop must be completed 4 hours before departure. Biometric check-in opens 6 hours prior. Pre-departure health check must be completed within 72 hours of departure. |
+| Earth Launch Terminal | 180 minutes | Terminal 7, Gate 22 | Baggage drop must be completed 4 hours before departure. Biometric check-in opens 6 hours prior. Pre-departure health check with Pelorus Voyages staff at Terminal 7, Medical Suite B, within the 72 hours before departure (most passengers take it on departure day). |
 | Moon Base 7 (IPS / ORT transit stop) | 90 minutes | Bay 3 Airlock, Level B | All surface excursions must end and suits returned before entering Bay 3. Excursion equipment drop-off adds 15 minutes — factor this in. |
 | Moon Base 7 (GST extended layover) | 90 minutes | Bay 3 Airlock, Level B | Golf Links last tee time must be booked no later than 2 hours before muster. Rover tour must return at least 2 hours before muster. |
 | Mars Colony 1 | 60 minutes | MC-1 Airlock Bay B, Hab Ring 2 | All EVA suits must be returned and docked before entering Airlock Bay B. EVA suit return takes 10–15 minutes — factor this into excursion end time. |
-| Venus — The Aphrodite | 30 minutes | Docking Pier 1, Resort Deck 2 | Pool and sun deck close 45 minutes before departure. Glass floor tour final group must exit by 60 minutes before departure. Gondola must return by 90 minutes before departure (gondola recovery and docking time). |
+| Venus — The Aphrodite | 30 minutes | Docking Pier 1, Resort Deck 2 | Pool and sun deck close 45 minutes before departure. Glass floor tour final group must exit by 60 minutes before departure. Gondola must begin its return ascent by 90 minutes before departure (gondola recovery and docking time). |
 | Ceres Waystation | 45 minutes | Waystation Hub Central, Dock 4 | Surface tether lines must be returned and logged before entering the pressurised hub; tether return at the equipment station adds 10 minutes. The Leap platform closes 60 minutes before departure. |
 | Saturn Ring Transit | N/A — no surface stop | N/A | Observation deck closes 30 minutes before ring exit burn. No disembarkation at this stop. |
 | Titan Ice Flats | 75 minutes | Excursion Base Alpha, Airlock 2 | **Cold-suit decontamination is mandatory and takes approximately 20 minutes.** Plan excursions to end at least 95 minutes before the departure window, not 75. Ice sports equipment must be returned before decontamination begins. |
@@ -50,7 +52,7 @@ All times are in minutes **before the published departure window opening**. Miss
 
 **Moon Base 7 golf.** Round times vary with party size and experience. Pelorus Voyages recommends booking the morning round (starting between 0700 and 1100) rather than the afternoon round to avoid close muster margins on the GST layover.
 
-**Muster is not boarding.** Presenting at the muster point by the deadline means you are counted on the manifest. Boarding then proceeds in cabin class order: Pathfinder first, then Navigator, then Pioneer. Passengers who arrive at the muster point with fewer than 20 minutes remaining before the departure window may not complete boarding before the airlock seals.
+**Muster is not boarding.** Presenting at the muster point by the deadline means you are counted on the manifest. Boarding then proceeds in cabin class order: Pathfinder first, then Navigator, then Pioneer, except that Pathfinder loyalty tier members board ahead of all cabin classes and Navigator tier members board before Pioneer cabin class passengers. Passengers who arrive at the muster point with fewer than 20 minutes remaining before the departure window may not complete boarding before the airlock seals.
 
 ---
 
@@ -80,7 +82,7 @@ The first thing the coordinator will determine is whether the missed departure i
 
 The Outer Space Transport Compact of 2038 (OSTC) requires any commercial vessel operating in cislunar space or beyond to accept a documented distressed traveller on request, provided the vessel has life support capacity to accommodate an additional person. Mining transport operators at Moon Base 7, Ceres Waystation, and outer system waypoints are bound by this compact.
 
-What the OSTC provides is **passage, not service.** Mining transports are working cargo vessels. The berth available to a distressed passenger is a fold-down bunk in a shared crew cabin, access to the crew galley (standard rations, no dietary options), and use of crew lavatory facilities. There is no passenger lounge, entertainment system, or medical bay beyond basic first aid.
+What the OSTC provides is **passage, not service.** Mining transports are working cargo vessels. The berth available to a distressed passenger is a fold-down bunk in a shared crew cabin, access to the crew galley (standard rations, no dietary options), and use of crew lavatory facilities. There is no passenger lounge, entertainment system, or medical bay beyond basic first aid. Some transports have an intermittent communications relay; others have none.
 
 The more significant limitation is **routing.** A mining transport's schedule is set by its cargo manifest. A Ceres-based transport heading toward the inner system might route through the Vesta processing station, complete two or three cargo transfers, and reach cislunar space six to eight weeks after departure. The drop-off point will be a cislunar transfer station — not Earth surface. Passengers still need to arrange their own descent from the transfer station, which adds additional cost and time.
 
@@ -104,3 +106,7 @@ Diversion affects all passengers on board. The threshold is a condition that pos
 Emergency diversion costs are covered by standard travel insurance when the event is documented by the flight surgeon as a genuine medical emergency. Passengers diverted are entitled to a proportional refund of the unused voyage days under trip interruption coverage.
 
 The flight surgeon contacts the passenger's registered emergency contact via the vessel's communications system as soon as bandwidth allows. From the outer system, light delay means this notification may take two to three hours to reach Earth.
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

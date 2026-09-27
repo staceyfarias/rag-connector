@@ -1,5 +1,7 @@
 # Outer Reaches Tour — Complete Voyage Guide
 
+*Pelorus Voyages Voyage Guides · For 2042–43 departures · Issued 5 April 2042*
+
 The Outer Reaches Tour is a 24-day expedition to the outer solar system: Moon Base 7, Ceres Waystation, Saturn Ring Transit, Titan Ice Flats, and Enceladus Geyser Flyover. It is the only Pelorus Voyages itinerary that goes directly from the Moon to the asteroid belt without visiting Mars or Venus. If the inner planets are the civilised part of the solar system, the ORT is the edge. This guide covers every leg with practical guidance.
 
 ## Contents
@@ -55,7 +57,7 @@ The ORT includes the most extreme gravity transition in the Pelorus Voyages port
 
 ## 3. Earth to Moon Base 7 (Days 1–2)
 
-Identical to the IPS departure. Earth departure burn: 45 minutes, peak 2.2g for the first 8 minutes. All passengers secured in berths. After burn, 0.15g sustained transit to the Moon. Adaptation period: 48 to 72 hours.
+Identical to the IPS departure. Earth departure burn: 45 minutes, peak 2.2g for the first 8 minutes. All passengers secured in berths. After burn, 0.15g sustained transit to the Moon. Adaptation period: 24 to 72 hours; most passengers adapt within 48 hours.
 
 First stop for communications: at Moon Base 7, light delay is 1.3 seconds — the last opportunity for real-time voice communication with Earth before the ORT proceeds to significantly longer light delays.
 
@@ -97,7 +99,7 @@ Full Ceres stop detail: see the [Ceres Destination Guide](dest_guide_ceres.md).
 
 ## 7. Ceres to Saturn (Days 9–13)
 
-The 5-day Ceres-to-Saturn transit is the longest single leg on the ORT. By Day 13, one-way light delay to Earth is 43 to 84 minutes. Saturn becomes visible from the observation deck as a distinct disc before arrival — the rings are visible to the naked eye as a thin line extending from the planetary disc. Most passengers spend considerable time on the observation deck during the approach.
+The 5-day Ceres-to-Saturn transit is the longest outbound leg on the ORT. By Day 13, one-way light delay to Earth is 43 to 84 minutes. Saturn becomes visible from the observation deck as a distinct disc before arrival — the rings are visible to the naked eye as a thin line extending from the planetary disc. Most passengers spend considerable time on the observation deck during the approach.
 
 The science officer delivers the Saturn and ring system lecture during this transit. The Titan briefing also runs on this leg; review it before the Titan stop on Day 15.
 
@@ -135,7 +137,7 @@ Full Titan detail: see the [Outer System Guide](dest_guide_outer_system.md).
 
 Twenty hours after departing Titan, the vessel makes its 25-kilometre altitude approach to Enceladus's southern plume field. The encounter lasts approximately 4 hours. No EVA, no surface access — planetary protection protocols prohibit surface contact. Passive observation from the deck and vessel windows.
 
-The plume coats observation windows; cleaning begins approximately 4 hours after the encounter. Window visibility may be reduced for the final hour of the approach.
+The plume coats observation windows; cleaning begins about 60 minutes after closest approach and takes approximately four hours. Window visibility may be reduced for the final hour of the approach.
 
 The Enceladus stop is typically the emotional close of the outer system sequence. Most passengers describe a period of quiet at the departure from Enceladus. The return transit begins immediately.
 
@@ -161,7 +163,7 @@ By the first Earth morning after arrival on Day 24, Earth gravity feels genuinel
 
 **Before booking:**
 - [ ] Medical clearance appointment (90-day validity — time it for departure date)
-- [ ] Confirm no disqualifying conditions for the ORT's gravity range (0.03g to 0.88g transitions)
+- [ ] Confirm no disqualifying conditions for the ORT's gravity range (0.03g to 0.17g transitions)
 
 **After booking:**
 - [ ] Book The Leap at Ceres if intended (waiver signed Day 3)
@@ -177,3 +179,7 @@ By the first Earth morning after arrival on Day 24, Earth gravity feels genuinel
 - [ ] Complete Titan cold-suit certification (if doing Titan surface excursion)
 - [ ] Complete cardiovascular fitness check (same appointment)
 - [ ] Sign Leap waiver (if intending The Leap at Ceres)
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

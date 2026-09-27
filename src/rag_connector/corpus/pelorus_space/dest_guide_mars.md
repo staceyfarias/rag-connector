@@ -1,5 +1,7 @@
 # Mars Colony 1 and Martian Excursions — Destination Guide
 
+*Pelorus Voyages Destination Guides · 2042 edition · Issued 12 February 2042*
+
 Mars Colony 1 is the centrepiece of the Inner Planets Survey and Grand Solar Tour. A three-night stay at humanity's first permanent Martian settlement, with access to five distinct excursions ranging from the Cydonia Highlands to the highest point in the solar system. This guide covers the colony itself, each available excursion, the unique preparation requirements for Mars, and practical advice for getting the most from the Mars stay.
 
 ## Contents
@@ -19,9 +21,9 @@ Mars Colony 1 is the centrepiece of the Inner Planets Survey and Grand Solar Tou
 
 Mars Colony 1 was established in 2041 and is built into the basaltic rock of Hellas Planitia's northern shelf — a location chosen for its natural radiation shielding and proximity to confirmed subsurface water ice deposits. The colony supports approximately 2,400 permanent residents and researchers, and receives expedition visitors on a scheduled rotation coordinated with Pelorus Voyages and two other licensed operators.
 
-The colony is a pressurised habitat complex connected by enclosed tunnels. Casual clothing is appropriate inside; no suit or helmet is required in any part of the interior. The expedition wing — where Pelorus Voyages passengers are accommodated — is maintained separately from the residential and research quarters used by permanent colonists. Expedition wing rooms are private for Navigator and Pathfinder passengers and shared (two passengers, same gender) for Pioneer passengers.
+The colony is a pressurised habitat complex connected by enclosed tunnels, maintained at Earth-standard atmospheric composition throughout. Casual clothing is appropriate inside; no suit or helmet is required in any part of the interior. The expedition wing — where Pelorus Voyages passengers are accommodated — is maintained separately from the residential and research quarters used by permanent colonists. Expedition wing rooms are private for Navigator and Pathfinder passengers and shared (two passengers, same gender) for Pioneer passengers.
 
-Mars Colony 1 is the most terrestrially normal of the outer system stops. Gravity is 0.38g — low enough to feel light and bouncy, but high enough that movement is intuitive. Most passengers find Mars easier to adapt to than the Moon; the higher gravity reduces the vestibular disorientation some experience in very low gravity, and the three-night stay allows genuine rest and acclimatisation rather than the rapid turnaround of shorter stops.
+Mars Colony 1 is the most terrestrially normal of the voyage's destinations. Gravity is 0.38g — low enough to feel light and bouncy, but high enough that movement is intuitive. Most passengers find Mars easier to adapt to than the Moon; the higher gravity reduces the vestibular disorientation some experience in very low gravity, and the three-night stay allows genuine rest and acclimatisation rather than the rapid turnaround of shorter stops.
 
 ---
 
@@ -39,18 +41,18 @@ Mars Colony 1 operates on a **24-hour-40-minute Martian sol** (day). Pelorus Voy
 
 ## 3. Cydonia Highlands Formation Complex
 
-The Cydonia Highlands complex is approximately 600 kilometres north-northwest of Mars Colony 1. Access is by pressurised transport shuttle with a flight time of roughly 90 minutes each way. The excursion is included in Navigator and Pathfinder standard Mars packages; Pioneer passengers may purchase it as an add-on.
+The Cydonia Highlands complex lies in the northern lowlands of Mars, approximately 600 kilometres north-northwest of Mars Colony 1. Access is by pressurised transport shuttle with a flight time of roughly 90 minutes each way. The excursion is included in Navigator and Pathfinder standard Mars packages; Pioneer passengers may purchase it as an add-on.
 
 The site is known primarily because of the Viking 1 orbiter's 1976 photograph of a 3-kilometre-wide mesa whose lighting and image compression made it appear to resemble a humanoid face. The "Face on Mars" became one of the most discussed features in planetary exploration history. Subsequent high-resolution imaging revealed an eroded mesa with no artificial characteristics under improved lighting — but the cultural impact of the original Viking image is itself part of the story, and the Cydonia interpretive centre treats the full history seriously.
 
-The interpretive centre presents the scientific and cultural history without advocacy for any particular conclusion:
+What the geological survey has established is that several formations in the Cydonia region exhibit angular geometry uncommon in typical Martian erosion patterns. The interpretive centre presents the scientific and cultural history without advocacy for any particular conclusion:
 
 - The scientific wing explains the range of geological mechanisms — preferential erosion along fracture planes, differential hardness layering, impact ejecta redistribution — that produce angular structures consistent with Cydonia's formations without invoking artificial construction.
 - The xenoarchaeological wing presents the dissenting hypothesis with its supporting observations and the methodological criticisms from the geological mainstream. This is the scientific subfield that emerged from the Cydonia debate, examining geological anomalies on Mars and other bodies for evidence of past non-human activity.
 
 Both wings cite current peer-reviewed literature. Pelorus Voyages takes no position on xenoarchaeological hypotheses.
 
-Surface excursion to the formation exterior allows approach to within **20 metres** of the formations. Closer approach is prohibited under the Mars Surface Heritage Regulations (Cydonia is a Category B scientific preservation zone). No sampling, marking, or physical contact with formation surfaces is permitted. Drone photography below 500 grams requires advance notification to the Cydonia site coordinator; drones above 500 grams are prohibited.
+Surface excursion to the formation exterior allows approach to within **20 metres** of the formations. Closer approach is prohibited under the Mars Surface Heritage Regulations (Cydonia is a Category B scientific preservation zone). No sampling, marking, or physical contact with formation surfaces is permitted. Drones of any size are prohibited; Pelorus Voyages permits drones only in the Ceres Waystation surface zone.
 
 ---
 
@@ -117,3 +119,7 @@ The minimum age for the Caldera Rim excursion is 18. This is the only activity i
 **Suggested prioritisation for Navigator/Pioneer passengers** — the Cydonia and Hellas excursions are the signature Mars experiences for non-Pathfinder passengers. The Terraforming tour is shorter and can complement either. The Hellas sunrise excursion requires a 0430 departure; passengers who want it should book it early and accept the early wake-up.
 
 **Muster deadline reminder** — 60 minutes before departure, all EVA suits returned, at Airlock Bay B. Build 75 minutes from excursion end to departure window, not 60.
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

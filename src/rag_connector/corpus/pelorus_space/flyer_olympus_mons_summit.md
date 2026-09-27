@@ -1,5 +1,7 @@
 # Olympus Mons Caldera Rim — Mars Colony 1
 
+*Pelorus Voyages · Excursion brochure · 2042–43 season*
+
 **The summit of the solar system's largest volcano. 21.9 kilometres above the Martian surface. An 80-kilometre-wide caldera at your feet.**
 
 Olympus Mons rises higher than any mountain on Earth and spans a base larger than the state of Arizona. It has been dormant for tens of millions of years. The caldera at its summit is 80 kilometres in diameter — a collapse structure formed by successive eruption events that drained the magma chambers below. At the rim, you stand above an 80-kilometre void that is several kilometres deep.

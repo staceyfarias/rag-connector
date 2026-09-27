@@ -1,5 +1,7 @@
 # Ceres Waystation — Destination Guide
 
+*Pelorus Voyages Destination Guides · 2042 edition · Issued 12 February 2042*
+
 Ceres Waystation is a six-hour stop in the asteroid belt — the dividing point between the inner and outer solar system legs of the Outer Reaches Tour and Grand Solar Tour. Its gravity is 0.03g, making it the most dramatic low-gravity environment on any itinerary. This guide covers the Waystation Hub, the surface walk, The Leap, and the Occator Crater Rim tour.
 
 ## Contents
@@ -15,7 +17,7 @@ Ceres Waystation is a six-hour stop in the asteroid belt — the dividing point 
 
 ## 1. Ceres Waystation Overview
 
-Ceres is the largest body in the main asteroid belt and the only dwarf planet in the inner solar system. It is approximately 940 kilometres in diameter. The Ceres Waystation is a permanent commercial and scientific installation operated by the Asteroid Belt Authority; Pelorus Voyages is one of several expedition operators with licensed access.
+Ceres is the largest body in the main asteroid belt and the only dwarf planet in the inner solar system and the closest dwarf planet to Earth. It is approximately 940 kilometres in diameter. The Ceres Waystation is a permanent commercial and scientific installation operated by the Asteroid Belt Authority; Pelorus Voyages is one of several expedition operators with licensed access.
 
 The Waystation Hub is a pressurised facility with a commercial concourse, a restaurant serving local and transported food, a communications relay centre, and a small exhibition on asteroid belt geology and the history of Ceres exploration. The exhibition includes the original Dawn spacecraft mission results and the subsequent discoveries about Ceres's subsurface ocean and the Occator bright deposits. It takes approximately 45 minutes to walk through and is freely accessible to all Pelorus Voyages passengers.
 
@@ -68,7 +70,7 @@ There is no sensation of falling during The Leap. The ascent and descent at 0.03
 | Minimum age | 16 years old — firm, no parental consent override |
 | Waiver | Must be signed at **Moon Base 7** before the vessel departs for the outer system |
 | Cannot sign waiver at Ceres | The Ceres Waystation team does not have waiver processing capability |
-| Platform closing time | 60 minutes before the departure window (not the 45-minute general muster deadline) |
+| Platform closing time | 60 minutes before the departure window (not the 45-minute general muster deadline) — the earlier close allows time for the post-Leap briefing, equipment return, and tether logging |
 | Excursion status | Add-on at all cabin classes; purchased separately |
 
 **The Moon Base 7 waiver rule is the most commonly overlooked detail about The Leap.** Passengers who arrive at Ceres without a signed waiver on file cannot participate under any circumstances, regardless of how much time remains or how strongly they feel. The waiver requirement is not a formality that can be waived itself — it involves medical documentation systems at Moon Base 7 that have no equivalent at Ceres. Any passenger intending to do The Leap must inform the Pelorus Voyages expedition coordinator at Moon Base 7 check-in and request the waiver document.
@@ -112,3 +114,7 @@ The six-hour window at Ceres is the tightest of any surface stop on the ORT or G
 This schedule is tight and leaves limited margin. Passengers who want both the Occator Crater Rim tour and The Leap on the same stop should confirm with the expedition coordinator that the timing is achievable given any active mining operations schedule on the day.
 
 Passengers who prioritise the surface walk and crater rim tour without The Leap have a more relaxed schedule, with time for the geology exhibition and a meal at the concourse.
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

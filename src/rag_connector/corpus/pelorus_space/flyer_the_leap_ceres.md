@@ -1,10 +1,12 @@
 # The Leap — Ceres Waystation
 
+*Pelorus Voyages · Excursion brochure · 2042–43 season*
+
 **The only place in the solar system where a single step sends you 100 metres into space.**
 
 At 0.03g, Ceres has the lowest surface gravity of any Pelorus Voyages destination. The Leap takes full advantage of it. You step onto the jump platform, detach your tether, plant both feet, and push off. You travel upward for 45 to 55 seconds. You reach an apex of 80 to 100 metres above the Cerean surface. The asteroid belt extends in every direction. The Sun is a bright point, visibly dimmer than from Earth. Then the long, slow arc begins back down. The full detached flight lasts 90 to 110 seconds. There is no sensation of falling — the vestibular system at 0.03g registers motion as drift, not drop. Participants consistently report it as floating, not jumping.
 
-At apex, what you see: the Cerean surface spreading below you in its dark regolith, the Occator Crater's bright sodium carbonate deposits visible on the horizon, Saturn a faint ring-bearing disc above the horizon, Jupiter bright and distinctly non-stellar. One hundred metres of altitude, and the asteroid belt is as present as the sky.
+At apex, what you see: the Cerean surface spreading below you in its dark regolith, the Occator Crater's bright sodium carbonate deposits visible on the horizon, Saturn a bright point above the horizon, Jupiter bright and distinctly non-stellar. One hundred metres of altitude, and the asteroid belt is as present as the sky.
 
 **Booking details**
 

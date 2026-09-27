@@ -1,5 +1,7 @@
 # Gondola Descent — Into the Clouds of Venus
 
+*Pelorus Voyages · Excursion brochure · 2042–43 season*
+
 **Leave the station. Enter the atmosphere. Descend 3 kilometres into the Venusian cloud layer.**
 
 The gondola detaches from The Aphrodite's lower hull and descends into the upper Venusian cloud deck. The descent takes approximately 15 minutes. You spend 45 minutes inside the clouds before the gondola ascends and redocks. Total time from boarding to exit: approximately 90 minutes.
@@ -10,7 +12,7 @@ The gondola is the only vessel in the Pelorus portfolio that physically enters a
 
 **Booking details**
 
-The Gondola Descent is an add-on at all cabin classes. It is not included in any base fare. Pathfinder loyalty tier members receive a 48-hour priority booking window before Navigator and Pioneer passengers.
+The Gondola Descent is an add-on at all cabin classes. It is not included in any base fare. Pathfinder loyalty tier members receive a 48-hour priority booking window before the standard window opens. Loyalty tier is earned through Orbital Points and is separate from cabin class.
 
 | Detail | Value |
 |---|---|
@@ -22,9 +24,10 @@ The Gondola Descent is an add-on at all cabin classes. It is not included in any
 | Gondola cardiovascular clearance | Must be obtained before Earth departure; cannot be arranged during voyage |
 | Return ascent deadline | Gondola must begin ascent no later than 90 minutes before departure window |
 | Waiver | Required |
+| Booking deadline | Before departure — add-ons close 48 hours before the Earth departure window; cannot be booked during the voyage |
 
 **The gondola cardiovascular clearance** is separate from and in addition to the standard voyage medical clearance. It specifically assesses the cardiovascular response to the pressure changes during the 3-kilometre descent. If you have any cardiovascular history, discuss the gondola specifically — not just spaceflight generally — with your physician.
 
 **Timing:** the gondola must begin its return ascent 90 minutes before the departure window. The operator enforces this independently. Passengers combining the Glass Floor Tour and the Gondola Descent should schedule both on different days or with sufficient separation between them.
 
-Book through the Pelorus Voyages account portal. Demand consistently exceeds capacity at popular departure windows.
+Book through the Pelorus Voyages account portal before departure. Demand consistently exceeds capacity at popular departure windows.

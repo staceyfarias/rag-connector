@@ -1,5 +1,7 @@
 # Orbital Points Loyalty Programme and Account Guide
 
+*Pelorus Voyages · Orbital Points Programme · Edition 3 · Issued 10 June 2042*
+
 This guide covers the Pelorus Voyages Orbital Points loyalty programme — how points are earned, how tiers work, how redemption works, and how Orbital Points relate to other payment methods. It also explains Orbital Credits, payment methods, the companion discount, and corporate accounts. Read the naming note in Section 2 before anything else; the programme names cause significant confusion.
 
 ## Contents
@@ -43,11 +45,12 @@ Pelorus Voyages loyalty tiers use the same names as cabin classes: Pioneer, Navi
 
 Loyalty tier is determined by **Orbital Points earned in the preceding calendar year** (not redeemed — Points redeemed do not reduce tier qualification points). Tier qualification is assessed annually on 1 January. The qualified tier is held for the full following calendar year regardless of Points activity during that year.
 
+Loyalty tier does not add an earning multiplier. The Points multiplier depends on the cabin class booked (see Section 1), not on the tier held.
+
 | Benefit | Pioneer tier (0–4,999 pts/yr) | Navigator tier (5,000–19,999 pts/yr) | Pathfinder tier (20,000+ pts/yr) |
 |---|---|---|---|
-| Points earning multiplier | 1× | 1.5× | 2× |
 | Priority boarding | Standard (cabin class order) | Early — before Pioneer cabin class passengers | First to board, ahead of all cabin classes |
-| Medical bay access | Standard queue | Standard queue | Priority — queue skipped for non-emergency visits |
+| Medical bay access | Standard queue | Standard queue | Priority — queue skipped for non-emergency visits (Pathfinder cabin class passengers also have priority access) |
 | Companion discount | Not eligible | Not eligible | 15% off the lower-priced passenger's fare (both must be Pathfinder tier) |
 | Gondola booking window | Standard window | Standard window | 48-hour advance access before standard window opens |
 | Upgrade fee discount | No discount | 10% off upgrade fees | 20% off upgrade fees |
@@ -101,17 +104,17 @@ Orbital Credits are a stored-value account held within your Pelorus Voyages acco
 
 ## 5. Companion Discount
 
-Pelorus Voyages offers a 15 percent companion discount for qualifying passengers travelling together. The discount applies to the lower-priced passenger's voyage package (base voyage only — add-ons and excursions are not discounted).
+Pelorus Voyages offers a 15 percent companion discount for qualifying passengers travelling together. The discount applies to the lower-priced passenger's voyage package (base voyage only — add-ons and excursions are not discounted). When both passengers are in the same cabin class, the discount is applied to the second booking processed.
 
 **Qualification requirements:**
 
-1. Both passengers must hold **Pathfinder loyalty tier** status at the time of booking. The tier check is at booking; if either passenger is not yet Pathfinder tier, the discount is unavailable. The discount is not retroactive if a passenger achieves Pathfinder tier after booking.
+1. Both passengers must hold **Pathfinder loyalty tier** status at the time of booking. The tier check is at booking; if either passenger is not yet Pathfinder tier, the discount is unavailable. A discount applied at booking is not reversed if either passenger's tier later changes. Equally, it cannot be applied retroactively if a passenger reaches Pathfinder tier after booking.
 2. Both passengers must be on the **same itinerary and same departure date**.
-3. Both passengers must have **linked Pelorus Voyages accounts**. Linking is done through the account portal by sending a companion link request to the other passenger's registered email address.
+3. Both passengers must have **linked Pelorus Voyages accounts**. Linking is done through the account portal by sending a companion link request to the other passenger's registered email address. Once the link is accepted, the discount option appears at checkout.
 
 The companion discount cannot be combined with group booking rates, corporate account discounts, or promotional codes unless the promotion's terms explicitly state otherwise. In most cases the companion discount is more favourable than a standard two-person group rate.
 
-Companions do not need to share a cabin. Two Pathfinder-tier passengers who prefer separate Pathfinder suites can each receive the 15 percent discount, provided both are on the same itinerary and departure date.
+Companions do not need to share a cabin. Two Pathfinder-tier passengers who prefer separate Pathfinder suites still qualify for the companion discount on the lower-priced voyage package, provided both are on the same itinerary and departure date.
 
 ---
 
@@ -123,10 +126,14 @@ Corporate accounts are available to organisations that book five or more Pelorus
 
 **Billing** — corporate account holders are invoiced monthly for all bookings made in the preceding month, on net-30 payment terms from invoice issue. Payment is by bank transfer only; credit and debit cards are not accepted for corporate billing. Late payment incurs a 1.5 percent monthly finance charge on the outstanding balance.
 
-**Booking management** — corporate account administrators can view all active bookings, make changes, and initiate cancellations through the corporate portal. Individual employees cannot cancel their own bookings under a corporate account without administrator authorisation.
+**Booking management** — corporate account administrators can view all active bookings, make changes, and initiate cancellations through the corporate portal. Individual employees cannot cancel their own bookings under a corporate account without administrator authorisation. Employees on a corporate booking receive their pre-voyage communications (clearance documentation requests, training programme links, voyage manifest) directly at their registered email addresses.
 
 **Orbital Points and corporate accounts** — Points earned on corporate-account bookings are by default credited to the corporate Orbital Points pool, not to the individual passenger's personal account. Administrators can choose to direct Points to individual passengers at the time of booking (not retroactively). Passengers travelling on a personal booking outside the corporate account earn Points to their personal account normally.
 
 **Companion discount** — the companion discount is not available for bookings made through a corporate account. Group rates and corporate pricing do not stack; Pelorus Voyages applies whichever is more favourable.
 
-**Charters and custom itineraries** — corporate clients booking dedicated vessel charters or custom itineraries should contact the corporate travel team at least 18 months before the desired travel date. Custom itineraries are subject to fleet availability.
+**Charters and custom itineraries** — corporate clients booking dedicated vessel charters or custom itineraries should discuss requirements with the corporate travel team well in advance. Custom itineraries require a minimum notice period of 18 months before the desired travel date and are subject to fleet availability.
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

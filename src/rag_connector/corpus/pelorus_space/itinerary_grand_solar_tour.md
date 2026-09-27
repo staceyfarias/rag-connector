@@ -1,5 +1,7 @@
 # Grand Solar Tour (GST) — itinerary overview
 
+*At a glance · 2042–43 departures*
+
 **Duration:** 38 days total  
 **Departure:** Earth Launch Terminal 7, Gate 22  
 **Drive:** Continuous-thrust fusion, 0.15g sustained acceleration/deceleration
@@ -7,9 +9,9 @@
 | Day | Stop / Leg | Duration | Included excursions (NCL/PFL) | EVA available | Transit to next stop |
 |---|---|---|---|---|---|
 | 1–2 | Earth → Moon Base 7 transit | 2 days | — | No | — |
-| 3 | Moon Base 7 layover (extended GST) | ~20 hours | Tranquility Heritage perimeter tour; Lunar Golf Links; Pressurised Rover Tour (choose 1–2) | Yes (Tranquility and Golf are surface suits; Golf is EVA-adjacent) | Moon → Mars, 4 days |
+| 3 | Moon Base 7 layover (extended GST) | ~20 hours | Tranquility Heritage perimeter tour; Lunar Golf Links; Pressurised Rover Tour (choose 1–2) | Yes (Golf is played in surface suits; the Rover Tour has an optional short EVA stop; Tranquility Heritage is by pressurised rover, no EVA suit) | Moon → Mars, 4 days |
 | 4–7 | Moon → Mars Colony 1 transit | 4 days | — | No | — |
-| 8–10 | Mars Colony 1 stay | 3 nights | Cydonia Highlands; Hellas Basin Overlook; Terraforming Operations Zone | Yes (all surface excursions) | Mars → Venus, 3 days |
+| 8–10 | Mars Colony 1 stay | 3 nights | Cydonia Highlands; Hellas Basin Overlook; Terraforming Operations Zone | Yes (surface EVA) | Mars → Venus, 3 days |
 | 11–13 | Mars → Venus transit | 3 days | — | No | — |
 | 14–16 | Venus — The Aphrodite | 3 nights | Pool and sun deck; Glass Floor Tour; Venus Science Centre | No — pressurised station | Venus → Ceres, 4 days |
 | 17–20 | Venus → Ceres transit | 4 days | — | No | — |
@@ -34,6 +36,6 @@
 ## Important scheduling notes
 
 - **Moon Base 7 (Day 3):** This is the only opportunity to sign the Leap waiver, complete Titan cold-suit certification, and complete the Titan cardiovascular fitness check. All three must be done during the Day 3 layover if the passenger intends to do those activities.
-- **Mars Day 9:** Olympus Fitness Test must be completed at least 48 hours before the Caldera Rim excursion. With a 3-night stay, the test should be booked for Day 8 morning and the hike on Day 10.
+- **Mars (Days 8–10):** Olympus Fitness Test must be completed at least 48 hours before the Caldera Rim excursion. With a 3-night stay, the test should be booked for Day 8 morning and the hike on Day 10.
 - **Ceres (Day 21):** The Leap platform closes 60 minutes before the departure window, 15 minutes before the general muster deadline of 45 minutes. Plan to finish The Leap no later than 60 minutes before the departure window.
-- **Titan (Day 28):** Cold-suit decontamination adds 20 minutes to return time. Plan excursion end at 95 minutes before the departure window, not 75.
+- **Titan (Day 28):** The muster deadline is 75 minutes before the departure window. Cold-suit decontamination adds 20 minutes, so plan excursion end at 95 minutes before the departure window, not 75.

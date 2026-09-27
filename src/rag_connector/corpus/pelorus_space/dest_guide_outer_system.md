@@ -1,5 +1,7 @@
 # Saturn, Titan and Enceladus — Outer Solar System Guide
 
+*Pelorus Voyages Destination Guides · 2042 edition · Issued 26 March 2042*
+
 The three outer system experiences — the Saturn Ring Transit, the Titan Ice Flats, and the Enceladus Geyser Flyover — form the closing sequence of the Outer Reaches Tour and the final outer system leg of the Grand Solar Tour. They are the furthest destinations from Earth on any Pelorus Voyages itinerary, they take the longest to reach, and they are for many passengers the reason the longer tours exist. This guide covers each experience, the unique preparation requirements for the outer system, and what the final legs of the voyage look and feel like.
 
 ## Contents
@@ -16,9 +18,9 @@ The three outer system experiences — the Saturn Ring Transit, the Titan Ice Fl
 
 Saturn is approximately 1.2 to 1.5 billion kilometres from Earth depending on orbital position. At that distance, one-way light travel time is 43 to 84 minutes; a question sent to Earth receives a reply 86 to 168 minutes later. Real-time conversation is not feasible. The Milky Way is visible from the outer system with a clarity impossible from the inner solar system — the reduced solar glare reveals structure in the night sky that is simply washed out at Earth's distance.
 
-The Ceres-to-Saturn transit takes approximately five days. This is the longest single transit leg on any itinerary. The vessel's programming schedule for this leg typically includes the full complement of science officer lectures; the outer system approaches to Saturn, Titan, and Enceladus are subjects the science officer covers in depth on the inbound leg so that passengers arrive at each stop with context.
+The Ceres-to-Saturn transit takes approximately five days. This is the longest outbound transit leg on any itinerary. The vessel's programming schedule for this leg typically includes the full complement of science officer lectures; the outer system approaches to Saturn, Titan, and Enceladus are subjects the science officer covers in depth on the inbound leg so that passengers arrive at each stop with context.
 
-The outer system stop sequence after Ceres is: Saturn Ring Transit (6 hours, no disembarkation) → Titan Ice Flats (surface excursion) → Enceladus Geyser Flyover (passive observation) → return transit to Earth (8 to 9 days). The total time from Ceres departure to Earth return is approximately 14 to 15 days.
+The outer system stop sequence after Ceres is: Saturn Ring Transit (6 hours, no disembarkation) → Titan Ice Flats (surface excursion) → Enceladus Geyser Flyover (passive observation) → return transit to Earth (8 to 9 days). The total time from Ceres departure to Earth return is approximately 16 to 17 days.
 
 ---
 
@@ -26,7 +28,7 @@ The outer system stop sequence after Ceres is: Saturn Ring Transit (6 hours, no 
 
 The Saturn Ring Transit is a six-hour passage between the B and C rings of Saturn's ring system. There is no docking, no EVA, and no disembarkation. The vessel moves slowly through the ring plane while passengers observe from the observation deck.
 
-**What the rings actually are** — the ring system at the B-C boundary is not the solid sheet it appears to be from Earth. It is composed of ice and rock particles ranging from dust grains to objects the size of houses, distributed across a band roughly 270,000 kilometres in diameter but only about 10 metres to a kilometre thick. The vessel passes through the Cassini Division boundary area, where particle density is low enough to be safe. The primary hazard is microparticle impact on the outer hull — expected, accounted for in maintenance schedules, not dangerous to passengers.
+**What the rings actually are** — the ring system at the B-C boundary is not the solid sheet it appears to be from Earth. It is composed of ice and rock particles ranging from dust grains to objects the size of houses, distributed across a band roughly 270,000 kilometres in diameter but only about 10 metres to a kilometre thick. The vessel passes through the B-C ring boundary area, where particle density is low enough to be safe. The primary hazard is microparticle impact on the outer hull — expected, accounted for in maintenance schedules, not dangerous to passengers.
 
 **The visual experience** depends on the sun angle at the time of transit, which varies with Saturn's position in its 29-year orbit and the vessel's approach geometry. In favourable conditions: a sweeping, backlit arc of ice filling the sky. In less favourable angles: a muted band of grey-white. Pelorus Voyages schedules ring transits for sun angles within the recommended viewing window where operationally possible; the voyage manifest specifies the predicted illumination quality.
 
@@ -51,11 +53,11 @@ The Titan Ice Flats excursion takes place on the frozen shoreline of Kraken Mare
 - Sled racing on downhill ice lanes
 - Long-jump competition from a dedicated launch zone
 
-**Cold suit — mandatory and non-optional** — at minus 179 degrees Celsius, no one goes outside without a Pelorus Voyages-provided cold suit. Cold suits are included in the Titan excursion price. They are not rented and are not optional. Personal cold-weather equipment is not permitted on the Titan surface because the certification requirement cannot be met for non-Pelorus equipment on the day. Open-face helmets are not permitted under any circumstances; all helmets must be sealed visored models with integrated communications.
+**Cold suit — mandatory and non-optional** — at minus 179 degrees Celsius, no one goes outside without a Pelorus Voyages-provided cold suit. Cold suits are included in the Titan excursion price. They are not rented and are not optional. Pelorus Voyages certifies the fit and seal of each passenger's cold suit at Excursion Base Alpha before surface access is permitted. Personal cold-weather equipment is not permitted on the Titan surface because the certification requirement cannot be met for non-Pelorus equipment on the day. Open-face helmets are not permitted under any circumstances; all helmets must be sealed visored models with integrated communications.
 
-**The decontamination rule — the most commonly missed deadline on the itinerary** — mandatory cold-suit decontamination takes approximately 20 minutes and must be completed before entering Excursion Base Alpha for departure processing. The posted muster deadline is 75 minutes before departure. The effective minimum return time from any surface activity is **95 minutes before the departure window**, not 75 minutes. This distinction has caused more missed departures at Titan than at any other stop. Ice sports equipment must be returned before decontamination begins.
+**The decontamination rule — the most commonly missed deadline on the itinerary** — the muster deadline at Titan is 75 minutes before the departure window. Mandatory cold-suit decontamination takes approximately 20 minutes and must be completed before entering Excursion Base Alpha for departure processing, so passengers should plan to be back from any surface activity by **95 minutes before the departure window**, not 75 minutes. This distinction has caused more missed departures at Titan than at any other stop. Ice sports equipment must be returned before decontamination begins.
 
-**Certification requirements** — a cold-suit certification and a cardiovascular fitness check are both required before the Titan surface excursion and must be completed at Moon Base 7 before the vessel departs for the outer system. There is no opportunity to complete them later in the voyage. ORT and GST passengers intending to do the Titan excursion should treat the Moon Base 7 certification appointment as a first priority during the Moon layover. Both typically take a combined half-day. Contact the expedition coordinator at Moon Base 7 check-in to secure a slot.
+**Certification requirements** — a cold-suit certification and a cardiovascular fitness check are both required before the Titan surface excursion and must be completed at Moon Base 7 before the vessel departs for the outer system. There is no opportunity to complete them later in the voyage. ORT and GST passengers intending to do the Titan excursion should treat the Moon Base 7 certification appointment as a first priority during the Moon layover. Together they take approximately 3 hours. Contact the expedition coordinator at Moon Base 7 check-in to secure a slot.
 
 **Minimum age:** 12 years old. A waiver is required; parental co-signature for passengers aged 12 to 17.
 
@@ -81,12 +83,16 @@ Enceladus is the final destination before the return transit to Earth. It is a s
 
 ## 5. Special Preparation for the Outer System
 
-**Titan cold-suit certification and cardiovascular check** — both completed at Moon Base 7, takes approximately half a day combined. Must be done before the vessel departs for the outer system. Cannot be completed during the voyage. Passengers intending the Titan surface excursion should make this their first scheduled activity at Moon Base 7.
+**Titan cold-suit certification and cardiovascular check** — both completed at Moon Base 7, taking approximately 3 hours combined. Must be done before the vessel departs for the outer system. Cannot be completed during the voyage. Passengers intending the Titan surface excursion should make this their first scheduled activity at Moon Base 7.
 
 **The Leap waiver** — if you plan to do The Leap at Ceres, the waiver must be signed at Moon Base 7. It cannot be processed at Ceres. Inform the expedition coordinator at Moon Base 7 check-in and request the waiver document before any excursions.
 
 **Communications expectations from the outer system** — from Saturn onwards, one-way light delay is 43 to 84 minutes. Round-trip reply time is 86 to 168 minutes. Plan your Earth communications for the Ceres leg and earlier if there is anything time-sensitive. The Ceres Waystation communications relay is the best uplink point on the outer system leg; use it for anything that needs reliable delivery.
 
-**Titan muster deadline** — 95 minutes before departure, not 75. Cold-suit decontamination consumes the extra 20 minutes.
+**Titan muster and return time** — the muster deadline is 75 minutes before departure. Cold-suit decontamination adds 20 minutes, so plan to be back from the surface 95 minutes before departure, not 75.
 
 **Return transit** — the Enceladus-to-Earth return takes 8 to 9 days. The vessel does not follow the same route back; the return arc is separately optimised. This is the longest uninterrupted transit of the voyage and the most socially relaxed stretch. The bar hosts the voyage retrospective event during the return. Most passengers describe the return as a gradual re-entry to the idea of Earth — physically approaching it for over a week before arrival.
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

@@ -1,5 +1,7 @@
 # Grand Solar Tour — Complete Voyage Guide
 
+*Pelorus Voyages Voyage Guides · For 2042–43 departures · Issued 5 April 2042*
+
 The Grand Solar Tour is the flagship 38-day expedition visiting every Pelorus Voyages destination: Moon Base 7 with shore excursions, Mars Colony 1, The Aphrodite at Venus, Ceres Waystation, Saturn Ring Transit, Titan Ice Flats, and Enceladus Geyser Flyover. It is the longest and most comprehensive itinerary Pelorus Voyages offers. This guide covers every leg with practical guidance on what to expect and how to plan.
 
 ## Contents
@@ -32,7 +34,7 @@ The Grand Solar Tour is the flagship 38-day expedition visiting every Pelorus Vo
 **Propulsion:** Continuous-thrust fusion drive, 0.15g  
 **Departure:** Earth Launch Terminal 7, Gate 22
 
-The Grand Solar Tour visits every destination in the Pelorus Voyages portfolio. It is the only itinerary with access to Moon shore excursions (including the Lunar Golf Links, Tranquility Heritage Tour, and Pressurised Rover Tour); it visits both the inner planets (Mars and Venus) and the outer system (Ceres, Saturn, Titan, Enceladus). Passengers completing a GST in Navigator or Pathfinder class typically earn enough Orbital Points to reach Pathfinder loyalty tier in a single voyage.
+The Grand Solar Tour visits every destination in the Pelorus Voyages portfolio. It is the only itinerary with access to Moon shore excursions (including the Lunar Golf Links, Tranquility Heritage Tour, and Pressurised Rover Tour); it visits both the inner planets (Mars and Venus) and the outer system (Ceres, Saturn, Titan, Enceladus). Passengers completing a GST in Pathfinder class typically earn enough Orbital Points to reach Pathfinder loyalty tier in a single voyage.
 
 The GST requires the most pre-voyage preparation of any itinerary. Moon Base 7 on Day 3 has more mandatory processing — certifications, waivers, EVA orientation — than on any other itinerary. Read Section 4 of this guide carefully before departure.
 
@@ -75,7 +77,7 @@ The GST layover at Moon Base 7 is approximately 18 to 24 hours — the longest o
 
 **Mandatory processing items on Day 3:**
 - EVA suit orientation (if not completed during the Day 1–2 transit; approximately 90 minutes; must be done before any shore excursion)
-- Titan cold-suit certification at the Medical Certification Suite (half-day; mandatory for Titan surface excursion)
+- Titan cold-suit certification at the Medical Certification Suite (approximately 3 hours together with the cardiovascular check; mandatory for Titan surface excursion)
 - Titan cardiovascular fitness check (conducted at same appointment as cold-suit certification)
 - Leap waiver signing (if intending The Leap at Ceres on Day 21)
 
@@ -87,7 +89,7 @@ The GST layover at Moon Base 7 is approximately 18 to 24 hours — the longest o
 Most passengers can complete two of the three excursions within the 18–24 hour layover after mandatory processing. **Golf Links + Tranquility Heritage** is the recommended pairing. The rover tour and golf together also work. Combining all three is usually too tight.
 
 **Recommended Day 3 schedule:**
-- Arrival: proceed immediately to the Medical Certification Suite for Titan certification and cardiovascular check (half-day)
+- Arrival: proceed immediately to the Medical Certification Suite for Titan certification and cardiovascular check (approximately 3 hours)
 - Sign Leap waiver at the expedition coordinator desk
 - Complete EVA orientation if not done on transit
 - Excursions in the remaining window
@@ -123,7 +125,7 @@ Three nights. Gravity: 0.38g. Surface EVA available. Navigator/Pathfinder: Cydon
 
 ## 7. Mars to Venus (Days 11–13)
 
-Three-day transit. The science officer's Venus briefing runs on Day 12. If the Gondola Descent is not yet booked and a booking still exists, this is the last opportunity to secure it before arrival — but the gondola typically fills well in advance of departure.
+Three-day transit. The science officer's Venus briefing runs on Day 12. The Gondola Descent cannot be booked during the voyage: it must be booked before departure (add-ons close 48 hours before the Earth departure window), and the gondola typically fills well in advance.
 
 ---
 
@@ -133,9 +135,9 @@ Three nights. Gravity: 0.88g. Pool, sun deck, Glass Floor Tour, Gondola Descent,
 
 **Day 14:** Arrival and wellness orientation. Pool and Science Centre recommended for the arrival day.
 
-**Day 15:** Main experience day. Glass Floor Tour and Gondola Descent if booked. Glass floor fills 3 weeks in advance; gondola holds 8 passengers with Pathfinder-tier priority window.
+**Day 15:** Main experience day. Glass Floor Tour and Gondola Descent if booked. Glass floor fills 3 weeks in advance; gondola holds 8 passengers, with a priority booking window for Pathfinder loyalty tier members.
 
-**Day 16 (departure):** Pool and sun deck close 45 minutes before departure. Gondola must complete ascent by 90 minutes before departure. Glass floor final group exits by 60 minutes before departure. Muster: Docking Pier 1, Resort Deck 2, 30 minutes before departure.
+**Day 16 (departure):** Pool and sun deck close 45 minutes before departure. Gondola must begin its return ascent by 90 minutes before departure. Glass floor final group exits by 60 minutes before departure. Muster: Docking Pier 1, Resort Deck 2, 30 minutes before departure.
 
 ---
 
@@ -161,7 +163,7 @@ For full Ceres detail: see the [Ceres Destination Guide](dest_guide_ceres.md).
 
 ## 11. Ceres to Saturn (Days 22–26)
 
-Five days — the longest single transit of the GST. Light delay reaches 43 to 84 minutes one-way by Day 26. Real-time conversation with Earth is no longer feasible. Plan any time-sensitive Earth communications for Day 21 at the Ceres Waystation, which has the best communications relay in the outer system.
+Five days — the longest outbound transit of the GST. Light delay reaches 43 to 84 minutes one-way by Day 26. Real-time conversation with Earth is no longer feasible. Plan any time-sensitive Earth communications for Day 21 at the Ceres Waystation, which has the best communications relay in the outer system.
 
 Saturn becomes visible from the observation deck as a distinct disc with visible ring geometry during the approach. The science officer's Saturn, Titan, and Enceladus lectures run during this transit.
 
@@ -210,7 +212,7 @@ Earth gravity on arrival (Day 38) feels genuinely heavy after 38 days in reduced
 | Add-on | Eligibility | Age | Special requirement |
 |---|---|---|---|
 | Olympus Mons Caldera Rim hike | Pathfinder only | 18+ | Olympus Fitness Test at MC-1, min. 48 hrs before hike (Day 8 test, Day 10 hike) |
-| Venus Gondola Descent | All classes | 16+ | Separate cardiovascular clearance; Pathfinder 48-hr priority booking window |
+| Venus Gondola Descent | All classes | 16+ | Separate cardiovascular clearance; book before departure; Pathfinder loyalty tier 48-hr priority booking window |
 | Ceres — The Leap | All classes | 16+ | Waiver signed at Moon Base 7 (Day 3 only) |
 
 ---
@@ -223,7 +225,7 @@ Earth gravity on arrival (Day 38) feels genuinely heavy after 38 days in reduced
 
 **After booking:**
 - [ ] Book Glass Floor Tour immediately (fills 3 weeks out in peak season)
-- [ ] Book Gondola Descent (8 max; Pathfinder-tier priority window)
+- [ ] Book Gondola Descent before departure (8 max; Pathfinder loyalty tier 48-hour priority window)
 - [ ] Book Moon Base 7 lunar excursions (Golf fills; Heritage tour fills; choose priority excursions)
 - [ ] Register dietary requirements and medications in portal
 - [ ] Complete online training programme (14 days before departure)
@@ -245,3 +247,7 @@ Earth gravity on arrival (Day 38) feels genuinely heavy after 38 days in reduced
 
 **Before Venus arrival:**
 - [ ] Confirm Gondola Descent booking is on file
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*

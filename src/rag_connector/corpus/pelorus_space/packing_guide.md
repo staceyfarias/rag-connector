@@ -1,5 +1,7 @@
 # Packing and Baggage Guide
 
+*Pelorus Voyages · Passenger Services · Edition 5 · Issued 2 May 2042*
+
 This guide covers your personal mass allowance, what you cannot bring, what equipment is available to rent at each stop, photography rules at heritage sites, and how to handle personal medications. Because everything on a spacecraft is weighed, mass management requires more planning than a typical holiday. Read this before you start packing.
 
 ## Contents
@@ -22,7 +24,7 @@ Mass is measured at the Earth launch terminal baggage drop and applies to everyt
 | **Navigator (NCL)** | 18 kg | 1× rental credit per voyage | USD 150/kg |
 | **Pathfinder (PFL)** | 25 kg | 2× rental credits per voyage | USD 120/kg |
 
-**Equipment rental credits** entitle the passenger to one rental of any single equipment item at any stop where rental is available. Credits are redeemed at the excursion check-in desk. Unused credits do not carry over to future voyages and have no cash value.
+**Equipment rental credits** entitle the passenger to one rental of any single equipment item at any stop where rental is available. Standard rental items include EVA equipment upgrades, photography equipment, golf club sets at the Lunar Golf Links, and Ceres surface sports equipment. Credits are redeemed at the excursion check-in desk. Unused credits do not carry over to future voyages and have no cash value.
 
 **Overweight baggage fees** are assessed at the Earth launch terminal only. Individual stops do not re-weigh passengers' belongings. Fees are charged before boarding and must be settled before the passenger proceeds to Gate 22.
 
@@ -83,14 +85,13 @@ Photography is encouraged at all Pelorus Voyages destinations. Most stops have n
 - Laser pointers or laser range-finding equipment: prohibited — may not be directed at the flag, the Lunar Module descent stage, or any other heritage object
 
 **Fra Mauro zone (Lunar Golf Links area)**
-- Drone prohibition within 500 metres of the Shepard Shot Marker
+- Drones: prohibited throughout the zone, including the 500-metre protection radius around the Shepard Shot Marker
 - Physical approach within 20 metres of the Shepard Shot Marker prohibited
 - Photography from beyond 20 metres is permitted without restriction
 
 **Cydonia Formation complex (Mars)**
 - Photography from designated viewing areas: permitted
-- Drones above 500 grams: prohibited entirely within the Category B scientific preservation zone
-- Drones under 500 grams: permitted with advance notification to the Cydonia site coordinator and a valid recreational drone permit
+- Drones of any size: prohibited throughout the Cydonia Formation interpretive zone and the Category B scientific preservation zone — drones are permitted only in the Ceres Waystation surface zone (see Section 2)
 - Professional photography and scientific equipment: requires a research permit from the Mars Surface Heritage Authority
 
 **Consequences of violations** — violations at Tranquility Base or Fra Mauro are reported immediately to the Lunar Heritage Authority by the tour guide. Pelorus Voyages is legally required to report violations and does not have discretion to decline reporting. Consequences range from permanent exclusion from heritage sites to criminal prosecution under OSHPA 2041, which carries fines and in serious cases custodial sentences.
@@ -116,6 +117,10 @@ Medications for personal use are handled differently from other baggage items.
 
 Passengers who take a medication on the prohibited list should contact Pelorus Voyages medical operations at least 60 days before departure to discuss alternatives. In most cases a therapeutic equivalent compatible with vessel regulations exists.
 
-**Pack a buffer** — carry a 14-day supply beyond the voyage duration. This covers the possibility of a scrub, diversion, or leg extension. Medications in checked baggage separated from the passenger in a baggage incident are not replaceable mid-voyage.
+**Carry-on, with a buffer** — pack essential medications in your carry-on, not checked baggage, and carry a 14-day supply beyond the voyage duration. This covers the possibility of a scrub, diversion, or leg extension. Medications in checked baggage separated from the passenger in a baggage incident are not replaceable mid-voyage.
 
 **Name discrepancies** — if the medication name on the pharmacy label differs from what appears in your medical documents (brand vs. generic, international naming conventions), carry a physician letter clarifying the equivalence. Customs authorities at interplanetary waypoints have varied pharmacopeias; original containers plus a physician letter are the most reliable documentation.
+
+---
+
+*Pelorus Voyages Passenger Services. Questions about this guide can be raised through the account portal. Guides are reviewed each year; the version published in the account portal is the current one.*
