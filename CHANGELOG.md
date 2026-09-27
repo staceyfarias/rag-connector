@@ -4,7 +4,17 @@ Notable changes to rag-connector. Dates are the day the work landed.
 
 ## 0.2.0a2 — unreleased
 
-Additive; nothing existing changes meaning.
+Additive, except the bundled demo corpus, which changes.
+
+- **Changed: the bundled Pelorus Space corpus is version 2** (2026-09-27):
+  28 documents and 426 frozen chunks at 1000/200, replacing 92 documents and
+  605 chunks. Every chunk id and the bundled Dataset id change, so anything
+  that cited version-1 chunk ids must be rebuilt. Version 1 was two layers,
+  20 guides plus the 72 short documents they were written from; version 2
+  keeps one realistic set (formal terms, guides, brochures, an FAQ, a dated
+  notice), fixes accidental contradictions, and adds deliberate test
+  material (a dated conflicting notice; two scope-in-another-chunk cases).
+  See `src/rag_connector/corpus/README.md`.
 
 - **Dataset spec, `rag-connector-dataset` 1.0** (`docs/dataset-spec.md`,
   versioned separately from this package) and `rag_connector.dataset`. A

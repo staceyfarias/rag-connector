@@ -17,7 +17,7 @@ thing to both. RAG Connector defines that once. A pipeline that implements the
 contract — or is wrapped by a connector that does — can be measured by RAGauge
 and curated by Pelorus Query, and a chunk one of them cites resolves to the
 same text in the other. The bundled demo corpus and its frozen chunk set exist
-for exactly that: both products are built against the same 605 chunk ids.
+for exactly that: both products are built against the same 426 chunk ids.
 
 Interoperability between those two products is why this library exists, and it
 is why the contract is narrow. Nothing here evaluates or curates: evaluation
@@ -34,7 +34,7 @@ It defines:
 - reconstructable, secret-free connector registration;
 - a conformance validator and reusable connector test kit;
 - an optional FastEmbed + Chroma Reference RAG that can be provisioned from a
-  document folder, or from the 92-document demo corpus bundled with the package;
+  document folder, or from the 28-document demo corpus bundled with the package;
 - an ingest kit (`rag_connector.ingest`) for hosts that build their own corpus —
   deliberately outside the read-only connector contract.
 
@@ -73,8 +73,8 @@ rag-connector validate \
   --query "a question your documents can answer"
 ```
 
-With no folder named, `provision` uses the bundled **Pelorus Space** corpus — 92
-short documents about a fictional interplanetary travel operator, MIT-licensed
+With no folder named, `provision` uses the bundled **Pelorus Space** corpus — 28
+documents about a fictional interplanetary travel operator, MIT-licensed
 like the rest of the package. Your own documents go in its place, as the first
 positional argument:
 
@@ -128,7 +128,7 @@ imported only when a file needs one.
 
 ### The frozen chunk set
 
-The bundled corpus also ships **pre-chunked**: 605 records at 1000/200, with
+The bundled corpus also ships **pre-chunked**: 426 records at 1000/200, with
 the ids anything downstream cites. Read it instead of re-chunking whenever a
 stored artifact refers to a chunk — re-chunking is a re-derivation, and a
 re-derivation that lands one character differently regrounds every citation.
@@ -137,7 +137,7 @@ re-derivation that lands one character differently regrounds every citation.
 from rag_connector.ingest import load_bundled_chunks
 from rag_connector.reference_provision import provision_reference_rag_from_chunks
 
-chunks = load_bundled_chunks()                        # 605 ChunkRecords
+chunks = load_bundled_chunks()                        # 426 ChunkRecords
 connector = provision_reference_rag_from_chunks(collection_name="frozen")
 ```
 
@@ -171,7 +171,7 @@ someone else can arrive at the same one.
 | Source identity | the corpus-relative path, forward slashes, casefolded |
 | Chunk id | `<source identity>:chunk-<n>`, `<n>` dense over emitted chunks |
 | File discovery | recursive, sorted by relative POSIX path, dot-directories skipped, `.txt .md .pdf .docx .rtf` |
-| Corpus layout | the 92 bundled documents, flat |
+| Corpus layout | the 28 bundled documents, flat |
 
 Verify a reproduction byte-for-byte. This re-derives the split from the
 bundled documents and digests it, and needs no optional extras:
@@ -181,7 +181,7 @@ python -c "import hashlib; from rag_connector.ingest import build_bundled_chunks
 ```
 
 ```
-290ca86076d9b878e54bdd2d5c1a1c870c4ab20c57edd1a013983e8782ba11fc 857219 605
+1b10f312c042185ec446a75dc6b479be785726338267efdf414ea64d0887ba9c 613811 426
 ```
 
 That is the sha256, the byte count and the line count of the shipped file
@@ -192,7 +192,7 @@ Two things that are **not** in the table, deliberately:
 
 - **The embedding model does not affect the chunk set.** It decides the vectors,
   not the split. The bundled datasets happen to use `BAAI/bge-small-en-v1.5`
-  (384-dim, cosine), and a different model over these same 605 chunks is a
+  (384-dim, cosine), and a different model over these same 426 chunks is a
   different index of the same substrate.
 - **Everything above is version-bound.** The boundary rule and the trailing-chunk
   rule are behaviour, not configuration, so reproducing the hash needs the same
