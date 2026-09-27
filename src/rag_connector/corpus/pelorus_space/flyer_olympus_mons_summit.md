@@ -15,7 +15,7 @@ The Caldera Rim excursion involves a pressurised shuttle flight from Mars Colony
 | Availability | Pathfinder class only — Inner Planets Survey and Grand Solar Tour |
 | Minimum age | 18 years — the only adult-only activity in the Pelorus portfolio |
 | Olympus Fitness Test | Mandatory; conducted at MC-1, approximately 2 hours, pass/fail |
-| Fitness test timing | Must be completed at least 48 hours before the excursion |
+| Fitness test timing | Must be completed at least 24 hours before the excursion |
 | Recommended test day | Day 8 morning (arrival day at MC-1) for IPS/GST Day 10 hike |
 | Standard medical clearance | Not a substitute for the fitness test |
 | Total excursion duration | Approximately 10 hours |

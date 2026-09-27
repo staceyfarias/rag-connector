@@ -305,7 +305,7 @@ To confirm which insurance products are on your booking, log into the account po
 
 14.3 **Overall limit.** Subject to Clauses 14.1 and 14.2, the total liability of Pelorus Voyages to a Passenger in connection with a Booking is limited to the price paid by or for that Passenger for the Booking.
 
-14.4 **Exclusions.** Pelorus Voyages is not liable for loss caused by a Passenger's failure to meet their obligations under Section 12, by a voluntary missed departure, by independent third-party transport or activities arranged by the Passenger, by Force Majeure, or by the acts or rules of the authorities that operate destination installations. Pelorus Voyages is not liable for indirect or consequential loss, or for third-party costs such as flights to the launch terminal and accommodation, which may be addressed through the Passenger's travel insurance (see Section 5).
+14.4 **Exclusions.** Pelorus Voyages is not liable for loss caused by a Passenger's failure to meet their obligations under Section 12, by a voluntary missed departure, by independent third-party transport or activities arranged by the Passenger, by Force Majeure, or by the acts or rules of the authorities that operate destination installations. Pelorus Voyages is not liable for indirect or consequential loss, or for third-party costs such as flights to the launch terminal and accommodation, which may be addressed through the Passenger's travel insurance (see Sections 7 and 8).
 
 ---
 

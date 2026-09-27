@@ -31,7 +31,10 @@ across documents. A handful of paragraphs of lorem ipsum demonstrates nothing.
 Some features are deliberate test material, not errors: loyalty tiers share
 their names with cabin classes; a notice issued 15 November 2042 raises the
 companion discount from 15 to 20 percent for bookings from 1 January 2043
-while the older documents still say 15; the Outer Reaches Tour charges sheet
+while the older documents still say 15; the Olympus Mons excursion flyer
+says the fitness test must be passed at least 24 hours before the hike while
+every guide says 48, and nothing in the corpus says which is right; the Outer
+Reaches Tour charges sheet
 and Section 11 of the medical guide state their itinerary scope once, chunks
 away from the values it governs.
 
