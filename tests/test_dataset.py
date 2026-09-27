@@ -63,9 +63,10 @@ SYNTHETIC = [
 SYNTHETIC_INVENTORY_BY_TESTSET_KIT = (
     "bfc47256c82fc7b2a2b0a487d7f2e4603fb41dfc7a2c360c72b24321fc6a8272"
 )
-#: testset-kit's chunk_inventory_sha256 on the bundled frozen 605-chunk split.
+#: testset-kit's chunk_inventory_sha256 on the bundled frozen 629-chunk split
+#: (Pelorus Space corpus version 2; version 1, 605 chunks, was 42e45a7a...).
 PELORUS_SPACE_INVENTORY_BY_TESTSET_KIT = (
-    "42e45a7af6eda157862c0092b3200e9dd096a19fb54c2f0b3eabcb8c9fe371f7"
+    "39f6afe0d888f031e56302b1c9784f2fe6a74a5697c3f5e3e84aa383d6a687c8"
 )
 
 
@@ -390,8 +391,8 @@ def test_the_bundled_corpus_round_trips_as_a_verified_dataset(tmp_path):
         chunking=chunker_chunking(chunk_size=BUNDLED_CHUNK_SIZE,
                                   chunk_overlap=BUNDLED_CHUNK_OVERLAP),
     )
-    assert dataset.chunk_count == 605
-    assert dataset.source_summary["source_count"] == 92
+    assert dataset.chunk_count == 629
+    assert dataset.source_summary["source_count"] == 94
     assert dataset.chunk_inventory_sha256 == PELORUS_SPACE_INVENTORY_BY_TESTSET_KIT
     assert dataset.dataset_id == "ds-" + PELORUS_SPACE_INVENTORY_BY_TESTSET_KIT[:16]
     # The frozen chunk file is already in the Dataset's row format, and carries

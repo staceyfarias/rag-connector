@@ -227,7 +227,7 @@ def test_an_overlap_that_cannot_advance_is_refused_not_repaired():
 # --- the bundled corpus ------------------------------------------------------
 
 
-def test_the_bundled_corpus_ships_and_is_the_full_92_documents():
+def test_the_bundled_corpus_ships_and_is_the_full_94_documents():
     """Package data that fails to ship is invisible from an editable install.
 
     This package carried no corpus at all until now, so an installed
@@ -246,13 +246,13 @@ def test_the_bundled_corpus_ships_and_is_the_full_92_documents():
     assert DEFAULT_BUNDLED_CORPUS in BUNDLED_CORPORA
     with bundled_corpus_path() as path:
         files = sorted(p.name for p in pathlib.Path(path).iterdir() if p.is_file())
-        assert len(files) == 92
+        assert len(files) == 94
         assert {p.rsplit(".", 1)[1] for p in files} == {"txt", "md"}
         # Pelorus's own state directory must not travel with the documents.
         assert not (pathlib.Path(path) / ".pelorus").exists()
 
     documents = load_bundled_corpus()
-    assert len(documents) == 92
+    assert len(documents) == 94
     assert all(doc.content.strip() for doc in documents)
 
 
@@ -325,7 +325,7 @@ def test_provisioning_needs_no_folder_from_the_caller(tmp_path):
 # --- the frozen pre-chunked corpus -------------------------------------------
 
 
-def test_the_frozen_chunk_set_ships_and_is_the_605_chunks():
+def test_the_frozen_chunk_set_ships_and_is_the_629_chunks():
     """The pre-chunked corpus is package data with the same invisibility trap
     as the documents: an editable install reads it off ``src/`` either way."""
     from rag_connector.ingest import bundled_chunks_path, load_bundled_chunks
@@ -334,9 +334,9 @@ def test_the_frozen_chunk_set_ships_and_is_the_605_chunks():
         assert pathlib.Path(path).is_file()
 
     chunks = load_bundled_chunks()
-    assert len(chunks) == 605
-    assert len({c.chunk_id for c in chunks}) == 605
-    assert [c.global_index for c in chunks] == list(range(605))
+    assert len(chunks) == 629
+    assert len({c.chunk_id for c in chunks}) == 629
+    assert [c.global_index for c in chunks] == list(range(629))
 
 
 def test_frozen_chunk_ids_are_readable_and_self_describing():
@@ -377,10 +377,10 @@ def test_the_committed_chunk_set_has_not_drifted_from_the_kit():
     # drift apart the first time the corpus is edited on purpose: the
     # comparison above stays green, because both sides moved together.
     assert hashlib.sha256(raw).hexdigest() == (
-        "290ca86076d9b878e54bdd2d5c1a1c870c4ab20c57edd1a013983e8782ba11fc"
+        "f6805ceb476c747dc9c1c1ccf4cf2ddb8ec3214d42d227e74cee5daccf1b4fa3"
     ), "the frozen chunk set changed; update the digest published in README.md"
-    assert len(raw) == 857219
-    assert raw.count(b"\n") == 605
+    assert len(raw) == 891920
+    assert raw.count(b"\n") == 629
     assert b"\r\n" not in raw, ".gitattributes pins this file to LF"
 
 
@@ -410,7 +410,7 @@ def test_the_frozen_shape_is_the_one_rag_eval_already_writes():
 
     with bundled_chunks_path() as path:
         lines = pathlib.Path(path).read_text(encoding="utf-8").splitlines()
-    assert len(lines) == 605
+    assert len(lines) == 629
     for line in (lines[0], lines[-1]):
         row = json.loads(line)
         assert list(row) == [
@@ -483,7 +483,7 @@ def test_provisioning_from_the_frozen_chunks_re_chunks_nothing(tmp_path, monkeyp
     try:
         assert not calls, "provisioning from frozen chunks re-chunked the corpus"
         pulled = connector.pull_all_chunks()
-        assert len(pulled) == 605
+        assert len(pulled) == 629
         assert "booking_cancellation_policy.md:chunk-0" in {
             c.chunk_id for c in pulled
         }
