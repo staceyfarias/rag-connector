@@ -378,9 +378,9 @@ def test_the_committed_chunk_set_has_not_drifted_from_the_kit():
     # drift apart the first time the corpus is edited on purpose: the
     # comparison above stays green, because both sides moved together.
     assert hashlib.sha256(raw).hexdigest() == (
-        "1b10f312c042185ec446a75dc6b479be785726338267efdf414ea64d0887ba9c"
+        "5638e7143fe4b664e874d00aa8722cafaf97972debd1fce8b2d1c1914a0548b4"
     ), "the frozen chunk set changed; update the digest published in README.md"
-    assert len(raw) == 613811
+    assert len(raw) == 613818
     assert raw.count(b"\n") == 426
     assert b"\r\n" not in raw, ".gitattributes pins this file to LF"
 

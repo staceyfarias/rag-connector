@@ -181,7 +181,7 @@ python -c "import hashlib; from rag_connector.ingest import build_bundled_chunks
 ```
 
 ```
-1b10f312c042185ec446a75dc6b479be785726338267efdf414ea64d0887ba9c 613811 426
+5638e7143fe4b664e874d00aa8722cafaf97972debd1fce8b2d1c1914a0548b4 613818 426
 ```
 
 That is the sha256, the byte count and the line count of the shipped file

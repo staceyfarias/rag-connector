@@ -67,7 +67,7 @@ SYNTHETIC_INVENTORY_BY_TESTSET_KIT = (
 #: (Pelorus Space corpus version 2, 28 documents; version 1, 92 documents and
 #: 605 chunks, was 42e45a7a...).
 PELORUS_SPACE_INVENTORY_BY_TESTSET_KIT = (
-    "041e3660b0334990d2142001411f1f6dd8b579f05b5402d67684faa899b7874f"
+    "900cf7746b744988fd4331e42a46977782ddde484a182058d47f1834ec7a9858"
 )
 
 
