@@ -20,7 +20,7 @@ This handbook covers everything you need to know before, during, and after booki
 
 Pelorus Voyages offers three expedition itineraries. Each is structured around planetary alignment windows, and departure dates are published quarterly. Not every date is available year-round — the positions of the planets determine when each tour can run, and high-demand departures fill months in advance. Passengers are encouraged to book as early as possible, particularly for the Grand Solar Tour, which requires favourable alignment across all legs simultaneously and therefore runs less frequently than the inner-system itineraries.
 
-**Inner Planets Sojourn (IPS)** — 18 days. Visits Moon Base 7, Mars Colony 1, and The Aphrodite floating resort above Venus. This is the most frequently available itinerary and the shortest, making it an accessible first voyage for new passengers.
+**Inner Planets Survey (IPS)** — 18 days. Visits Moon Base 7, Mars Colony 1, and The Aphrodite floating resort above Venus. This is the most frequently available itinerary and the shortest, making it an accessible first voyage for new passengers.
 
 **Outer Reaches Tour (ORT)** — 24 days. Visits Moon Base 7 (layover), Ceres Waystation, Saturn Ring Transit, Titan Ice Flats, and Enceladus Geyser Flyover. Focuses on the outer solar system; the furthest-from-Earth itinerary.
 
@@ -38,9 +38,9 @@ Pelorus Voyages offers three cabin classes: Pioneer (PCL), Navigator (NCL), and 
 
 **Pioneer class** is the standard expedition berth. Passengers share a cabin with up to three other passengers of the same gender. Dining is in the shared dining hall on a fixed schedule. Personal mass allowance is 12 kilograms. Shore excursions are not included in the Pioneer base fare; each excursion must be purchased separately as an add-on. Pioneer passengers earn Orbital Points at the standard 1× rate.
 
-**Navigator class** provides a private berth for solo travellers or a private shared cabin for companions travelling together. Dining is flexible — Navigator passengers may eat in the main dining hall at any service time or order delivery to their cabin. Personal mass allowance is 18 kilograms. Standard shore excursions at each stop are included in the Navigator fare; premium add-ons (the gondola descent at Venus, The Leap at Ceres, the Caldera Rim hike at Olympus Mons) are purchased separately. Navigator passengers earn Orbital Points at a 1.5× multiplier.
+**Navigator class** provides a private berth for solo travellers or a private shared cabin for companions travelling together. Dining is flexible — Navigator passengers may eat in the main dining hall at any service time or order delivery to their cabin. Personal mass allowance is 18 kilograms. Standard shore excursions at each stop are included in the Navigator fare; premium add-ons (the gondola descent at Venus, The Leap at Ceres) are purchased separately. The Caldera Rim hike at Olympus Mons is Pathfinder class only. Navigator passengers earn Orbital Points at a 1.5× multiplier.
 
-**Pathfinder class** is the luxury expedition tier. Passengers have a private suite with a dedicated private dining room and on-demand meal service at any hour. Personal mass allowance is 25 kilograms. All standard and most premium shore excursions are included; the gondola descent at Venus is a separately purchased add-on at all cabin classes, though Pathfinder passengers receive priority booking access. The Caldera Rim hike at Olympus Mons is included in the Pathfinder fare but requires a separate fitness assessment completed at Mars Colony 1. Pathfinder passengers earn Orbital Points at a 2× multiplier and receive priority access to the medical bay. The companion discount — 15 percent off the second passenger's fare — is available only when both passengers hold Pathfinder loyalty tier status and travel together on the same itinerary and departure.
+**Pathfinder class** is the luxury expedition tier. Passengers have a private suite with a dedicated private dining room and on-demand meal service at any hour. Personal mass allowance is 25 kilograms. All standard and most premium shore excursions are included; the gondola descent at Venus and The Leap at Ceres are separately purchased add-ons at all cabin classes, though Pathfinder passengers receive priority booking access for the gondola descent. The Caldera Rim hike at Olympus Mons is included in the Pathfinder fare but requires a separate fitness assessment completed at Mars Colony 1. Pathfinder passengers earn Orbital Points at a 2× multiplier and receive priority access to the medical bay. The companion discount — 15 percent off the lower-priced passenger's fare — is available only when both passengers hold Pathfinder loyalty tier status and travel together on the same itinerary and departure.
 
 Cabin class can be upgraded after booking, subject to availability. Downgrades after booking are not permitted; a passenger wishing to move to a lower class must cancel and rebook.
 
@@ -53,21 +53,21 @@ Cabin class can be upgraded after booking, subject to availability. Downgrades a
 | **Personal mass allowance** | 12 kg | 18 kg | 25 kg |
 | **Equipment rental credit** | None included; rental at standard rate | 1× rental credit per voyage | 2× rental credits per voyage |
 | **Standard shore excursions** | Not included; purchased separately | Included at all stops | Included at all stops |
-| **Caldera Rim hike (Olympus Mons)** | Add-on; separate purchase + fitness test | Add-on; separate purchase + fitness test | Included; fitness test still required |
+| **Caldera Rim hike (Olympus Mons)** | Not available (Pathfinder class only) | Not available (Pathfinder class only) | Included; fitness test still required |
 | **Glass floor tour (Venus)** | Add-on; separate purchase | Included | Included |
 | **Gondola descent (Venus)** | Add-on; separate purchase + medical clearance | Add-on; separate purchase + medical clearance | Priority booking access; add-on, separate purchase + medical clearance |
 | **The Leap (Ceres)** | Add-on; age 16+, waiver required | Add-on; age 16+, waiver required | Add-on; age 16+, waiver required |
 | **Lunar Golf Links** | Add-on; equipment included | Included | Included |
 | **Medical bay priority** | Standard (queue-based) | Standard (queue-based) | Priority access |
 | **Orbital Points multiplier** | 1× (base rate) | 1.5× | 2× |
-| **Companion discount eligibility** | Not eligible | Not eligible | Eligible (both passengers must be Pathfinder loyalty tier) |
+| **Companion discount eligibility** | Set by loyalty tier, not cabin class | Set by loyalty tier, not cabin class | Set by loyalty tier, not cabin class (both passengers must be Pathfinder loyalty tier) |
 | **Same-day upgrade (departure day)** | To NCL or PFL; cash/card only — Orbital Points not accepted | To PFL; cash/card only | N/A |
 
 Notes on the table:
 
 - Mass allowance is per passenger, not per cabin. Two Navigator passengers in the same cabin each have an 18 kg allowance.
 - The gondola descent at Venus is an add-on at all cabin classes. The only Pathfinder advantage is priority booking access to the limited slots.
-- The Caldera Rim fitness test is conducted at Mars Colony 1 and is separate from standard medical clearance. It is not waived for Pathfinder passengers.
+- The Caldera Rim fitness test is conducted at Mars Colony 1 and is separate from standard medical clearance. Every passenger taking the hike must pass it.
 - Equipment rental credits are redeemable at any stop. Unused credits do not carry over to future voyages.
 
 ---
@@ -150,7 +150,7 @@ Several excursions carry minimum ages above the general voyage minimum:
 - Titan ice flats excursion: minimum age 12
 - Gondola descent (Venus): minimum age 16
 - The Leap (Ceres): minimum age 16
-- Mars EVA surface excursions: minimum age 16
+- Mars EVA surface excursions: minimum age 12
 - Olympus Mons Caldera Rim hike: minimum age 18, Pathfinder class only
 
 These limits are firm and cannot be overridden by parental consent or waiver. Full activity age requirements are listed in the Medical Clearance and Pre-Voyage Fitness Guide.

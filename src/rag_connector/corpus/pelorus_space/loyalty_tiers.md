@@ -1,6 +1,6 @@
 # Loyalty tier benefits — Pelorus Voyages Orbital Points programme
 
-Loyalty tiers are determined by total lifetime Orbital Points earned (not redeemed). Tier qualification is assessed annually on 1 January and based on points earned in the preceding calendar year. Tiers are held for the full calendar year following qualification, regardless of points activity during that year.
+Loyalty tiers are determined by Orbital Points earned (not redeemed) in the preceding calendar year. Tier qualification is assessed annually on 1 January. Tiers are held for the full calendar year following qualification, regardless of points activity during that year.
 
 **Important:** Loyalty tier names (Pioneer, Navigator, Pathfinder) are the same as cabin class names but are completely independent. Your loyalty tier does not determine your cabin class, and booking a Pathfinder cabin does not grant Pathfinder loyalty tier status. These are separate systems that happen to share naming conventions.
 
@@ -28,4 +28,4 @@ Loyalty tiers are determined by total lifetime Orbital Points earned (not redeem
 
 ## Tier and cabin class: a common source of confusion
 
-A frequent question from new passengers: "If I book Pathfinder class, am I Pathfinder tier?" No. Cabin class is a per-voyage purchase. Loyalty tier is a cumulative lifetime status. A first-time passenger who books the most expensive suite is still Pioneer tier until they have earned 20,000 lifetime points. Conversely, a repeat Pathfinder-tier passenger who books a Pioneer cabin for budget reasons retains all Pathfinder tier benefits (priority boarding, medical bay access, dedicated support) while travelling in the lower cabin class.
+A frequent question from new passengers: "If I book Pathfinder class, am I Pathfinder tier?" No. Cabin class is a per-voyage purchase. Loyalty tier is an annual status earned from points. A first-time passenger who books the most expensive suite is still Pioneer tier until they have earned 20,000 points in a calendar year. Conversely, a repeat Pathfinder-tier passenger who books a Pioneer cabin for budget reasons retains all Pathfinder tier benefits (priority boarding, medical bay access, dedicated support) while travelling in the lower cabin class.

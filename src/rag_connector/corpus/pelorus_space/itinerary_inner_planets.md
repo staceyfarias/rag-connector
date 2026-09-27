@@ -15,11 +15,11 @@
 | 17–18 | Venus → Earth return transit | 2 days | — | No | — |
 | 18 | Earth arrival | — | — | — | — |
 
-## Premium add-ons (all cabin classes, purchased separately)
+## Premium excursions and add-ons
 
 | Add-on | Availability | Age / eligibility |
 |---|---|---|
-| Olympus Mons Caldera Rim hike | Pathfinder class only; departs from MC-1 on Day 9 or 10 | Age 18+; Olympus Fitness Test at MC-1 required (48 hrs before hike) |
+| Olympus Mons Caldera Rim hike | Pathfinder class only; departs from MC-1 on Day 10 | Age 18+; Olympus Fitness Test at MC-1 required (48 hrs before hike) |
 | Venus Gondola Descent | All cabin classes | Age 16+; separate cardiovascular clearance; must book before departure |
 
 ## IPS vs. GST

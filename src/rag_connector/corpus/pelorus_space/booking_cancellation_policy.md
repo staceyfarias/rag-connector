@@ -22,7 +22,7 @@ Pelorus Voyages provides a free cancellation window of 14 days from the date of 
 
 After the 14-day free window closes, cancellation fees apply based on how far in advance of the departure date the cancellation is submitted:
 
-- **More than 30 days before departure** — 25 percent fee; 75 percent refunded
+- **30 or more days before departure** — 25 percent fee; 75 percent refunded
 - **7 to 29 days before departure** — 50 percent fee; 50 percent refunded
 - **48 hours to 6 days before departure** — 75 percent fee; 25 percent refunded
 - **Within 48 hours of departure window** — non-refundable; full voyage price is forfeited
@@ -154,7 +154,7 @@ The following are not covered by standard Pelorus Voyages travel insurance:
 
 **Non-Pelorus excursions.** Activities conducted outside of Pelorus Voyages-operated or Pelorus Voyages-approved excursions. Passengers who arrange independent surface activities at any stop do so at their own risk.
 
-**Heritage site violations.** Loss or damage caused by failure to follow Pelorus Voyages safety instructions, crew directives, or heritage site preservation rules. This includes fines or penalties imposed by planetary heritage authorities — including the Outer Solar Heritage Preservation Authority — for violations at protected sites such as Tranquility Base Heritage Site and the Shepard Shot Marker at Fra Mauro.
+**Heritage site violations.** Loss or damage caused by failure to follow Pelorus Voyages safety instructions, crew directives, or heritage site preservation rules. This includes fines or penalties imposed by planetary heritage authorities — including the Lunar Heritage Authority — for violations at protected sites such as Tranquility Base Heritage Site and the Shepard Shot Marker at Fra Mauro.
 
 ---
 

@@ -18,7 +18,7 @@ The Caldera Rim excursion involves a pressurised shuttle flight from Mars Colony
 | Standard medical clearance | Not a substitute for the fitness test |
 | Total excursion duration | Approximately 10 hours |
 
-**The Olympus Fitness Test** assesses cardiovascular and musculoskeletal capacity for sustained exertion in the EVA suit under Martian atmospheric conditions. It is conducted at Mars Colony 1 by Pelorus Voyages medical staff. It is pass/fail; failure disqualifies the passenger from the Caldera Rim excursion on that voyage, and the excursion fee is refunded. A passed result is valid only for the current voyage.
+**The Olympus Fitness Test** assesses cardiovascular and musculoskeletal capacity for sustained exertion in the EVA suit under Martian atmospheric conditions. It is conducted at Mars Colony 1 by Pelorus Voyages medical staff. It is pass/fail; failure disqualifies the passenger from the Caldera Rim excursion on that voyage. A passed result is valid only for the current voyage.
 
 Pathfinder passengers should book the fitness test for their first morning at MC-1. Slots are limited and fill quickly at peak departure windows. The standard voyage medical clearance does not substitute for this test; passengers who arrive at the Caldera Rim departure gate without a passed fitness test result on file will be turned away.
 

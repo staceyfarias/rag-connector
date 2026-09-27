@@ -123,7 +123,7 @@ This is typically the most relaxed stretch of the IPS. The excursion schedule is
 
 ## 10. Premium Add-Ons
 
-The following are separately purchased at all cabin classes on the IPS:
+The following are restricted or separately purchased on the IPS:
 
 | Add-on | Cabin eligibility | Age limit | Special requirement |
 |---|---|---|---|

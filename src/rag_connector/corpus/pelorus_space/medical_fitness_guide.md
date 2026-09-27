@@ -14,6 +14,7 @@ This guide covers everything related to your health and fitness requirements for
 8. G-Force Tolerance and Acceleration Phases
 9. Pre-Departure Health Check
 10. Medical Events During the Voyage
+11. Conditioning Standards for the Outer System Legs
 
 ---
 
@@ -235,3 +236,51 @@ Diversion costs and unused voyage days are covered by standard travel insurance 
 **Next-of-kin notification:** The flight surgeon contacts the passenger's emergency contact via the vessel communications system as soon as bandwidth allows. Light delay from the outer system may mean the notification takes 2 to 3 hours to reach Earth. Notifications confirm the passenger's status and planned course of action; they do not request family input into medical decisions.
 
 Ensure your emergency contact details in the account portal are current before departure. The system accepts one primary and one secondary emergency contact. Both should be reachable at Earth-based or high-reliability communications links.
+
+---
+
+## 11. Conditioning Standards for the Outer System Legs
+
+**This section applies to the Outer Reaches Tour and the Grand Solar Tour only.** These are the two itineraries that carry passengers beyond the asteroid belt, and they are the only itineraries whose outer-system excursions carry the conditioning standards set out below. Inner Planets Survey passengers are assessed under Sections 1, 2 and 9, and nothing set out below is asked of them, expected of them, or applied to them at any point. If you hold an Inner Planets Survey booking and a physician has quoted you a figure from this section, the figure is from the wrong section; ask them to review Section 1 instead.
+
+The reason for the difference is the nature of the excursions rather than the length of the voyage. Tethered surface work at very low gravity and sustained exertion inside a cold suit both place demands on a passenger that a pressurised habitat stay does not. Those demands are assessed in person, at Moon Base 7, before the vessel departs for the legs on which they arise — at the same appointment as the Titan cold-suit certification and cardiovascular check described in Section 2. What this section adds is the part passengers have historically had no way to find out in advance: what that appointment actually measures, and what a pass looks like.
+
+**What this section is not.** It is not the online pre-voyage training programme in Section 3, which every passenger on every itinerary completes and which measures knowledge rather than fitness. It is not the physician clearance in Section 1, which is a medical judgement rather than a performance measure. It is not the pre-departure health check in Section 9. A passenger can complete all three and still not meet the standards below, and the assessments are conducted separately for exactly that reason.
+
+Pelorus Voyages publishes these standards because the alternative is worse. Passengers who first encounter them at Moon Base 7, with a few hours of layover and no preparation behind them, have no remedy; passengers who see them in advance almost always meet them.
+
+### Begin conditioning sixteen weeks out
+
+Sixteen weeks before the departure window is the point at which a passenger of ordinary fitness can expect to reach the standards comfortably. It is a recommendation rather than a deadline — nobody is asked for a training log, and no record of preparation is kept. Passengers who are already physically active may need considerably less. Passengers who have been sedentary for a year or more should allow longer and should raise it with their physician at the clearance appointment rather than assuming sixteen weeks will be enough.
+
+The benchmarks are assessed within that Moon Base 7 appointment and need no separate booking; each itinerary guide gives the appointment's length for its tour. Slots are limited and are allocated in booking order. Treat the appointment as the first priority of the layover.
+
+### The three benchmarks
+
+Each benchmark is assessed once. There is no aggregate score and no trade-off between them: a passenger who exceeds one standard comfortably is not credited against another they miss.
+
+| Benchmark | Standard | Assessed as |
+|---|---|---|
+| **Sustained aerobic effort** | 30 minutes continuous at 70 percent of age-predicted maximum heart rate | Cycle ergometer, monitored |
+| **Grip endurance** | 90 seconds sustained at 25 kg per hand | Dual dynamometer, both hands simultaneously |
+| **Loaded carry** | 20 kg carried 200 metres without setting the load down | Weighted vest, marked course |
+
+The aerobic standard is the one that matters most and the one passengers most often underestimate. It is set where it is because a cold suit is worked rather than worn: the joints resist, and an eight-hour surface excursion is closer to a long hill walk than to a stroll.
+
+Grip endurance is assessed with both hands at once because both hands are what a tether line needs. Passengers with arthritis, a previous hand or wrist injury, or any condition affecting grip should raise it at the clearance appointment; an adapted assessment is available and is arranged in advance rather than on the day.
+
+The loaded carry is the least demanding of the three in absolute terms and the one most affected by preparation. Twenty kilograms is roughly the mass of a charged life-support pack.
+
+### Re-demonstration and validity
+
+A benchmark result stands for 18 months from the date it was recorded. A passenger who was assessed on a previous voyage inside that window is not reassessed and should say so when booking the layover appointment, since an unnecessary reassessment consumes a slot another passenger needs.
+
+A result older than 18 months lapses and the benchmark is assessed again in full. There is no partial renewal and no paper route: a lapsed result cannot be refreshed by a letter from a physician, a gym assessment, or a certificate from another operator.
+
+### Standards that are not affected by any of the above
+
+Two thresholds are frequently assumed to move with the standards in this section, and neither does.
+
+**The departure-burn tolerance screen is identical on every Pelorus Voyages itinerary.** The Earth departure burn peaks at 2.2g regardless of where the vessel is going, so the screen for it does not vary by itinerary, by cabin class, or by the benchmarks above. It is covered in Section 8 and is assessed as part of the physician clearance.
+
+**The pre-departure health check threshold is also fleet-wide.** Oxygen saturation below 95 percent bars boarding on every Pelorus Voyages itinerary without exception, and meeting or missing any benchmark in this section changes nothing about it. A passenger who meets all three standards comfortably and presents at Terminal 7 with an acute respiratory infection does not board.

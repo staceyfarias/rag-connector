@@ -32,7 +32,7 @@ ORT does not visit Mars or Venus. The Moon Base 7 layover is 4 hours (transit + 
 ## Important scheduling notes
 
 - **Moon Base 7 (Day 3):** The 4-hour layover must accommodate Titan cold-suit certification + cardiovascular check (approximately 3.5 hours combined) AND Leap waiver signing. These are sequential. Passengers should proceed directly to the medical certification suite on arrival at Moon Base 7; do not spend time in the commercial concourse if you intend to do both Titan and The Leap.
-- **Ceres (Day 8):** Leap waiver must already be on file. The Leap platform closes 60 minutes before general muster.
+- **Ceres (Day 8):** Leap waiver must already be on file. The Leap platform closes 60 minutes before the departure window.
 - **Titan (Day 15):** Cold-suit decontamination adds 20 minutes. Plan return at 95 minutes before departure, not 75.
 
 ## Total EVA time (ORT)

@@ -41,14 +41,14 @@ Orbital Points are the loyalty currency of the Pelorus Voyages frequent-travelle
 
 Pelorus Voyages loyalty tiers use the same names as cabin classes: Pioneer, Navigator, and Pathfinder. **They are completely independent systems.** Booking a Pathfinder cabin does not grant Pathfinder loyalty tier. Holding Pathfinder loyalty tier does not guarantee Pathfinder cabin access. These are two separate systems that share naming conventions.
 
-Loyalty tier is determined by **total lifetime Orbital Points earned** (not redeemed — Points redeemed do not reduce tier qualification points). Tier qualification is assessed annually on 1 January, based on Points earned in the preceding calendar year. The qualified tier is held for the full following calendar year regardless of Points activity during that year.
+Loyalty tier is determined by **Orbital Points earned in the preceding calendar year** (not redeemed — Points redeemed do not reduce tier qualification points). Tier qualification is assessed annually on 1 January. The qualified tier is held for the full following calendar year regardless of Points activity during that year.
 
 | Benefit | Pioneer tier (0–4,999 pts/yr) | Navigator tier (5,000–19,999 pts/yr) | Pathfinder tier (20,000+ pts/yr) |
 |---|---|---|---|
 | Points earning multiplier | 1× | 1.5× | 2× |
 | Priority boarding | Standard (cabin class order) | Early — before Pioneer cabin class passengers | First to board, ahead of all cabin classes |
 | Medical bay access | Standard queue | Standard queue | Priority — queue skipped for non-emergency visits |
-| Companion discount | Not eligible | Not eligible | 15% off second passenger's fare (both must be Pathfinder tier) |
+| Companion discount | Not eligible | Not eligible | 15% off the lower-priced passenger's fare (both must be Pathfinder tier) |
 | Gondola booking window | Standard window | Standard window | 48-hour advance access before standard window opens |
 | Upgrade fee discount | No discount | 10% off upgrade fees | 20% off upgrade fees |
 | Points expiry | 36 months from earning voyage | 48 months from earning voyage | Points do not expire while tier is held |
@@ -59,7 +59,7 @@ Loyalty tier is determined by **total lifetime Orbital Points earned** (not rede
 
 **Reaching Pathfinder tier** — 20,000 points corresponds to approximately one Grand Solar Tour in Pathfinder class (2× multiplier, longer voyage), or two to three shorter voyages in Navigator or Pathfinder class. A GST in Pathfinder class typically earns 18,000–24,000 points in a single voyage.
 
-**Tier and cabin class — the common confusion** — a first-time passenger who books the most expensive Pathfinder suite is still Pioneer tier until they have earned 20,000 lifetime points. Conversely, a repeat Pathfinder-tier passenger who books a Pioneer cabin for budget reasons retains all Pathfinder tier benefits (priority boarding, medical bay access, dedicated support line) while travelling in the lower cabin class. Cabin class affects onboard experience and what is included; loyalty tier affects programme benefits. They operate on parallel tracks.
+**Tier and cabin class — the common confusion** — a first-time passenger who books the most expensive Pathfinder suite is still Pioneer tier until they have earned 20,000 points in a calendar year. Conversely, a repeat Pathfinder-tier passenger who books a Pioneer cabin for budget reasons retains all Pathfinder tier benefits (priority boarding, medical bay access, dedicated support line) while travelling in the lower cabin class. Cabin class affects onboard experience and what is included; loyalty tier affects programme benefits. They operate on parallel tracks.
 
 ---
 
@@ -67,7 +67,7 @@ Loyalty tier is determined by **total lifetime Orbital Points earned** (not rede
 
 Redemption requires a minimum of **5,000 Points per transaction**. Points are redeemed through the account portal — they cannot be applied at the excursion desk, the bar, or any other point of sale during the voyage.
 
-**Voyage credit** — the most common redemption method. Navigate to booking checkout, select the Points redemption option, and choose how many Points to apply. The portal converts the selected Points into a voyage credit that offsets the payment due. Conversion rate: 1 point = USD 1 equivalent of voyage credit. 5,000 points = USD 50 voyage credit. Fractional redemptions above the 5,000-point minimum are permitted — you may apply exactly the number you wish.
+**Voyage credit** — the most common redemption method. Navigate to booking checkout, select the Points redemption option, and choose how many Points to apply. The portal converts the selected Points into a voyage credit that offsets the payment due. Conversion rate: 100 points = USD 1 equivalent of voyage credit. 5,000 points = USD 50 voyage credit. Fractional redemptions above the 5,000-point minimum are permitted — you may apply exactly the number you wish.
 
 **Cabin class upgrade** — use the Upgrade function in the account portal and select Points as the payment method. Points redemption for upgrades is available until **seven days before the departure window opens**. After that seven-day cutoff, upgrades must be paid by credit card, debit card, or Orbital Credits — Points cannot be used for upgrades within seven days of departure, regardless of loyalty tier.
 

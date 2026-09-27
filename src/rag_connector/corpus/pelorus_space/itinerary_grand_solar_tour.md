@@ -23,11 +23,11 @@
 | 30–38 | Enceladus → Earth return transit | 8–9 days | — | No | — |
 | 38 | Earth arrival | — | — | — | — |
 
-## Premium add-ons (all cabin classes, purchased separately)
+## Premium excursions and add-ons
 
 | Add-on | Availability | Age / eligibility |
 |---|---|---|
-| Olympus Mons Caldera Rim hike | Pathfinder class only; departs from MC-1 on Day 9 | Age 18+; Olympus Fitness Test required (2 hrs, at MC-1) |
+| Olympus Mons Caldera Rim hike | Pathfinder class only; departs from MC-1 on Day 10 | Age 18+; Olympus Fitness Test required (2 hrs, at MC-1) |
 | Venus Gondola Descent | All cabin classes | Age 16+; separate cardiovascular clearance; must book before departure |
 | Ceres — The Leap | All cabin classes | Age 16+; waiver signed at Moon Base 7 (Day 3) |
 
@@ -35,5 +35,5 @@
 
 - **Moon Base 7 (Day 3):** This is the only opportunity to sign the Leap waiver, complete Titan cold-suit certification, and complete the Titan cardiovascular fitness check. All three must be done during the Day 3 layover if the passenger intends to do those activities.
 - **Mars Day 9:** Olympus Fitness Test must be completed at least 48 hours before the Caldera Rim excursion. With a 3-night stay, the test should be booked for Day 8 morning and the hike on Day 10.
-- **Ceres (Day 21):** The Leap platform closes 60 minutes before general muster (45 min before departure window). Plan The Leap for no later than 105 minutes before the departure window.
+- **Ceres (Day 21):** The Leap platform closes 60 minutes before the departure window, 15 minutes before the general muster deadline of 45 minutes. Plan to finish The Leap no later than 60 minutes before the departure window.
 - **Titan (Day 28):** Cold-suit decontamination adds 20 minutes to return time. Plan excursion end at 95 minutes before the departure window, not 75.
