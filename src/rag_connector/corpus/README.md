@@ -33,7 +33,12 @@ their names with cabin classes; a notice issued 15 November 2042 raises the
 companion discount from 15 to 20 percent for bookings from 1 January 2043
 while the older documents still say 15; the Olympus Mons excursion flyer
 says the fitness test must be passed at least 24 hours before the hike while
-every guide says 48, and nothing in the corpus says which is right; the Outer
+every guide says 48, and nothing in the corpus says which is right; the
+Booking Terms' refund table says redeemed Orbital Points are restored within
+1-2 business days, while the loyalty guide says redeemed Points are not
+restored when a booking is cancelled (found by review on 2026-09-27 and kept
+as deliberate: a terms table and a guide disagreeing is what real document
+sets do); the Outer
 Reaches Tour charges sheet
 and Section 11 of the medical guide state their itinerary scope once, chunks
 away from the values it governs.
