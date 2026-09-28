@@ -2,7 +2,7 @@
 
 Notable changes to rag-connector. Dates are the day the work landed.
 
-## 0.2.0a2 — unreleased
+## 0.2.0a2 — 2026-09-28
 
 Additive, except the bundled demo corpus, which changes.
 
