@@ -21,9 +21,9 @@ import sys
 import tarfile
 import zipfile
 
-#: The bundled corpus, as shipped: 92 documents plus the frozen split whose
+#: The bundled corpus, as shipped: 28 documents (corpus v2.1) plus the frozen split whose
 #: chunk ids Pelorus's extracts and RAGauge's dataset both cite.
-EXPECTED_CORPUS_DOCUMENTS = 92
+EXPECTED_CORPUS_DOCUMENTS = 28
 CORPUS_DIR = "rag_connector/corpus/pelorus_space/"
 FROZEN_CHUNKS = "rag_connector/corpus/pelorus_space.chunks.jsonl"
 #: Package data with the same invisibility, and a worse failure: a consumer's
