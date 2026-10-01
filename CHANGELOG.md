@@ -9,7 +9,11 @@ Additive.
 - **A shared Datasets directory** (`rag_connector.datasets_dir`). One place
   every product looks for Datasets: an explicit path, else
   `RAG_CONNECTOR_DATASETS_DIR`, else `datasets_dir` in
-  `~/.rag-connector/config.json`, else `~/rag-connector/datasets`. API:
+  `~/.rag-connector/config.json`, else the default: `datasets/` in the repository
+  when running from a source checkout (gitignored), else
+  `~/rag-connector/datasets`. A checkout also ships the prechunked Pelorus Space
+  v2.1 Dataset (`ds-900cf7746b744988`) in `examples/pelorus-space-v2.1/`, to be
+  copied into the directory. API:
   `datasets_dir`, `resolve_datasets_dir` (also says which rule chose it),
   `set_datasets_dir`, `list_dataset_folders` (manifest only; does not verify),
   `default_datasets_dir`, `config_path`. CLI: `rag-connector datasets-dir

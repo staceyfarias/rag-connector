@@ -225,8 +225,17 @@ rag-connector dataset export --connector my-rag --params "{...}" --out ./my-data
 
 Products that use Datasets (RAGauge, Pelorus Query, testset-kit) look for them
 in one shared directory, so a Dataset built once is found by all of them. It is
-`~/rag-connector/datasets` by default (under `%USERPROFILE%` on Windows), and
+`datasets/` inside the repository when you run from a clone (it is gitignored),
+else `~/rag-connector/datasets` (under `%USERPROFILE%` on Windows), and
 `dataset build` / `dataset export` write there when you leave out `--out`.
+
+A clone also carries the prechunked Pelorus Space v2.1 Dataset in
+`examples/pelorus-space-v2.1/`. Copy it into the directory and keep the
+original here:
+
+```bash
+cp -r examples/pelorus-space-v2.1 "$(rag-connector datasets-dir)/"
+```
 
 ```bash
 rag-connector datasets-dir                  # print the directory

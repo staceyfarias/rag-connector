@@ -4,3 +4,7 @@
 # and in every built artifact, rather than whatever this machine's autocrlf
 # setting makes of it.
 src/rag_connector/corpus/*.chunks.jsonl text eol=lf
+
+# A Dataset's core is hashed byte for byte (docs/dataset-spec.md); no line-ending
+# rewriting, whatever the checkout's autocrlf says.
+examples/pelorus-space-v2.1/** -text

@@ -19,6 +19,8 @@ def home(tmp_path, monkeypatch):
     fake.mkdir()
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: fake))
     monkeypatch.delenv(dd.DATASETS_DIR_ENV, raising=False)
+    # These tests are about an installed package; the clone case has its own.
+    monkeypatch.setattr(dd, "_source_checkout_root", lambda: None)
     return fake
 
 
@@ -27,6 +29,32 @@ def test_default_is_a_visible_folder_in_the_profile(home):
     assert path == (home / "rag-connector" / "datasets").resolve()
     assert source == dd.SOURCE_DEFAULT
     assert not any(part.startswith(".") for part in path.relative_to(home.resolve()).parts)
+
+
+def test_a_source_checkout_defaults_to_its_own_datasets_folder(home, monkeypatch, tmp_path):
+    clone = tmp_path / "clone"
+    monkeypatch.setattr(dd, "_source_checkout_root", lambda: clone)
+
+    assert dd.resolve_datasets_dir() == ((clone / "datasets").resolve(), dd.SOURCE_DEFAULT)
+
+    # Everything above the default still wins over it.
+    dd.set_datasets_dir(tmp_path / "chosen")
+    assert dd.resolve_datasets_dir()[0] == (tmp_path / "chosen").resolve()
+
+
+def test_this_repository_is_recognised_as_a_source_checkout():
+    root = Path(dd.__file__).resolve().parents[2]
+    if not (root / "pyproject.toml").is_file():
+        pytest.skip("not running from a source checkout")
+    assert dd._source_checkout_root() == root
+
+
+def test_the_checkout_ignores_its_datasets_folder_in_git():
+    root = Path(dd.__file__).resolve().parents[2]
+    gitignore = root / ".gitignore"
+    if not gitignore.is_file():
+        pytest.skip("not running from a source checkout")
+    assert "/datasets/" in gitignore.read_text(encoding="utf-8").splitlines()
 
 
 def test_resolution_order_argument_then_env_then_config_then_default(home, monkeypatch, tmp_path):

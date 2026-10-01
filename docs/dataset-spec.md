@@ -268,6 +268,8 @@ can live anywhere; so that products share them, `rag_connector.datasets_dir`
 names one directory where they are looked for and written by default. Resolved
 in order: an explicit path, the `RAG_CONNECTOR_DATASETS_DIR` environment
 variable, the `datasets_dir` setting in `~/.rag-connector/config.json`, then
+the default: `datasets/` in the repository when running from a source checkout
+(gitignored; the pristine demo Dataset is under `examples/`), else
 `~/rag-connector/datasets`. A Dataset is a direct child folder holding a
 `dataset.json`; folders starting with `.` or `_` are skipped. Listing reads the
 manifests only and does not verify; verification belongs to opening a Dataset

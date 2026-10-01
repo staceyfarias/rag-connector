@@ -33,3 +33,8 @@ dist/
 # than relying on a machine-global ignore, because the first `git add -A` on
 # any other machine is what publishes it.
 /.claude/
+
+# The default Datasets directory when running from a clone (see
+# rag_connector.datasets_dir). Datasets are copied or built here, from the
+# pristine ones under examples/. Never tracked.
+/datasets/

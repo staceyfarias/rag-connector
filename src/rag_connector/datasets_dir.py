@@ -11,12 +11,17 @@ Resolution, first match wins:
 1. an explicit path the caller passes;
 2. the ``RAG_CONNECTOR_DATASETS_DIR`` environment variable;
 3. the ``datasets_dir`` setting in ``~/.rag-connector/config.json``;
-4. the default, ``~/rag-connector/datasets`` (``%USERPROFILE%`` on Windows).
+4. the default: ``<checkout>/datasets`` when this package is running from a
+   source checkout (a clone, or an editable install of one; the folder is
+   gitignored there), else ``~/rag-connector/datasets`` (``%USERPROFILE%`` on
+   Windows).
 
-The default is an ordinary visible folder, not a hidden one, because people
-drop Dataset folders into it. A product may let its user configure a different
-directory of its own; that is that product's setting, and it falls back to this
-one when unset.
+A clone gets its own folder so that everything built from it, RAGauge and
+Pelorus included when they install it editable, shares one place that sits next
+to the pristine copies in ``examples/``. The default is an ordinary visible
+folder, not a hidden one, because people drop Dataset folders into it. A
+product may let its user configure a different directory of its own; that is
+that product's setting, and it falls back to this one when unset.
 
 Listing reads only each folder's ``dataset.json``. It does **not** verify the
 Dataset: verification hashes every chunk, which is the cost of *opening* one
@@ -43,8 +48,24 @@ SOURCE_CONFIG = "config"
 SOURCE_DEFAULT = "default"
 
 
+def _source_checkout_root() -> Path | None:
+    """The repository root when running from a source checkout, else ``None``.
+
+    A checkout has ``pyproject.toml`` and ``src/rag_connector`` two levels above
+    this file; an installed wheel (site-packages) has neither.
+    """
+    root = Path(__file__).resolve().parents[2]
+    if (root / "pyproject.toml").is_file() and (root / "src" / "rag_connector").is_dir():
+        return root
+    return None
+
+
 def default_datasets_dir() -> Path:
-    """``~/rag-connector/datasets``: the profile folder, whatever the OS."""
+    """``<checkout>/datasets`` from a source checkout, else ``~/rag-connector/datasets``
+    (the profile folder, whatever the OS)."""
+    checkout = _source_checkout_root()
+    if checkout is not None:
+        return checkout / "datasets"
     return Path.home() / "rag-connector" / "datasets"
 
 
