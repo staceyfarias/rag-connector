@@ -2,6 +2,21 @@
 
 Notable changes to rag-connector. Dates are the day the work landed.
 
+## Unreleased
+
+Additive.
+
+- **A shared Datasets directory** (`rag_connector.datasets_dir`). One place
+  every product looks for Datasets: an explicit path, else
+  `RAG_CONNECTOR_DATASETS_DIR`, else `datasets_dir` in
+  `~/.rag-connector/config.json`, else `~/rag-connector/datasets`. API:
+  `datasets_dir`, `resolve_datasets_dir` (also says which rule chose it),
+  `set_datasets_dir`, `list_dataset_folders` (manifest only; does not verify),
+  `default_datasets_dir`, `config_path`. CLI: `rag-connector datasets-dir
+  [--set PATH | --unset] [--json]` and `rag-connector dataset list`;
+  `dataset build` and `dataset export` now default `--out` to a folder inside
+  the directory (an explicit `--out` behaves as before).
+
 ## 0.2.0a2 — 2026-09-28
 
 Additive, except the bundled demo corpus, which changes.

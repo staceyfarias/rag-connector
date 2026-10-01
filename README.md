@@ -221,6 +221,23 @@ rag-connector dataset build --folder ./my-documents --out ./my-dataset
 rag-connector dataset export --connector my-rag --params "{...}" --out ./my-dataset
 ```
 
+### The shared Datasets directory
+
+Products that use Datasets (RAGauge, Pelorus Query, testset-kit) look for them
+in one shared directory, so a Dataset built once is found by all of them. It is
+`~/rag-connector/datasets` by default (under `%USERPROFILE%` on Windows), and
+`dataset build` / `dataset export` write there when you leave out `--out`.
+
+```bash
+rag-connector datasets-dir                  # print the directory
+rag-connector datasets-dir --set D:\data\ds  # use another one (saved in ~/.rag-connector/config.json)
+rag-connector datasets-dir --unset          # back to the default
+rag-connector dataset list                  # the Datasets in it (reads manifests; does not verify)
+```
+
+`RAG_CONNECTOR_DATASETS_DIR` overrides the saved setting. From Python:
+`rag_connector.datasets_dir.datasets_dir()` and `list_dataset_folders()`.
+
 ## Installed connectors
 
 List every connector registered in the current environment — the bundled

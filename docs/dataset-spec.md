@@ -261,6 +261,26 @@ count and hashes as JSON. The same two operations are library functions:
 `build_dataset_from_folder(folder, out_dir, *, chunk_size, chunk_overlap, name)`
 and `export_dataset_from_connector(pipeline, out_dir, *, connector_type, name)`.
 
+## The Datasets directory
+
+Not part of the spec's format, but how tools find Datasets. A Dataset folder
+can live anywhere; so that products share them, `rag_connector.datasets_dir`
+names one directory where they are looked for and written by default. Resolved
+in order: an explicit path, the `RAG_CONNECTOR_DATASETS_DIR` environment
+variable, the `datasets_dir` setting in `~/.rag-connector/config.json`, then
+`~/rag-connector/datasets`. A Dataset is a direct child folder holding a
+`dataset.json`; folders starting with `.` or `_` are skipped. Listing reads the
+manifests only and does not verify; verification belongs to opening a Dataset
+(`read_dataset_folder`).
+
+```
+rag-connector datasets-dir [--set PATH | --unset] [--json]
+rag-connector dataset list [--dir PATH]
+```
+
+`dataset build` and `dataset export` write to `<Datasets directory>/<name>` when
+`--out` is omitted, and still refuse a non-empty target.
+
 ## About the demo corpus
 
 The corpus bundled with this package, `pelorus_space` ("Pelorus Space"), is an
