@@ -6,6 +6,16 @@ Notable changes to rag-connector. Dates are the day the work landed.
 
 Additive.
 
+- **Dataset spec 1.1, draft** (`docs/dataset-spec.md`). Documentation only;
+  the core and the library are unchanged and still write `spec_version`
+  `"1.0"`. The draft defines every top-level entry in a Dataset folder: the
+  core; shared areas `sources/`, `testsets/`, `analysis/<tool>/` and `docs/`;
+  tool-private areas `.<tool>/` (with `extensions/<tool>/` still valid
+  throughout 1.x); and free entries owned by whoever keeps the folder. It adds
+  the rule that only `data/chunks.jsonl` is corpus, and reserves
+  `.rag-connector/` for connector attachments. Sections the library does not
+  implement yet are marked as such.
+
 - **A shared Datasets directory** (`rag_connector.datasets_dir`). One place
   every product looks for Datasets: an explicit path, else
   `RAG_CONNECTOR_DATASETS_DIR`, else `datasets_dir` in
