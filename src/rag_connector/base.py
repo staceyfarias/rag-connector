@@ -343,6 +343,18 @@ class RagPipeline(ABC):
     def pull_all_chunks(self) -> list[ChunkRecord]:
         """Return every chunk in the corpus with the metadata contract satisfied.
 
+        The corpus is the WHOLE collection this connector is configured for.
+        Apply only the filters that define the search space (the static
+        collection boundary sent with every search, e.g. the partition key of
+        an index shared by many customers, disclosed in
+        ``info()["internal_filters"]``). Never apply filters that narrow
+        results within the space (section/module, delivery mode, access,
+        thresholds, top-k): those belong to :meth:`query` alone. A corpus
+        filtered by result rules silently drops the content retrieval cannot
+        reach, so no test can ever find that defect. Any other exclusion is a
+        declared deviation named in :meth:`info`.
+        (docs/contract.md, "The corpus read returns the whole collection".)
+
         Default: page through :meth:`list_chunks` to exhaustion.
         """
         self._require_a_corpus_read_path()
@@ -372,6 +384,9 @@ class RagPipeline(ABC):
         limit: int = _CORPUS_PAGE_SIZE,
     ) -> ChunkPage:
         """Return one page of the corpus, plus the cursor for the next.
+
+        Pages through the WHOLE collection: only the static collection
+        boundary, never result-narrowing rules (see :meth:`pull_all_chunks`).
 
         Default: slice :meth:`pull_all_chunks`, so a connector that can only
         bulk-pull still satisfies :class:`~rag_connector.capabilities.

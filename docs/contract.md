@@ -61,6 +61,39 @@ operational failure, not a smaller successful corpus. A `list_chunks` cursor
 that repeats is refused rather than looped forever: a connector can be wrong,
 and hanging is the worst way to find out.
 
+### The corpus read returns the whole collection — never filter results
+
+The corpus read returns **every chunk inside the collection boundary** the
+connector is configured for. It never reproduces the system's retrieval rules.
+
+Two kinds of metadata filter must be kept apart:
+
+| | Defines the search space (collection boundary) | Narrows results within the space |
+|---|---|---|
+| What | Static filters sent with **every** search: the partition a shared index is divided by, e.g. a customer or channel key | Filters that depend on the query or its context: which section or module the user is in, presentation or delivery mode, access rules, score thresholds, top-k |
+| Corpus read | **Applies exactly these** | **Never applies these** |
+| `query()` | Applies them | Applies them |
+
+Many customers sharing one index, partitioned by metadata, is a valid design.
+The partition filters are the collection boundary: whatever that space admits
+is the corpus, including content shared across the space (for example documents
+every partition's search can see). Disclose the boundary filters in
+`info()["internal_filters"]` — the filters the system applies to every query —
+and apply exactly those in the corpus read, as explicit connection parameters,
+so a host freezes them with the Dataset.
+
+**Why.** The corpus is the reference a test measures retrieval against. If the
+corpus read applies a filter that narrows results, content retrieval cannot
+reach is silently missing from the corpus, so no test can ever ask about it and
+no failure is ever seen: the defect the tests exist to find is hidden by the
+fixture. A complete corpus turns the same defect into a visible miss.
+
+**Any other exclusion is a declared deviation**, never a silent filter: name
+it in `info()` (what is excluded and why), so the Dataset records it and a
+reader can see the corpus is not the whole collection. Records that are not
+servable content at all (internal bookkeeping a query can never return) may be
+excluded on the same terms.
+
 ### `info()` keys hosts read
 
 `retrieval_mode` is required (the base default supplies it). `embedding_fingerprint`

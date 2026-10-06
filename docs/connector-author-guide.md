@@ -57,6 +57,17 @@ makes every page O(corpus). If you find yourself writing a paging loop inside
 `pull_all_chunks`, you are hand-building the adapter the base class already
 provides — and a host that prefers paged reads has nothing to call.
 
+**The corpus read returns everything in the collection.** Apply only the
+filters that define the search space — the static collection boundary sent with
+every search, such as the partition key of an index shared by many customers —
+and never the filters that narrow results within it (current section or module,
+delivery mode, access, thresholds, top-k); those belong in `query()`. A corpus
+filtered by result rules hides exactly the content retrieval cannot reach, so
+the tests can never find that defect. Disclose the boundary in
+`info()["internal_filters"]`; anything else you exclude is a declared deviation
+named in `info()`. See [contract](contract.md), "The corpus read returns the
+whole collection".
+
 `info()` is **not** required: the base default returns `name`, `type` and
 `retrieval_mode`. Override it to add anything a host should freeze as run
 metadata, such as `embedding_fingerprint`.
