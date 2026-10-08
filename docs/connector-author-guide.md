@@ -223,7 +223,10 @@ FAIL per check, with the fix for anything that failed, and verifies:
   renamed-override bug, where a misspelled method leaves the base default
   quietly answering and your implementation dead;
 - `list_chunks()`, when overridden, pages with an advancing cursor that
-  terminates, and reproduces `pull_all_chunks()` chunk for chunk;
+  terminates, and reproduces `pull_all_chunks()` chunk for chunk. Pages may
+  hold fewer items than `limit` (a backend cap is legal and is noted, not
+  failed); what fails is a repeated cursor, a run of empty pages that still
+  return a cursor, or a pager that keeps serving items past the corpus size;
 - `get_chunk_vectors()`, when overridden, returns honest indexed vectors —
   empty input yields `{}` without a backend call, and unknown IDs stay absent
   rather than being fabricated;

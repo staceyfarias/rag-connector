@@ -588,6 +588,109 @@ def test_a_consistent_list_chunks_override_passes():
     assert _status_of(report, "list_chunks") == PASS
 
 
+class _BigCorpus(GoodConnector):
+    """A 200-chunk corpus: large enough that a pager capped well below the
+    validator's requested limit needs many more pages than ~5."""
+
+    def __init__(self):
+        self._chunks = [
+            _chunk(f"c:{i}", f"doc-{i // 10}", i % 10, i,
+                   f"alpha beta gamma delta {i}")
+            for i in range(200)
+        ]
+
+
+def _paging_check(report):
+    matches = [c for c in report.checks if "list_chunks" in c.name]
+    assert matches
+    return matches[0]
+
+
+def test_a_list_chunks_override_with_capped_pages_passes():
+    # The contract does not require full pages. A backend cap (a store's list
+    # endpoint maximum) yields far more pages than the requested limit implies;
+    # that is honest paging, not a pager that never terminates.
+    class CappedPager(_BigCorpus):
+        def list_chunks(self, *, cursor=None, limit=1000):
+            from rag_connector.models import ChunkPage
+            start = int(cursor) if cursor else 0
+            page = self._chunks[start:start + min(limit, 7)]
+            nxt = start + len(page)
+            return ChunkPage(
+                items=page,
+                next_cursor=str(nxt) if nxt < len(self._chunks) else None)
+
+    report = validate_pipeline(CappedPager(), target="x", sample_query="alpha")
+    check = _paging_check(report)
+    assert check.status == PASS, check.details
+    assert any("capped at 7 items" in d for d in check.details)
+
+
+def test_a_repeating_list_chunks_cursor_fails_naming_the_repeat():
+    class LoopingPager(GoodConnector):
+        def list_chunks(self, *, cursor=None, limit=1000):
+            from rag_connector.models import ChunkPage
+            return ChunkPage(items=self._chunks[:1], next_cursor="again")
+
+    report = validate_pipeline(LoopingPager(), target="x", sample_query="alpha")
+    check = _paging_check(report)
+    assert check.status == FAIL
+    assert "repeated" in check.details[0]
+
+
+def test_empty_pages_with_ever_advancing_cursors_fail_as_a_stall():
+    class StallingPager(GoodConnector):
+        calls = 0
+
+        def list_chunks(self, *, cursor=None, limit=1000):
+            from rag_connector.models import ChunkPage
+            type(self).calls += 1
+            assert type(self).calls < 1000, "validator did not terminate"
+            n = int(cursor) if cursor else 0
+            return ChunkPage(items=[], next_cursor=str(n + 1))
+
+    report = validate_pipeline(StallingPager(), target="x",
+                               sample_query="alpha")
+    check = _paging_check(report)
+    assert check.status == FAIL
+    assert "empty pages" in check.details[0]
+    assert "stalled" in check.details[0]
+
+
+def test_a_pager_reserving_items_forever_fails_as_an_overrun():
+    class EndlessPager(GoodConnector):
+        calls = 0
+
+        def list_chunks(self, *, cursor=None, limit=1000):
+            from rag_connector.models import ChunkPage
+            type(self).calls += 1
+            assert type(self).calls < 1000, "validator did not terminate"
+            n = int(cursor) if cursor else 0
+            return ChunkPage(items=self._chunks[:1], next_cursor=str(n + 1))
+
+    report = validate_pipeline(EndlessPager(), target="x", sample_query="alpha")
+    check = _paging_check(report)
+    assert check.status == FAIL
+    assert "overran the corpus" in check.details[0]
+
+
+def test_a_full_page_pager_over_a_big_corpus_passes_without_a_cap_note():
+    class FullPager(_BigCorpus):
+        def list_chunks(self, *, cursor=None, limit=1000):
+            from rag_connector.models import ChunkPage
+            start = int(cursor) if cursor else 0
+            page = self._chunks[start:start + limit]
+            nxt = start + len(page)
+            return ChunkPage(
+                items=page,
+                next_cursor=str(nxt) if nxt < len(self._chunks) else None)
+
+    report = validate_pipeline(FullPager(), target="x", sample_query="alpha")
+    check = _paging_check(report)
+    assert check.status == PASS, check.details
+    assert not any("capped" in d for d in check.details)
+
+
 def test_fabricated_chunk_vectors_are_a_blocking_failure():
     # Also previously invisible: get_chunk_vectors was never called, so a
     # connector inventing vectors for unknown ids validated READY.

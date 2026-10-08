@@ -929,6 +929,12 @@ def _check_shadow_names(report: Report, pipeline: RagPipeline) -> None:
         report.add(name, PASS)
 
 
+# Consecutive empty-but-not-final pages tolerated before paging counts as
+# stalled. A few are legal (a store may skip a filtered-out segment); an
+# unbounded run is a pager that never advances.
+_PAGING_STALL_LIMIT = 3
+
+
 def _check_paging(report: Report, pipeline: RagPipeline,
                   chunks: list[ChunkRecord]) -> None:
     """Exercise an overridden list_chunks: cursor discipline + corpus parity.
@@ -943,25 +949,52 @@ def _check_paging(report: Report, pipeline: RagPipeline,
                     "pull_all_chunks(), so there is no separate path to test"])
         return
     limit = max(1, (len(chunks) + 4) // 5)   # aim for ~5 pages
-    max_pages = (len(chunks) // limit) + 6
+    # Termination is judged by progress, not by a page budget: the contract
+    # lets a page hold fewer than `limit` items (a backend cap such as a
+    # store's list endpoint maximum), so a budget that assumes full pages
+    # fails honest small-page pagers. Instead, three things end the loop:
+    #   - a repeated cursor is a loop, full stop;
+    #   - an empty page that still hands back a cursor makes no progress, and
+    #     more than _PAGING_STALL_LIMIT of those in a row is a stalled pager;
+    #   - every other page yields at least one item, so collecting more than
+    #     the corpus plus one requested page means the pager is re-serving
+    #     items and would never reach None.
+    # Together these bound the loop for any pager, whatever its page size.
+    overrun_at = len(chunks) + limit
     seen_cursors: set[str] = set()
     collected: list = []
     cursor: str | None = None
     pages = 0
+    empty_streak = 0
+    largest_page = 0
+    tripped: str | None = None
     try:
         while True:
             page = pipeline.list_chunks(cursor=cursor, limit=limit)
-            collected.extend(list(getattr(page, "items", None) or []))
+            items = list(getattr(page, "items", None) or [])
+            collected.extend(items)
             pages += 1
+            largest_page = max(largest_page, len(items))
             cursor = getattr(page, "next_cursor", None)
             if cursor is None:
                 break
-            if cursor in seen_cursors or pages > max_pages:
+            empty_streak = empty_streak + 1 if not items else 0
+            if cursor in seen_cursors:
+                tripped = (f"cursor {cursor!r} repeated on page {pages} -- "
+                           "paging would loop forever")
+            elif empty_streak > _PAGING_STALL_LIMIT:
+                tripped = (f"{empty_streak} consecutive empty pages still "
+                           f"returned a next_cursor (last {cursor!r}) -- "
+                           "paging stalled and would never terminate")
+            elif len(collected) > overrun_at:
+                tripped = (f"paging overran the corpus: {len(collected)} "
+                           f"items over {pages} pages for a {len(chunks)}-chunk "
+                           "corpus and next_cursor is still not None -- the "
+                           "pager is re-serving items and would never "
+                           "terminate")
+            if tripped:
                 report.add(
-                    name, FAIL,
-                    [f"cursor {cursor!r} repeated (or paging exceeded "
-                     f"{max_pages} pages for a {len(chunks)}-chunk corpus) -- "
-                     "paging would never terminate"],
+                    name, FAIL, [tripped],
                     "next_cursor must advance every page and become None on "
                     "the last one; pull_all_chunks() derives from this loop "
                     "and would hang the same way.")
@@ -998,9 +1031,14 @@ def _check_paging(report: Report, pipeline: RagPipeline,
                    "freezes via one and inspects via the other would see two "
                    "different corpora.")
     else:
-        report.add(name, PASS,
-                   [f"{pages} page(s) at limit={limit} reproduce the full "
-                    "corpus"])
+        details = [f"{pages} page(s) at limit={limit} reproduce the full "
+                   "corpus"]
+        if pages > 1 and largest_page < limit:
+            details.append(
+                f"pages capped at {largest_page} items (< requested "
+                f"limit={limit}) -- legal: the contract does not require "
+                "full pages")
+        report.add(name, PASS, details)
 
 
 def _check_chunk_vectors(report: Report, pipeline: RagPipeline,
