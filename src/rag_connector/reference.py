@@ -363,8 +363,17 @@ class ReferenceRagConnector(RagPipeline):
         embedding_model: str = DEFAULT_EMBEDDING_MODEL,
         distance: str = "cosine",
         normalized: bool | None = None,
+        top_k: int | None = None,
     ):
         self.persist_dir = persist_dir
+        # The connector's own retrieval depth: how many chunks query() returns
+        # when the caller passes no top_k (the evaluation-host case). Part of
+        # the system's configuration, so it lives in the connection document;
+        # absent means the historical default of 5.
+        if top_k is not None and (not isinstance(top_k, int) or isinstance(top_k, bool)
+                                  or top_k < 1):
+            raise ValueError(f"top_k must be a positive int or None (got {top_k!r})")
+        self.top_k = top_k
         self.collection_name = collection_name
         self.distance = distance
         # Tri-state, and deliberately NOT inferred from the model id: this is
@@ -489,7 +498,10 @@ class ReferenceRagConnector(RagPipeline):
     # so a connector reconstructed from a persisted connection document has no
     # way to destroy the corpus it is meant to read. See that module.
 
-    def query(self, text: str, top_k: int = 5) -> list[RetrievedChunk]:
+    #: Retrieval depth when neither the caller nor the connection sets one.
+    DEFAULT_TOP_K = 5
+
+    def query(self, text: str, top_k: int | None = None) -> list[RetrievedChunk]:
         """Ranked retrieval: embed the query, search Chroma, map to RetrievedChunks.
 
         The reference pattern for the two rules that matter: ``chunk_id`` comes
@@ -500,7 +512,11 @@ class ReferenceRagConnector(RagPipeline):
         distance is preserved in ``raw_score`` as evidence. A backend failure is
         raised as ``ConnectorOperationalError`` so a host records a retrieval
         error -- never a fake empty-result zero.
+
+        Depth: the caller's ``top_k`` when given, else this connection's own
+        ``top_k``, else :attr:`DEFAULT_TOP_K`.
         """
+        depth = top_k or self.top_k or self.DEFAULT_TOP_K
         try:
             emb = self._embed.embed_query(text)
         except Exception as exc:
@@ -510,7 +526,7 @@ class ReferenceRagConnector(RagPipeline):
         res = self._read(
             lambda: self._collection.query(
                 query_embeddings=[emb],
-                n_results=top_k,
+                n_results=depth,
                 include=["documents", "metadatas", "distances"],
             ),
             "query",
@@ -717,7 +733,7 @@ class ReferenceRagConnector(RagPipeline):
         """
         return render_numbered_rag_block(chunks)
 
-    def generate(self, text: str, *, top_k: int = 5, llm=None) -> GeneratedAnswer:
+    def generate(self, text: str, *, top_k: int | None = None, llm=None) -> GeneratedAnswer:
         """Retrieve then synthesize a cited answer (reference connector path)."""
         if llm is None:
             return GeneratedAnswer(
@@ -877,7 +893,7 @@ class ReferenceRagConnector(RagPipeline):
         freeze time quietly stops gating on it at evaluation time.
         """
 
-        return {
+        doc = {
             "type": "reference",
             "persist_dir": self.persist_dir,
             "collection_name": self.collection_name,
@@ -885,6 +901,11 @@ class ReferenceRagConnector(RagPipeline):
             "distance": self.distance,
             "normalized": self.normalized,
         }
+        # The retrieval depth travels only when one was set, so a default
+        # connection's document is the same as before 2026-10-08.
+        if self.top_k is not None:
+            doc["top_k"] = self.top_k
+        return doc
 
 
 def reference_prompt_template(template_id: str) -> PromptTemplate:
@@ -1002,6 +1023,9 @@ def _build_reference(connection: dict) -> ReferenceRagConnector:
         # Absent on connections persisted before the declaration existed, which
         # is exactly the tri-state's "not stated" -- no migration needed.
         normalized=connection.get("normalized"),
+        # Absent on connections persisted before 2026-10-08 and whenever the
+        # operator sets none: the historical depth, 5.
+        top_k=connection.get("top_k"),
     )
 
 
@@ -1021,6 +1045,10 @@ def _connect_reference(params: dict) -> tuple[ReferenceRagConnector, dict]:
         "distance": str(params.get("distance") or "cosine"),
         "normalized": params.get("normalized"),
     }
+    # Stored only when the operator sets a depth, so a default connection's
+    # document (and its configuration fingerprint) is unchanged.
+    if params.get("top_k") not in (None, ""):
+        connection["top_k"] = int(params["top_k"])
     return _build_reference(connection), connection
 
 
@@ -1068,6 +1096,14 @@ register_connector(ConnectorSpec(
             "type": "string",
             "required": True,
             "default": DEFAULT_EMBEDDING_MODEL,
+        },
+        {
+            "name": "top_k",
+            "label": "Results per query (retrieval depth)",
+            "type": "integer",
+            "required": False,
+            "help": "How many chunks this RAG returns per query (default 5). Part of "
+                    "the system under test; an evaluation host does not override it.",
         },
     ],
 ))

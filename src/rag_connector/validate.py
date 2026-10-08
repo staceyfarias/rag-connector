@@ -290,6 +290,31 @@ def _check_mode(report: Report, info: dict) -> str:
     return mode
 
 
+def _check_query_without_top_k(report: Report, pipeline: RagPipeline,
+                               sample_query: str) -> None:
+    """``query(text)`` with no top_k, exactly as an evaluation host calls it.
+
+    top_k is unset by default (2026-10-08): a host observes the connector as
+    configured and passes no top_k, so a connector whose ``query`` requires
+    one cannot be evaluated at all. A FAIL, not a warning: the call raises."""
+    name = "query(text) with top_k unset (as an evaluation host calls it)"
+    fix = ("Give query() a default for top_k (top_k: int | None = None) and, when "
+           "it is None, retrieve with the connector's own configured depth.")
+    try:
+        hits = pipeline.query(sample_query)
+    except TypeError as exc:
+        report.add(name, FAIL, [f"query(text) raised TypeError: {exc}"], fix)
+        return
+    except Exception as exc:
+        report.add(name, FAIL, [f"query(text) raised: {exc!r}"], fix)
+        return
+    if not isinstance(hits, list):
+        report.add(name, FAIL, [f"query(text) returned {type(hits).__name__}, not a list"],
+                   fix)
+        return
+    report.add(name, PASS, [f"returned {len(hits)} chunk(s) with top_k unset"])
+
+
 def _check_cardinality_probe(report: Report, pipeline: RagPipeline,
                              sample_query: str, top_k: int) -> None:
     """complete_set only: does the returned cardinality respond to top_k?
@@ -1575,6 +1600,7 @@ def validate_pipeline(pipeline: RagPipeline, *, target: str,
                         retrieval_mode)
     _check_derived_results(report, hits, pulled_ids)
     _check_determinism(report, pipeline, probe, top_k, hits)
+    _check_query_without_top_k(report, pipeline, probe)
     if retrieval_mode == "complete_set":
         _check_cardinality_probe(report, pipeline, probe, top_k)
     _check_score_direction(report, hits, connection, info, retrieval_mode)

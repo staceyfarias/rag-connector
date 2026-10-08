@@ -4,6 +4,28 @@ Notable changes to rag-connector. Dates are the day the work landed.
 
 ## Unreleased
 
+Contract change (2026-10-08), compatible with existing connectors.
+
+- **`top_k` is unset by default.** `RagPipeline.query(text, top_k=None)` and
+  `generate(text, *, top_k=None, llm=None)`: `None` means "retrieve however
+  this connector is configured". How deep a system retrieves is part of the
+  system, so it belongs in the connection document, not a caller's argument.
+  An evaluation host does not pass `top_k`; its metrics cutoff (the k of @k
+  metrics) never reaches the connector. A caller may still pass a positive
+  int. Connectors written with `top_k: int = 5` keep working: a host that
+  omits the argument gets their default (never pass `top_k=None` to a
+  connector you did not write). Retrieval modes: under `scored` and
+  `ordered` the connector's configured depth bounds the list, a caller's
+  `top_k` overriding it; `complete_set` is unchanged. See `docs/contract.md`,
+  "top_k is unset by default".
+- **Reference RAG: its own retrieval depth.** A new optional `top_k`
+  connection parameter ("Results per query"); absent means the historical
+  5, and it is stored in the connection only when set, so a default
+  connection document and its fingerprint are unchanged.
+- **Validator: `query(text)` with top_k unset.** A new check calls `query`
+  exactly as an evaluation host does and FAILs a connector whose `query`
+  requires `top_k`.
+
 Additive.
 
 - **Dataset spec 1.1, draft** (`docs/dataset-spec.md`). Documentation only;

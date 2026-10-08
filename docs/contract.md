@@ -29,7 +29,7 @@ supply **one** of the two corpus reads:
 
 | Method | Purpose |
 | --- | --- |
-| `query(text, top_k=5) -> list[RetrievedChunk]` | Run retrieval, best-first. Abstract. |
+| `query(text, top_k=None) -> list[RetrievedChunk]` | Run retrieval, best-first. Abstract. `top_k` is unset by default: retrieve however the connector is configured (see [top_k](#top_k-is-unset-by-default)). |
 | `list_chunks(*, cursor=None, limit=1000) -> ChunkPage` | One page of the corpus, plus the cursor for the next. **Preferred.** |
 | `pull_all_chunks() -> list[ChunkRecord]` | Enumerate the entire corpus. |
 
@@ -53,7 +53,7 @@ These have working defaults you may override:
 | `fingerprint() -> str` | SHA-256 over sorted `(chunk_id, text)` pairs, truncated to 16 chars. Override with a cheaper identity if the backend can compute one without a full pull. |
 | `get_chunks(ids) -> dict[str, ChunkRecord]` | Filters a full `pull_all_chunks()`. Correct but expensive; override with a direct by-ID lookup. Missing IDs are simply absent from the result — never invent a placeholder. |
 | `get_chunk_vectors(ids) -> dict[str, list[float]]` | Raises `UnsupportedCapability`. Override to return the vectors your index actually holds — see [Indexed chunk vectors](#indexed-chunk-vectors). |
-| `generate(text, *, top_k=5, llm=None) -> GeneratedAnswer` | Raises `NotImplementedError`. Retrieval-only connectors leave it alone. |
+| `generate(text, *, top_k=None, llm=None) -> GeneratedAnswer` | Raises `NotImplementedError`. Retrieval-only connectors leave it alone. |
 | `info() -> dict` | Returns `name`, `type`, and `retrieval_mode`. Add anything a host should freeze as run metadata. |
 
 A corpus read must return a *complete* snapshot. A partial pull is an
@@ -246,13 +246,31 @@ before the convention.
 
 | Mode | Cardinality | Scores | Threshold |
 | --- | --- | --- | --- |
-| `scored` | `top_k` bounds the list | Meaningful; every hit must carry a float | Allowed |
-| `ordered` | `top_k` bounds the list | Evidence only; `None` is legal | Refused |
-| `complete_set` | **The system decides**; `top_k` is only a breadth hint | Evidence only; `None` is legal | Refused |
+| `scored` | The connector's configured depth bounds the list (a caller's `top_k` overrides it) | Meaningful; every hit must carry a float | Allowed |
+| `ordered` | As `scored` | Evidence only; `None` is legal | Refused |
+| `complete_set` | **The system decides**; `top_k` is at most a breadth hint | Evidence only; `None` is legal | Refused |
 
 Under `scored`, a `None` score is a contract violation — declare `ordered`
 instead of returning `None`. Under `complete_set`, returning more than `top_k`
 items is legal and expected (neighbor expansion, for instance).
+
+### top_k is unset by default
+
+`query(text)` and `generate(text)` take `top_k=None` by default (2026-10-08):
+**retrieve however the connector is configured.** How deep a system retrieves
+is part of the system, so it belongs in the connector's connection document
+(the reference connector's `top_k` parameter, default 5), not in a caller's
+argument.
+
+- **An evaluation host does not pass `top_k`.** It observes the configured
+  system as a black box. Its own metrics cutoff (the k of @k metrics, for
+  example RAGauge's `metrics_k`) is a host setting and never reaches the
+  connector; nor does the host cut what comes back before grading it.
+- A caller that genuinely wants a depth (a debugging tool, an application)
+  may pass a positive int; a `scored` or `ordered` connector honours it.
+- Compatibility: a connector written with `top_k: int = 5` still works,
+  because a host that omits the argument gets that default. Never pass
+  `top_k=None` explicitly to a connector you did not write.
 
 `resolve_retrieval_mode(live_mode, dataset_override)` returns
 `(resolved_mode, source)`. The **only** legal override is `scored → ordered`

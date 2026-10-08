@@ -20,7 +20,7 @@ from .prompts import PromptTemplate, RenderedPrompt
 class RagConnector(Protocol):
     retrieval_mode: str
 
-    def query(self, text: str, top_k: int = 5) -> list[RetrievedChunk]: ...
+    def query(self, text: str, top_k: int | None = None) -> list[RetrievedChunk]: ...
 
     def pull_all_chunks(self) -> list[ChunkRecord]: ...
 
@@ -165,7 +165,7 @@ def supports_chunk_vectors(pipeline: object) -> bool:
 
 @runtime_checkable
 class AnswerGenerator(Protocol):
-    def generate(self, text: str, *, top_k: int = 5, llm=None) -> GeneratedAnswer: ...
+    def generate(self, text: str, *, top_k: int | None = None, llm=None) -> GeneratedAnswer: ...
 
 
 @runtime_checkable

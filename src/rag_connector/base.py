@@ -163,12 +163,18 @@ SCORE_CONVENTION = "higher_is_better"
 # docs/contract.md, "Retrieval modes". Every connector inherits ``scored`` --
 # the one behavior that existed before this convention -- so the stamp's legacy
 # meaning and the default coincide.
-#   scored       -- harness top_k bounds the list; scores canonical (threshold OK)
-#   ordered      -- harness top_k bounds the list; scores meaningless (evidence
+#   scored       -- the connector's configured depth bounds the list (a caller's
+#                  top_k overrides it); scores canonical (threshold OK)
+#   ordered      -- as scored for cardinality; scores meaningless (evidence
 #                  only); threshold REFUSED
-#   complete_set -- the SYSTEM decides cardinality; top_k is a pass-through
-#                  breadth knob, never the metrics cutoff; scores evidence only;
-#                  threshold REFUSED; metrics switch to the @set family
+#   complete_set -- the SYSTEM decides cardinality; top_k is at most a
+#                  pass-through breadth hint, never the metrics cutoff; scores
+#                  evidence only; threshold REFUSED; metrics switch to @set
+#
+# top_k is UNSET by default (2026-10-08): ``query(text)`` retrieves however the
+# connector is configured. An evaluation host observes the system as configured
+# and does not pass top_k at all; its own metrics cutoff (the k of @k metrics)
+# is a host setting that never reaches the connector.
 # ---------------------------------------------------------------------------
 
 RETRIEVAL_MODES = ("scored", "ordered", "complete_set")
@@ -319,8 +325,16 @@ class RagPipeline(ABC):
     retrieval_mode: str = DEFAULT_RETRIEVAL_MODE
 
     @abstractmethod
-    def query(self, text: str, top_k: int = 5) -> list[RetrievedChunk]:
-        """Retrieve the top-k chunks for a query, ranked best-first."""
+    def query(self, text: str, top_k: int | None = None) -> list[RetrievedChunk]:
+        """Run retrieval for a query and return the chunks, best-first.
+
+        ``top_k`` is unset by default: ``None`` means "retrieve however this
+        connector is configured" (its own depth, or the system's own set under
+        ``complete_set``). A caller MAY pass a positive int to request a depth;
+        an evaluation host should not, because the configured system is the
+        thing under test. Connectors written before 2026-10-08 with
+        ``top_k: int = 5`` stay compatible: a host that omits the argument gets
+        their default."""
 
     # -- Corpus reading -----------------------------------------------------
     #
@@ -508,7 +522,7 @@ class RagPipeline(ABC):
             "scores can only be trusted as declared."
         )
 
-    def generate(self, text: str, *, top_k: int = 5, llm=None) -> GeneratedAnswer:
+    def generate(self, text: str, *, top_k: int | None = None, llm=None) -> GeneratedAnswer:
         """Produce an answer through the connector's production-shaped prompt path.
 
         Retrieval-only connectors may leave this unsupported. ``llm`` exists for
