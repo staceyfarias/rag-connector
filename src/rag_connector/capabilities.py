@@ -20,7 +20,10 @@ from .prompts import PromptTemplate, RenderedPrompt
 class RagConnector(Protocol):
     retrieval_mode: str
 
-    def query(self, text: str, top_k: int = 5) -> list[RetrievedChunk]: ...
+    def query(
+        self, text: str, top_k: int = 5, *,
+        answer_metadata: Sequence[Mapping[str, Any]] | None = None,
+    ) -> list[RetrievedChunk]: ...
 
     def pull_all_chunks(self) -> list[ChunkRecord]: ...
 
@@ -104,6 +107,26 @@ def supports(pipeline: object, method_name: str) -> bool:
     # Bound methods compare via the underlying function; plain functions
     # (class access, staticmethods, instance-attribute callables) compare as-is.
     return getattr(attr, "__func__", attr) is not default
+
+
+def query_accepts_answer_metadata(pipeline: object) -> bool:
+    """Whether ``pipeline.query`` takes the optional ``answer_metadata``
+    keyword (or ``**kwargs``).
+
+    A host always sends it; a connector written before the parameter existed
+    does not accept it, so the host checks once and calls plain ``query``.
+    """
+    import inspect
+
+    query = getattr(pipeline, "query", None)
+    if query is None:
+        return False
+    try:
+        params = inspect.signature(query).parameters.values()
+    except (TypeError, ValueError):
+        return False
+    return any(p.name == "answer_metadata" or p.kind is p.VAR_KEYWORD
+               for p in params)
 
 
 #: The three methods that make up the declared-prompt-template capability.

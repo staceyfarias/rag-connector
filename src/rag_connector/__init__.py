@@ -31,6 +31,7 @@ from .capabilities import (
     RunSnapshotProvider,
     declared_prompt_methods,
     supports,
+    query_accepts_answer_metadata,
     supports_chunk_vectors,
     supports_declared_prompts,
 )
@@ -149,6 +150,7 @@ __all__ = [
     "PromptTemplate",
     "PromptTemplateError",
     "QUERY_PLACEHOLDER",
+    "query_accepts_answer_metadata",
     "QueryEmbedder",
     "QueryTelemetryReader",
     "RAG_BLOCK_PLACEHOLDER",

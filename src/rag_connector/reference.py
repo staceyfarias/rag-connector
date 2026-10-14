@@ -489,7 +489,8 @@ class ReferenceRagConnector(RagPipeline):
     # so a connector reconstructed from a persisted connection document has no
     # way to destroy the corpus it is meant to read. See that module.
 
-    def query(self, text: str, top_k: int = 5) -> list[RetrievedChunk]:
+    def query(self, text: str, top_k: int = 5, *,
+              answer_metadata=None) -> list[RetrievedChunk]:
         """Ranked retrieval: embed the query, search Chroma, map to RetrievedChunks.
 
         The reference pattern for the two rules that matter: ``chunk_id`` comes

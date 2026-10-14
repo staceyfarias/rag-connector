@@ -31,7 +31,8 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional
 
 from .errors import ConnectorContractError, UnsupportedCapability
 
@@ -319,8 +320,19 @@ class RagPipeline(ABC):
     retrieval_mode: str = DEFAULT_RETRIEVAL_MODE
 
     @abstractmethod
-    def query(self, text: str, top_k: int = 5) -> list[RetrievedChunk]:
-        """Retrieve the top-k chunks for a query, ranked best-first."""
+    def query(
+        self, text: str, top_k: int = 5, *,
+        answer_metadata: Optional[Sequence[Mapping[str, Any]]] = None,
+    ) -> list[RetrievedChunk]:
+        """Retrieve the top-k chunks for a query, ranked best-first.
+
+        ``answer_metadata`` (optional; a host may always send it): the
+        ``metadata`` of the question's expected-answer chunks, in answer-key
+        order, never their ids. Ignore it, or use it only to choose the
+        context the question is asked from (a module, a section) when the
+        system scopes retrieval that way. Never filter, rerank or add results
+        with it. See docs/contract.md.
+        """
 
     # -- Corpus reading -----------------------------------------------------
     #

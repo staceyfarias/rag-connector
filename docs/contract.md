@@ -604,6 +604,29 @@ unimplemented capability is a supported configuration; a faked one silently
 corrupts every measurement taken through it. Unsupported optional operations
 raise `UnsupportedCapability`.
 
+### Query from the answer's context (`query(..., answer_metadata=...)`)
+
+Some systems scope retrieval by where the user is: a module, a section, a
+tenant. A question written from the corpus has no natural place to be asked
+from, and asking every question from one fixed place measures that place's
+reach, not retrieval. So `query` takes an optional keyword,
+`answer_metadata`: the `metadata` mappings of the question's expected-answer
+chunks, in answer-key order, never their chunk ids. A host may send it on
+every call (RAGauge does; `[]` when the key is empty).
+
+A connector may ignore it. If it uses it, it uses it only to choose the
+context the question is asked from (SWI: the first entry's module becomes the
+active module, when the connection says so) and returns the system's own
+retrieval from there: never filter, rerank or add results with it. Whether it
+was used is part of the connector's configuration, so declare it in
+`run_snapshot().settings` and `info()`: a run that used it was told where the
+answer lives, and a host never compares it with a run that did not. The
+declared key is `answer_metadata_used: true` in the snapshot settings
+(absent or false means it was ignored).
+
+A connector written before this parameter does not accept it;
+`query_accepts_answer_metadata(pipeline)` tells a host to call plain `query`.
+
 ## Reserved surface
 
 The following are exported from `rag_connector` but are **not yet produced,
