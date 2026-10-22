@@ -43,6 +43,9 @@ from .fingerprints import corpus_fingerprint
 from .ingest import CHUNKER_METHOD, CHUNKER_VERSION, chunks_from_jsonl, chunks_to_jsonl
 
 __all__ = [
+    "ANALYSIS_DIR",
+    "ANALYSIS_ENVELOPE_FILE",
+    "AnalysisEnvelope",
     "CHUNKING_EXPORTED",
     "DATASET_SPEC_ID",
     "DATASET_SPEC_VERSION",
@@ -59,10 +62,12 @@ __all__ = [
     "dataset_id_for_inventory",
     "export_dataset_from_connector",
     "exported_chunking",
+    "list_analyses",
     "list_extensions",
     "read_dataset_folder",
     "read_legacy_dataset_folder",
     "source_manifest_from_chunks",
+    "write_analysis_envelope",
     "write_dataset_folder",
     "write_extension_envelope",
 ]
@@ -92,6 +97,9 @@ CORE_FILES = (MANIFEST_FILE, CHUNKS_FILE, SOURCES_FILE)
 TESTSETS_DIR = "testsets"
 EXTENSIONS_DIR = "extensions"
 EXTENSION_ENVELOPE_FILE = "extension.json"
+ANALYSIS_DIR = "analysis"
+ANALYSIS_ENVELOPE_FILE = "analysis.json"
+_ARTIFACT_FORMATS = ("markdown", "json", "jsonl", "csv", "html")
 
 #: Domain tag hashed in front of the core digest, so a core hash can never be
 #: mistaken for a hash of anything else, and a future definition can change it.
@@ -832,13 +840,15 @@ class ExtensionEnvelope:
         return bool(self.core_sha256) and self.core_sha256 == dataset.core_sha256
 
 
-def _envelope_problems(tool_dir: str, raw: Any) -> list[str]:
+def _envelope_problems(tool_dir: str, raw: Any, *,
+                       area_dir: str = EXTENSIONS_DIR,
+                       envelope_file: str = EXTENSION_ENVELOPE_FILE) -> list[str]:
     if not isinstance(raw, dict):
-        return ["extension.json must hold a JSON object"]
+        return [f"{envelope_file} must hold a JSON object"]
     problems = []
     if raw.get("tool") != tool_dir:
         problems.append(
-            f"tool is {raw.get('tool')!r} but the area is extensions/{tool_dir}/"
+            f"tool is {raw.get('tool')!r} but the area is {area_dir}/{tool_dir}/"
         )
     for key in ("tool_version", "format_version", "created_at"):
         if not isinstance(raw.get(key), str) or not raw.get(key):
@@ -931,6 +941,136 @@ def write_extension_envelope(
     }
     area.mkdir(parents=True, exist_ok=True)
     envelope_path.write_bytes(
+        (json.dumps(envelope, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    )
+    return area
+
+
+# ---------------------------------------------------------------------------
+# Analysis areas
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class AnalysisEnvelope(ExtensionEnvelope):
+    """One tool's ``analysis/<tool>/analysis.json``, as read.
+
+    The extension envelope's keys plus ``artifacts``: what is in the area, so a
+    reader can find it without knowing the tool. Use the area only when
+    :meth:`built_on` the Dataset being read; an area recording another core
+    describes a different corpus.
+    """
+
+    artifacts: tuple[Mapping[str, Any], ...] = ()
+
+
+def _artifact_problems(area: Path, artifacts: Any) -> list[str]:
+    if not isinstance(artifacts, list):
+        return ["artifacts must be a list"]
+    problems = []
+    for item in artifacts:
+        if not isinstance(item, dict):
+            problems.append("each artifact must be a JSON object")
+            continue
+        rel = item.get("path")
+        if (not isinstance(rel, str) or not rel or Path(rel).is_absolute()
+                or ".." in Path(rel).parts):
+            problems.append(f"artifact path {rel!r} must be relative to the area")
+        elif not (area / rel).is_file():
+            problems.append(f"artifact {rel} is listed but not in the area")
+        if item.get("format") not in _ARTIFACT_FORMATS:
+            problems.append(
+                f"artifact {rel!r} format must be one of {', '.join(_ARTIFACT_FORMATS)}"
+            )
+        if not isinstance(item.get("description"), str) or not item.get("description"):
+            problems.append(f"artifact {rel!r} needs a description")
+    return problems
+
+
+def list_analyses(folder: str | os.PathLike[str]) -> list[AnalysisEnvelope]:
+    """Every ``analysis/*/analysis.json`` in a Dataset folder, sorted by tool.
+
+    Like :func:`list_extensions`, a malformed envelope is listed with its
+    problems rather than skipped, and an artifact that the envelope lists but
+    the area does not hold is a problem: a reader trusts the list.
+    """
+    root = Path(folder) / ANALYSIS_DIR
+    if not root.is_dir():
+        return []
+    out = []
+    for envelope_path in sorted(root.glob(f"*/{ANALYSIS_ENVELOPE_FILE}")):
+        tool_dir = envelope_path.parent.name
+        try:
+            raw = json.loads(envelope_path.read_text(encoding="utf-8"))
+        except ValueError as exc:
+            out.append(AnalysisEnvelope(
+                tool=tool_dir, path=envelope_path.parent, tool_version=None,
+                format_version=None, core_sha256=None, created_at=None, raw={},
+                problems=(f"analysis.json is not valid JSON: {exc}",),
+            ))
+            continue
+        data = raw if isinstance(raw, dict) else {}
+        problems = _envelope_problems(tool_dir, raw, area_dir=ANALYSIS_DIR,
+                                      envelope_file=ANALYSIS_ENVELOPE_FILE)
+        problems += _artifact_problems(envelope_path.parent, data.get("artifacts"))
+        artifacts = data.get("artifacts")
+        out.append(AnalysisEnvelope(
+            tool=tool_dir,
+            path=envelope_path.parent,
+            tool_version=data.get("tool_version"),
+            format_version=data.get("format_version"),
+            core_sha256=data.get("core_sha256"),
+            created_at=data.get("created_at"),
+            raw=data,
+            problems=tuple(problems),
+            artifacts=tuple(a for a in artifacts if isinstance(a, dict))
+            if isinstance(artifacts, list) else (),
+        ))
+    return out
+
+
+def write_analysis_envelope(
+    folder: str | os.PathLike[str],
+    tool: str,
+    *,
+    tool_version: str,
+    format_version: str,
+    artifacts: Sequence[Mapping[str, Any]],
+    created_at: str | None = None,
+) -> Path:
+    """Write ``analysis/<tool>/analysis.json`` over files already in the area.
+
+    The Dataset is read and verified first and its ``core_sha256`` recorded, so
+    the area always says which core it describes; a legacy folder has no core
+    hash and is refused. Each artifact is ``{"path", "format", "description"}``
+    and must already be in the area: an envelope that lists a file it does not
+    hold would be a declaration a reader cannot check. The envelope is replaced
+    on every call, because a tool replaces its analysis as a whole when it
+    re-runs (spec, "analysis/<tool>/").
+    """
+    if not _TOOL_NAME_RE.match(tool or ""):
+        raise ValueError(
+            f"tool name {tool!r} must be lowercase letters, digits, '.', '_' or "
+            "'-', starting with a letter or digit"
+        )
+    for key, value in (("tool_version", tool_version), ("format_version", format_version)):
+        if not isinstance(value, str) or not value:
+            raise ValueError(f"{key} must be a non-empty string")
+    dataset = read_dataset_folder(folder)
+    area = Path(folder) / ANALYSIS_DIR / tool
+    listed = [dict(a) for a in artifacts]
+    problems = _artifact_problems(area, listed)
+    if problems:
+        raise ValueError("invalid analysis artifacts: " + "; ".join(problems))
+    envelope = {
+        "tool": tool,
+        "tool_version": tool_version,
+        "format_version": format_version,
+        "core_sha256": dataset.core_sha256,
+        "created_at": created_at or _utc_now(),
+        "artifacts": listed,
+    }
+    area.mkdir(parents=True, exist_ok=True)
+    (area / ANALYSIS_ENVELOPE_FILE).write_bytes(
         (json.dumps(envelope, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     )
     return area

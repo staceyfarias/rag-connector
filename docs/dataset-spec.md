@@ -286,7 +286,7 @@ Reserved for Test Sets. Their contents are defined by the Test Set spec
 
 ### `analysis/<tool>/` — shared analysis
 
-*Not yet implemented.* One area per tool, holding that tool's findings about
+*Implemented: `write_analysis_envelope`, `list_analyses`.* One area per tool, holding that tool's findings about
 the corpus that are meant for other tools and for people: a chunking report,
 per-chunk observations, a survey of what the corpus contains. The area is
 recognized by its envelope, `analysis/<tool>/analysis.json`
@@ -302,6 +302,35 @@ recognized by its envelope, `analysis/<tool>/analysis.json`
 - Analysis is **evidence about the corpus, not corpus** (rule 4). A
   per-chunk finding cites its chunk by `chunk_id`.
 - A tool's intermediate and working state goes in its private area, not here.
+
+#### `analysis/rag-connector/` — the corpus index
+
+This package's own analysis area holds two indexes over the chunks, built
+separately from freezing them and replaceable at any time:
+
+- **The book index** (`rag-connector index prepare`,
+  `rag_connector.corpus_index`). Names, document titles and section headings,
+  each with the chunk ids that hold it, the previous and next chunk in that
+  document, and identical copies elsewhere. Taken from the chunk text by
+  pattern; no model is called. `index.json` is the full map, `index.md` says
+  how it is laid out, and `index/terms/<letter>.md` and
+  `index/threads/<letter>.md` are the slices to read. A label found in too
+  many places to narrow a search is left out, and ordinary wording is never
+  indexed: the chunks remain the only place to search text.
+- **The signal index** (`rag-connector index signal`,
+  `rag_connector.signal_index`). A model labels each distinct document, on its
+  own, with a few high-signal words and the chunk-index span that holds them.
+  The words are model output and each labelled document records the model
+  that wrote them; chunk ids are attached from the Dataset's rows, never taken
+  from the model, and a saved subject naming a chunk outside its document is
+  dropped. `index/signal.json`, `index/signal.md`, `index/signal/<letter>.md`.
+  Labelling progress is working state, kept privately in
+  `.rag-connector/index/signal_progress.jsonl`, so a later run sends only the
+  documents not labelled yet. It needs the optional `llm` extra.
+
+Rebuilding the book index leaves the signal index in place. Both name the
+core they were built on; a reader given an area built on another core gets no
+index, and the next build replaces the area as a whole.
 
 ### `docs/` — documentation
 
@@ -647,6 +676,7 @@ from rag_connector.dataset import (
     write_dataset_folder, read_dataset_folder, read_legacy_dataset_folder,
     chunk_inventory_sha256, source_manifest_from_chunks,
     list_extensions, write_extension_envelope,
+    list_analyses, write_analysis_envelope,
     chunker_chunking, exported_chunking,
 )
 ```
@@ -660,7 +690,21 @@ from rag_connector.dataset import (
 | `source_manifest_from_chunks(chunks)` | The source list. |
 | `list_extensions(folder)` | Every envelope under `extensions/`, sorted by tool, each with any `problems`. Does not yet discover `.<tool>/` areas. |
 | `write_extension_envelope(folder, tool, *, tool_version, format_version, created_at=None, overwrite=False)` | Creates `extensions/<tool>/extension.json` recording the verified core. Still writes the 1.0 location. |
+| `list_analyses(folder)` | Every `analysis/*/analysis.json`, sorted by tool, as `AnalysisEnvelope`s (with `artifacts`); a listed artifact the area does not hold is a problem. |
+| `write_analysis_envelope(folder, tool, *, tool_version, format_version, artifacts, created_at=None)` | Writes `analysis/<tool>/analysis.json` recording the verified core, over artifacts already in the area; replaced on every call. |
 | `chunker_chunking(...)`, `exported_chunking(connector_type)` | The two defined `chunking` blocks. |
+
+```python
+from rag_connector import corpus_index, signal_index
+```
+
+| Function | Does |
+| --- | --- |
+| `corpus_index.prepare(folder)` | Writes the book index into `analysis/rag-connector/` and returns its counts. |
+| `corpus_index.build(chunks)` | The book index body from `ChunkRecord`s or chunk-row mappings; writes nothing. |
+| `corpus_index.load(folder)`, `corpus_index.find(index, query)` | The index on this core, or `None`; the entries and threads whose label contains `query`. |
+| `signal_index.build(folder, *, model=MODEL, label=None, limit=None, workers=6)` | Labels the documents not labelled yet and rewrites the signal index. `label` is `(system, prompt) -> (text, input_tokens, output_tokens)`; the default calls the Anthropic API (`llm` extra). |
+| `signal_index.load(folder)`, `signal_index.find(payload, query)` | The signal index on this core, or `None`; the subjects whose words contain `query`. |
 
 ```python
 from rag_connector.audit import (
@@ -686,6 +730,17 @@ from rag_connector.sync import sync_dataset, list_syncs
 | `Dataset.derived_from` | The manifest's `derived_from`, or `None`. |
 
 ## Command line
+
+```bash
+# The corpus index, in analysis/rag-connector/ (no model call):
+rag-connector index prepare --dataset ./my-dataset
+rag-connector index status --dataset ./my-dataset
+rag-connector index lookup --dataset ./my-dataset "Port St. Joe"
+
+# The signal index (llm extra and ANTHROPIC_API_KEY; resumes where it stopped):
+rag-connector index signal --dataset ./my-dataset [--model ...] [--limit N] [--workers N]
+rag-connector index signal-lookup --dataset ./my-dataset "roster"
+```
 
 ```bash
 # From a folder of documents, with this package's chunker (no vector store):
@@ -748,7 +803,7 @@ defines only the envelopes.
 
 | Tool name | Written today | Reserved | Contents defined by |
 | --- | --- | --- | --- |
-| `rag-connector` | `.rag-connector/audits/`, `.rag-connector/syncs/` | `.rag-connector/attachments/` | This spec |
+| `rag-connector` | `.rag-connector/audits/`, `.rag-connector/syncs/`, `.rag-connector/index/`, `analysis/rag-connector/` | `.rag-connector/attachments/` | This spec |
 | `testset-kit` | `testsets/`, `extensions/testset-kit/` | `analysis/testset-kit/` | testset-kit: the Test Set spec (`contract/CORE.md`) and its output contract (`contract/OUTPUT.md`) |
 | `ragauge` | `extensions/ragauge/` | `analysis/ragauge/` | RAGauge |
 | `pelorus` | `extensions/pelorus/` (on export) | — | Pelorus |

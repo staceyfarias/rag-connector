@@ -6,6 +6,24 @@ Notable changes to rag-connector. Dates are the day the work landed.
 
 Additive.
 
+- **A corpus index over a Dataset** (`rag_connector.corpus_index`,
+  `rag_connector.signal_index`; `rag-connector index prepare|status|lookup|
+  signal|signal-lookup`). Moved from testset-kit so every product reads one
+  index. The book index maps names, document titles and section headings to
+  the chunk ids that hold them, with neighbors and identical copies, and calls
+  no model. The signal index has a model label each document with a few words
+  and the chunk span that holds them; each document records the model, chunk
+  ids come from the Dataset, never the model, and progress resumes. Both are
+  written to the shared analysis area `analysis/rag-connector/`. Rebuilding
+  the book index no longer deletes the signal index, as it did in testset-kit.
+  The model call needs the new optional `llm` extra (`anthropic`); nothing in
+  the core imports it.
+
+- **Analysis areas** (`write_analysis_envelope`, `list_analyses`,
+  `AnalysisEnvelope`). The spec's `analysis/<tool>/analysis.json` envelope,
+  until now documented only: it records the core it was built on and lists
+  its artifacts, and an artifact it lists must be in the area.
+
 - **Dataset spec 1.1, draft** (`docs/dataset-spec.md`). Documentation only;
   the core and the library are unchanged and still write `spec_version`
   `"1.0"`. The draft defines every top-level entry in a Dataset folder: the

@@ -140,6 +140,88 @@ def _add_dataset_commands(subparsers: argparse._SubParsersAction) -> None:
                               "directory")
 
 
+def _add_index_commands(subparsers: argparse._SubParsersAction) -> None:
+    index = subparsers.add_parser(
+        "index",
+        help="build or search a Dataset's corpus index, in analysis/rag-connector/",
+    )
+    commands = index.add_subparsers(dest="index_command", required=True)
+    prepare = commands.add_parser(
+        "prepare",
+        help="write the book index (names, titles, headings -> chunk ids); "
+             "calls no model",
+    )
+    status = commands.add_parser("status", help="how big the indexes are")
+    lookup = commands.add_parser(
+        "lookup", help="print book-index entries and threads whose label contains QUERY",
+    )
+    lookup.add_argument("query")
+    signal = commands.add_parser(
+        "signal",
+        help="label each document with a model (needs the llm extra and "
+             "ANTHROPIC_API_KEY); skips documents already labelled",
+    )
+    signal.add_argument("--model", default=None,
+                        help="the labelling model (default: claude-haiku-5-5)")
+    signal.add_argument("--limit", type=int, default=None,
+                        help="label at most this many documents this run")
+    signal.add_argument("--workers", type=int, default=6)
+    signal_lookup = commands.add_parser(
+        "signal-lookup", help="print signal-index subjects whose words contain QUERY",
+    )
+    signal_lookup.add_argument("query")
+    for command in (prepare, status, lookup, signal, signal_lookup):
+        command.add_argument("--dataset", required=True, metavar="PATH",
+                             help="the Dataset folder")
+
+
+def _run_index_command(args: argparse.Namespace) -> int:
+    from . import corpus_index, signal_index
+
+    folder = Path(args.dataset)
+    if args.index_command == "prepare":
+        counts = corpus_index.prepare(folder)
+        print(f"indexed {counts['documents']} documents, {counts['chunks']} chunks, "
+              f"{counts['entries']} entries, {counts['threads']} threads")
+        print(f"  {corpus_index.markdown_path(folder)}")
+        return 0
+    if args.index_command == "signal":
+        result = signal_index.build(folder, model=args.model or signal_index.MODEL,
+                                    limit=args.limit, workers=args.workers)
+        print(f"labelled {result['labelled']} this run; tokens in "
+              f"{result['tokens_in']} out {result['tokens_out']}")
+        print(f"wrote {result['documents']} documents, {result['subjects']} subjects")
+        print(f"  {signal_index.signal_markdown(folder)}")
+        for item in result["failures"][:15]:
+            print(f"  failed: {item}", file=sys.stderr)
+        return 1 if result["failures"] else 0
+    if args.index_command == "signal-lookup":
+        payload = signal_index.load(folder)
+        if payload is None:
+            print("no signal index for this Dataset; `rag-connector index signal` builds one")
+            return 1
+        print(signal_index.format_hits(signal_index.find(payload, args.query)), end="")
+        return 0
+    index = corpus_index.load(folder)
+    if index is None:
+        print("no book index for this Dataset; `rag-connector index prepare` builds one")
+        return 1
+    if args.index_command == "status":
+        counts = index["counts"]
+        print(f"book index: {counts['documents']} documents, {counts['chunks']} chunks, "
+              f"{counts['entries']} entries, {counts['threads']} threads "
+              f"(built {index['built_at']})")
+        signal = signal_index.load(folder)
+        if signal is not None:
+            subjects = sum(len(d.get("subjects") or []) for d in signal["documents"])
+            print(f"signal index: {len(signal['documents'])} documents, {subjects} subjects "
+                  f"(built {signal['built_at']}, {', '.join(signal['models'])})")
+        print(f"  {corpus_index.analysis_dir(folder)}")
+        return 0
+    print(corpus_index.format_find(corpus_index.find(index, args.query)), end="")
+    return 0
+
+
 def _add_datasets_dir_command(subparsers: argparse._SubParsersAction) -> None:
     datasets_dir = subparsers.add_parser(
         "datasets-dir",
@@ -359,6 +441,7 @@ def main(argv: list[str] | None = None) -> int:
     _add_reference_commands(subparsers)
     _add_dataset_commands(subparsers)
     _add_datasets_dir_command(subparsers)
+    _add_index_commands(subparsers)
     subparsers.add_parser(
         "validate",
         help="validate a connector (run with --help for validator options)",
@@ -376,6 +459,13 @@ def main(argv: list[str] | None = None) -> int:
             # for the operator, not a crash: name it and exit non-zero.
             print(f"rag-connector dataset: {type(exc).__name__}: {exc}",
                   file=sys.stderr)
+            return 1
+    if args.command == "index":
+        try:
+            return _run_index_command(args)
+        except (OSError, ValueError, RuntimeError, ImportError) as exc:
+            # A Dataset that does not verify, a missing key or extra: name it.
+            print(f"rag-connector index: {type(exc).__name__}: {exc}", file=sys.stderr)
             return 1
     if args.command == "datasets-dir":
         return _run_datasets_dir_command(args)

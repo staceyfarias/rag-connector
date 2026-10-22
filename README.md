@@ -278,6 +278,29 @@ per Dataset: two applications, or two environments, attaching the same Dataset
 each have their own records. See
 [the Dataset spec](docs/dataset-spec.md#the-dataset-is-static-the-backend-is-not).
 
+### A corpus index
+
+An index of a Dataset's corpus, for a person or an agent to search the way it
+would search a book's index: a name, a document title or a section heading,
+and the chunk ids to open. It is written to `analysis/rag-connector/`, where
+any tool can read it.
+
+```bash
+rag-connector index prepare --dataset ./my-dataset     # no model call
+rag-connector index lookup --dataset ./my-dataset "Port St. Joe"
+```
+
+A second index has a model label each document with a few words and the
+chunk span that holds them. It needs `pip install "rag-connector[llm]"` and
+`ANTHROPIC_API_KEY`, and a later run sends only what is not labelled yet:
+
+```bash
+rag-connector index signal --dataset ./my-dataset
+rag-connector index signal-lookup --dataset ./my-dataset "roster"
+```
+
+See [the Dataset spec](docs/dataset-spec.md#analysisrag-connector--the-corpus-index).
+
 ## Installed connectors
 
 List every connector registered in the current environment — the bundled

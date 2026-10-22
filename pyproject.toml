@@ -50,6 +50,11 @@ reference = [
     "python-docx>=1.1",
     "striprtf>=0.0.26",
 ]
+# The signal index (rag_connector.signal_index) labels documents with a model.
+# Nothing in the core imports the SDK; only anthropic_labeler() does, lazily.
+llm = [
+    "anthropic>=0.40",
+]
 dev = [
     "pytest>=8",
     # The suite exercises the registry-mode .env loading path; without this
