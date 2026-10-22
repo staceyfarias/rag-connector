@@ -16,6 +16,43 @@ Additive.
   `.rag-connector/` for connector attachments. Sections the library does not
   implement yet are marked as such.
 
+- **`FINDINGS.md`, a convention for findings about a Dataset** (draft, in
+  `docs/dataset-spec.md`; documentation only, no code). A top-level shared
+  file where any tool or person records what is learned about the Dataset.
+  Each finding is its own top-level entry starting with a `# ` heading;
+  programs only append, people edit freely. Added to the layout, the shared
+  areas, the rule on who writes where (rule 6 gains this one exception) and the
+  rule on shared content (rule 8).
+
+- **Dataset audits** (`rag_connector.audit`; `rag-connector dataset audit`
+  and `dataset audits`). Compare a Dataset with one connector instance's
+  corpus as it is now, and record what differs, chunk by chunk and document by
+  document: unchanged, text changed, id changed (same text under a new id, as
+  an index rebuild does), ambiguous, missing and added chunks; removed, added
+  and changed documents; metadata keys added and removed; and an observed
+  chunking profile of each side. An audit changes nothing. Any number are kept
+  under `.rag-connector/audits/<audit-id>/`, each naming the instance it
+  describes by `connection_sha256`, never by its configuration.
+
+- **Sync into a copy** (`rag_connector.sync`; `rag-connector dataset sync`).
+  Writes a **new** Dataset from a connector instance's corpus as it is now,
+  never touching the Dataset it follows (whose Test Sets cite its chunk ids).
+  Lineage between the two Datasets goes in the new core as the manifest key
+  `derived_from` (`dataset_id`, `core_sha256`), written once and covered by
+  `core_sha256`; the instance (`connection_sha256`) and the audit that
+  motivated the copy go in `.rag-connector/syncs/<sync-id>/sync.json`, since
+  they describe one backend. A cited audit must be of the source's core and of
+  the same connector instance, or the sync is refused; a backend that moved on
+  since the audit is recorded as `backend_matches_audit: false`.
+  `write_dataset_folder` and `export_dataset_from_connector` gain
+  `derived_from=`, and `Dataset` a `derived_from` property.
+
+- **Dataset spec: rule 9, "a Dataset is static; the backend is not".**
+  Anything that describes a backend (a connection, an id map, a "connected"
+  status) is recorded per connector instance, never as one slot per Dataset,
+  and is never shared between instances, even of one connector type over
+  identical chunks.
+
 - **A shared Datasets directory** (`rag_connector.datasets_dir`). One place
   every product looks for Datasets: an explicit path, else
   `RAG_CONNECTOR_DATASETS_DIR`, else `datasets_dir` in

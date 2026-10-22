@@ -215,3 +215,34 @@ def test_export_of_an_unregistered_type_names_the_registered_ones(tmp_path, caps
     assert main(["dataset", "export", "--connector", "nope", "--out",
                  str(tmp_path / "x")]) == 1
     assert "not registered" in capsys.readouterr().err
+
+
+# --- audit ------------------------------------------------------------------
+
+def test_audit_records_and_lists_without_touching_the_core(
+        fake_registered, tmp_path, capsys):
+    out = tmp_path / "exported"
+    main(["dataset", "export", "--connector", "fake-kb", "--out", str(out)])
+    core = (out / "dataset.json").read_bytes()
+    capsys.readouterr()
+
+    assert main(["dataset", "audit", "--dataset", str(out), "--connector", "fake-kb",
+                 "--label", "staging", "--host", "test"]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["in_sync"] is True
+    assert printed["connector"]["instance_label"] == "staging"
+    assert printed["connector"]["connection_sha256"]  # from connect()'s document
+    assert fake_registered["pipeline"].closed
+
+    assert main(["dataset", "audits", "--dataset", str(out)]) == 0
+    listed = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [a["audit_id"] for a in listed] == [printed["audit_id"]]
+    assert (out / "dataset.json").read_bytes() == core
+
+
+def test_audit_no_record_writes_nothing(fake_registered, tmp_path, capsys):
+    out = tmp_path / "exported"
+    main(["dataset", "export", "--connector", "fake-kb", "--out", str(out)])
+    assert main(["dataset", "audit", "--dataset", str(out), "--connector", "fake-kb",
+                 "--no-record"]) == 0
+    assert not (out / ".rag-connector").exists()

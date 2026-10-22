@@ -83,6 +83,53 @@ def _add_dataset_commands(subparsers: argparse._SubParsersAction) -> None:
                              "(default: inside the Datasets directory)")
     export.add_argument("--name", default=None,
                         help="Dataset name (default: the connector type)")
+    audit = commands.add_parser(
+        "audit",
+        help="compare a Dataset with a connector's corpus as it is now; "
+             "changes nothing, records the audit in the Dataset",
+    )
+    audit.add_argument("--dataset", required=True, metavar="PATH",
+                       help="the Dataset folder to audit")
+    audit.add_argument("--connector", required=True, metavar="TYPE",
+                       help="a registered connector_type (see `rag-connector list`)")
+    audit.add_argument("--params", default="{}", metavar="JSON",
+                       help="JSON params for the connector's connect() "
+                            "(or its connection document, if it has no connect)")
+    audit.add_argument("--label", default=None,
+                       help="a name for this connector instance, e.g. 'staging'")
+    audit.add_argument("--host", default=None,
+                       help="the application auditing, e.g. 'ragauge'")
+    audit.add_argument("--no-record", action="store_true",
+                       help="print the audit without storing it in the Dataset")
+    audits = commands.add_parser(
+        "audits",
+        help="list the audits recorded in a Dataset",
+    )
+    audits.add_argument("--dataset", required=True, metavar="PATH")
+    sync = commands.add_parser(
+        "sync",
+        help="take a NEW Dataset from a connector's corpus as it is now, "
+             "recording which Dataset (and audit) it follows; the source is "
+             "never changed",
+    )
+    sync.add_argument("--dataset", required=True, metavar="PATH",
+                      help="the source Dataset folder (read, never written)")
+    sync.add_argument("--connector", required=True, metavar="TYPE",
+                      help="a registered connector_type (see `rag-connector list`)")
+    sync.add_argument("--params", default="{}", metavar="JSON",
+                      help="JSON params for the connector's connect() "
+                           "(or its connection document, if it has no connect)")
+    sync.add_argument("--out", required=True, metavar="PATH",
+                      help="the new Dataset folder; must not exist or be empty")
+    sync.add_argument("--audit", default=None, metavar="AUDIT_ID",
+                      help="an audit recorded in the source, for this same "
+                           "connector instance, that motivated the copy")
+    sync.add_argument("--name", default=None,
+                      help="the new Dataset's name (default: the source's)")
+    sync.add_argument("--label", default=None,
+                      help="a name for this connector instance, e.g. 'staging'")
+    sync.add_argument("--host", default=None,
+                      help="the application syncing, e.g. 'ragauge'")
     listing = commands.add_parser(
         "list",
         help="list the Dataset folders in the Datasets directory "
@@ -123,6 +170,88 @@ def _dataset_summary(dataset) -> dict:
     }
 
 
+def _audit_brief(summary) -> dict:
+    keys = ("audit_id", "created_at", "path", "problem", "in_sync",
+            "connector", "backend", "chunk_counts", "document_counts")
+    brief = {key: summary[key] for key in keys if key in summary}
+    if "signals" in summary:
+        brief["signals"] = {s["code"]: s["count"] for s in summary["signals"]}
+    return brief
+
+
+def _run_audit_command(args: argparse.Namespace) -> int:
+    from .audit import audit_dataset, record_audit
+    from .dataset import read_dataset_folder
+    from .registry import get_connector, registered_types
+
+    dataset = read_dataset_folder(args.dataset)
+    spec = get_connector(args.connector)
+    if spec is None:
+        print(f"Connector type {args.connector!r} is not registered. "
+              f"Registered types: {registered_types()}", file=sys.stderr)
+        return 1
+    params = json.loads(args.params)
+    if spec.connect is not None:
+        pipeline, connection = spec.connect(params)
+    else:
+        pipeline, connection = spec.build(params), params
+    try:
+        result = audit_dataset(
+            dataset, pipeline,
+            connector_type=spec.connector_type, connection=connection,
+            instance_label=args.label, host=args.host,
+        )
+    finally:
+        close = getattr(pipeline, "close", None)
+        if callable(close):
+            close()
+    if not args.no_record:
+        result = record_audit(args.dataset, result)
+    summary = dict(result.summary)
+    if result.path is not None:
+        summary["path"] = str(result.path)
+    print(json.dumps(_audit_brief(summary), indent=2, sort_keys=True))
+    return 0
+
+
+def _run_sync_command(args: argparse.Namespace) -> int:
+    from .registry import get_connector, registered_types
+    from .sync import sync_dataset
+
+    spec = get_connector(args.connector)
+    if spec is None:
+        print(f"Connector type {args.connector!r} is not registered. "
+              f"Registered types: {registered_types()}", file=sys.stderr)
+        return 1
+    params = json.loads(args.params)
+    if spec.connect is not None:
+        pipeline, connection = spec.connect(params)
+    else:
+        pipeline, connection = spec.build(params), params
+    try:
+        result = sync_dataset(
+            args.dataset, pipeline, args.out,
+            connector_type=spec.connector_type, connection=connection,
+            audit_id=args.audit, instance_label=args.label, host=args.host,
+            name=args.name,
+        )
+    finally:
+        close = getattr(pipeline, "close", None)
+        if callable(close):
+            close()
+    printed = _dataset_summary(result.dataset)
+    printed["derived_from"] = dict(result.dataset.derived_from or {})
+    printed["sync"] = {
+        "sync_id": result.record["sync_id"],
+        "path": str(result.path),
+        "same_chunk_inventory_as_source":
+            result.record["same_chunk_inventory_as_source"],
+        "audit": result.record["audit"],
+    }
+    print(json.dumps(printed, indent=2, sort_keys=True))
+    return 0
+
+
 def _run_dataset_command(args: argparse.Namespace) -> int:
     from . import dataset as ds
     from .datasets_dir import datasets_dir, folder_name_for, list_dataset_folders
@@ -138,6 +267,19 @@ def _run_dataset_command(args: argparse.Namespace) -> int:
                 "problem": entry.problem,
             }, sort_keys=True))
         return 0
+
+    if args.dataset_command == "audits":
+        from .audit import list_audits
+
+        for summary in list_audits(args.dataset):
+            print(json.dumps(_audit_brief(summary), sort_keys=True))
+        return 0
+
+    if args.dataset_command == "audit":
+        return _run_audit_command(args)
+
+    if args.dataset_command == "sync":
+        return _run_sync_command(args)
 
     if args.dataset_command == "build":
         name = args.name or Path(args.folder).resolve().name

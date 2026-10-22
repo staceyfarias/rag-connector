@@ -344,6 +344,19 @@ class Dataset:
     def legacy(self) -> bool:
         return self.layout != LAYOUT_CORE
 
+    @property
+    def derived_from(self) -> Mapping[str, str] | None:
+        """The manifest's ``derived_from`` (``dataset_id``, ``core_sha256``).
+
+        ``None`` when the core records no lineage, or records it in a shape
+        this reader does not know (unknown content is ignored, rule 5).
+        """
+        raw = self.manifest.get("derived_from")
+        if (isinstance(raw, Mapping) and isinstance(raw.get("dataset_id"), str)
+                and _SHA256_RE.match(str(raw.get("core_sha256") or ""))):
+            return {"dataset_id": raw["dataset_id"], "core_sha256": raw["core_sha256"]}
+        return None
+
 
 # ---------------------------------------------------------------------------
 # Writing
@@ -398,6 +411,7 @@ def write_dataset_folder(
     chunking: Mapping[str, Any],
     sources: Sequence[Mapping[str, Any]] | None = None,
     created_at: str | None = None,
+    derived_from: Dataset | None = None,
 ) -> Dataset:
     """Write a new Dataset's core — once — and return it as read back.
 
@@ -417,6 +431,12 @@ def write_dataset_folder(
     non-blank text, and are written without embeddings and without
     ``metadata["document_filepath"]``.
 
+    ``derived_from`` names the verified Dataset this one was made from, as the
+    manifest key ``derived_from`` (``dataset_id`` and ``core_sha256``). It is
+    part of the core, so it can only be given here, at creation. Only a fact
+    about Datasets goes there: what motivated the copy, and which backend it
+    came from, belong to one connector instance (spec rule 9).
+
     The returned :class:`Dataset` is the result of :func:`read_dataset_folder`
     on what was written, so it has been verified end to end.
     """
@@ -425,6 +445,12 @@ def write_dataset_folder(
     problems = _chunking_problems(chunking)
     if problems:
         raise ValueError("invalid chunking block: " + "; ".join(problems))
+    if derived_from is not None and not (derived_from.verified
+                                         and derived_from.core_sha256):
+        raise ValueError(
+            "derived_from must be a verified Dataset: lineage to a core whose "
+            "identity was never checked would record a guess"
+        )
 
     target = Path(out_dir)
     if target.exists():
@@ -457,6 +483,11 @@ def write_dataset_folder(
         "chunk_inventory_sha256": inventory,
         "corpus_fingerprint": corpus_fingerprint(source_rows),
     }
+    if derived_from is not None:
+        manifest["derived_from"] = {
+            "dataset_id": derived_from.dataset_id,
+            "core_sha256": derived_from.core_sha256,
+        }
     manifest["core_sha256"] = compute_core_sha256(manifest, chunks_bytes, sources_bytes)
     manifest_bytes = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode(
         "utf-8"
@@ -522,6 +553,7 @@ def export_dataset_from_connector(
     connector_type: str,
     name: str,
     created_at: str | None = None,
+    derived_from: Dataset | None = None,
 ) -> Dataset:
     """Freeze a connector's whole corpus, as its system chunked it, into a Dataset.
 
@@ -532,6 +564,9 @@ def export_dataset_from_connector(
     ``metadata["document_filepath"]``. A connector that cannot read its corpus
     raises :class:`~rag_connector.errors.UnsupportedCapability`, and a backend
     failure raises; neither ever produces an empty Dataset.
+
+    ``derived_from`` is passed to :func:`write_dataset_folder`; see
+    :func:`rag_connector.sync.sync_dataset` for taking a copy of a Dataset.
     """
     chunks = pipeline.pull_all_chunks()
     return write_dataset_folder(
@@ -540,6 +575,7 @@ def export_dataset_from_connector(
         name=name,
         chunking=exported_chunking(connector_type),
         created_at=created_at,
+        derived_from=derived_from,
     )
 
 

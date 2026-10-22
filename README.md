@@ -247,6 +247,37 @@ rag-connector dataset list                  # the Datasets in it (reads manifest
 `RAG_CONNECTOR_DATASETS_DIR` overrides the saved setting. From Python:
 `rag_connector.datasets_dir.datasets_dir()` and `list_dataset_folders()`.
 
+### Findings about a Dataset
+
+A Dataset may carry a top-level `FINDINGS.md`: one place where anything learned
+about the Dataset itself is collected, from any tool or person (damage in the
+chunking, repeated or conflicting content, ambiguities, judgement calls). The
+only rule is that **each finding is its own top-level entry, starting with a
+`# ` heading**. Programs only append entries; a person may edit freely. It is a
+convention, with no code needed, so a person or a coding agent finds everything
+in one known file. It is not corpus. See
+[the Dataset spec](docs/dataset-spec.md#findingsmd--findings-about-the-dataset).
+
+### Auditing a Dataset against a connector
+
+A Dataset never changes; the system behind a connector does. An audit reads a
+connector instance's whole corpus and records how it differs from the Dataset:
+chunks whose ids changed (an index rebuild), whose text changed, that are
+missing or new; documents removed or added; metadata keys added or removed;
+and the observed chunk sizes and overlap on each side. It changes nothing, and
+a Dataset keeps every audit, from any application, under
+`.rag-connector/audits/`.
+
+```bash
+rag-connector dataset audit --dataset ./my-dataset --connector my-rag   --params '{"endpoint": "..."}' --label staging
+rag-connector dataset audits --dataset ./my-dataset
+```
+
+What the backend says about a Dataset is kept per connector instance, never
+per Dataset: two applications, or two environments, attaching the same Dataset
+each have their own records. See
+[the Dataset spec](docs/dataset-spec.md#the-dataset-is-static-the-backend-is-not).
+
 ## Installed connectors
 
 List every connector registered in the current environment — the bundled

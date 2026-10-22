@@ -43,9 +43,16 @@ Dataset.
   analysis/<tool>/        shared — one tool's analysis of the corpus
     analysis.json           its envelope
   docs/                   shared — documentation about the Dataset
+  FINDINGS.md             shared — what is learned about the Dataset: one
+                          entry per top-level heading, from any tool or person
 
   .<tool>/                private — one tool's own state
     extension.json          its envelope
+  .rag-connector/         private — this package's: audits, attachments
+    audits/<audit-id>/      one audit of the Dataset against one connector
+                            instance
+    syncs/<sync-id>/        in a Dataset made by a sync: the instance and
+                            audit it was taken from
   extensions/<tool>/      private — the 1.0 location, still valid
     extension.json          its envelope
 
@@ -58,7 +65,7 @@ Every top-level entry is in exactly one of four classes:
 | Class | Entries | Owned by |
 | --- | --- | --- |
 | **Core** | `dataset.json` and the whole `data/` directory | Nobody — written once, never changed |
-| **Shared areas** | `sources/`, `testsets/`, `analysis/`, `docs/` | Divided between tools and the owner, as each section below says |
+| **Shared areas** | `sources/`, `testsets/`, `analysis/`, `docs/`, `FINDINGS.md` | Divided between tools and the owner, as each section below says |
 | **Tool-private areas** | `.<tool>/` or `extensions/<tool>/`, holding an `extension.json` whose `tool` is `<tool>` | That one tool |
 | **Free entries** | Everything else, including other dot-entries such as `.claude/` and `.git/` | The Dataset's owner — the person or project that keeps the folder |
 
@@ -96,17 +103,24 @@ used for regression testing.
    or `extensions/<its name>/`), `analysis/<its name>/`, `docs/<its name>/`,
    and Test Sets in `testsets/` under the rules of the Test Set spec. Free entries and the rest of `docs/`
    belong to the owner; a tool writes there only when the owner asks it to,
-   never on its own initiative.
+   never on its own initiative. The one exception is `FINDINGS.md`
+   ([below](#findingsmd--findings-about-the-dataset)): any tool may **append**
+   an entry to it, and only append.
 7. **The manifest lists nothing outside the core.** Listing an area would mean
    rewriting the write-once core whenever a tool arrived. Areas are discovered
    by their envelopes.
 8. **The shared areas this spec defines hold nothing secret or
    machine-local**: no credentials, no absolute paths, no machine names in
-   `sources/`, `analysis/` or `docs/`. A shared area travels with every copy
+   `sources/`, `analysis/`, `docs/` or `FINDINGS.md`. A shared area travels with every copy
    of the Dataset; a tool-private area does not
    ([below](#sharing-a-dataset)). What a Test Set may record is the Test Set
    spec's to say; a Test Set manifest's `dataset_path` is currently an
    absolute path.
+9. **A Dataset is static; the systems it is used with are not.** Anything
+   that describes a backend — a connection, a chunk-id map, a "connected"
+   status, a backend fingerprint — belongs to **one connector instance**, and
+   is never kept as a single slot per Dataset
+   ([below](#the-dataset-is-static-the-backend-is-not)).
 
 ## `dataset.json` — the manifest
 
@@ -143,6 +157,7 @@ used for regression testing.
 | `chunk_inventory_sha256` | The chunk-inventory fingerprint — see below. |
 | `corpus_fingerprint` | The existing source-level fingerprint (`rag_connector.fingerprints.corpus_fingerprint`) over `data/sources.json`. It changes when a source document changes, and is blind to how the documents were split — which is why it is not the Dataset's identity. |
 | `core_sha256` | The digest over all three core files — see below. |
+| `derived_from` | Optional. The Dataset this one was made from, as `{"dataset_id", "core_sha256"}` — written by a sync ([below](#syncing-into-a-copy--rag-connectorsyncs)). Lineage between Datasets only: nothing about a backend. |
 
 Unknown keys are allowed and ignored by readers. Note what that does and does
 not permit: a writer (for example a later `1.x` writer) may include extra keys
@@ -295,6 +310,59 @@ covers, how it was built, known problems. It belongs to the owner, except
 `docs/<tool>/`, where a tool may write documentation it generates. Like
 everything outside the core, none of it is corpus.
 
+### `FINDINGS.md` — findings about the Dataset
+
+*A convention; no code is required to use it.* One top-level file where
+anything learned about the Dataset itself is collected, from any tool or any
+person: damage found in the chunking, repeated or conflicting content,
+ambiguities, judgement calls a tool had to make. A person or a coding agent
+opens one known file instead of looking through each tool's area.
+
+The only requirement:
+
+- **Each finding is its own top-level entry, and each entry starts with a `# `
+  heading.** An entry runs from its heading to the next top-level heading. A
+  line starting with `# ` inside a fenced code block is not a heading.
+- Everything else is free. Use any sub-headings, lists, tables, quotes or
+  links inside an entry. A summary or overview is just another top-level entry.
+- **Programs only append** new entries at the end. A person may add, change or
+  remove anything.
+
+What this file is, and is not:
+
+- It holds findings **about the Dataset** (its chunks, documents and corpus),
+  from any tool. It is not about a Test Set or a run. A Test Set or a run may
+  mention a finding by its heading; a finding does not point back.
+- A finding that concerns a chunk names it by `chunk_id` in its text, so
+  "what is known about this chunk?" is a search for the id.
+- It is **evidence about the corpus, not corpus** (rule 4), like everything
+  outside the core.
+- It is a shared file (rule 8): nothing secret and nothing machine-local. It
+  travels with every copy of the Dataset, which already carries every chunk, so
+  quoting a chunk in an entry exposes nothing the copy does not hold.
+- It is not tied to one core the way `analysis/<tool>/` is. A finding about a
+  chunk is only meaningful for the Dataset that has that chunk id, so say in
+  the entry which Dataset (or `core_sha256`) it was made on if that matters.
+
+Suggested, never required. Keep entries short and clear, in three parts:
+
+- **An id and a description, in the heading**: `# F07: Statements that
+  conflict`. The description is short and says what the issue is.
+- **A source line**, in words a person understands, for example "Source:
+  testset-kit Scanner, confirmed by reading", "Source: RAGauge TEST 2 grader",
+  "Source: person". A reader can filter on it; an entry without one shows
+  under "unknown source".
+- **The details**: a few lines, with the chunk ids and a short quote where it
+  helps.
+
+An entry states what was observed. It is a fact, not a decision, a
+recommendation or a task. There is no status or kind field. Anything more
+belongs in the details.
+
+Scale: one file is meant for tens or hundreds of entries. A tool with many
+records (a chunk-by-chunk survey, say) should write a summary entry and keep
+the records in its own `analysis/<tool>/` area, citing it.
+
 ## Tool-private areas — `.<tool>/`
 
 *The `.<tool>/` location is not yet implemented; `extensions/<tool>/` is.* A
@@ -308,9 +376,12 @@ nothing in this spec defines, reads or validates it.
   files a tool deletes itself.
 - **A dot-entry without a matching envelope is not a tool area.** `.git/`,
   `.claude/`, `.DS_Store` and the like are free entries.
-- **`.rag-connector/` is this package's.** It is reserved for the record of
-  attaching this Dataset to a connector instance (`.rag-connector/attachments/`),
-  whose format a later section of this spec will define.
+- **`.rag-connector/` is this package's.** It holds the audits of this
+  Dataset (`.rag-connector/audits/`, [below](#audits--rag-connectoraudits)),
+  the record of the sync that made it, if one did (`.rag-connector/syncs/`,
+  [below](#syncing-into-a-copy--rag-connectorsyncs)), and is reserved for the record of attaching it to a connector instance
+  (`.rag-connector/attachments/`), whose format a later section of this spec
+  will define. `list_extensions` does not yet discover it.
 
 **`extensions/<tool>/` remains valid.** The 1.0 location is a tool-private
 area throughout 1.x, with the same envelope and the same rules. A reader
@@ -318,6 +389,189 @@ discovers tool areas at both locations. `.<tool>/` is the recommended location
 for a tool's next format; a tool **may** move its area there, when it chooses,
 and nothing requires it to. One name in both locations at once is reported as a
 problem rather than one being chosen silently.
+
+## The Dataset is static; the backend is not
+
+A Dataset's core never changes. The RAG system it was exported from, or is
+attached to, changes all the time: its index is rebuilt and hands out new chunk
+ids, its corpus is re-ingested with other chunking settings or metadata fields,
+documents are added and removed. And there is rarely one such system: the same
+connector type may be configured by several applications, or by one
+application for several environments (development, staging, production), and
+those systems need not be in the same state.
+
+So the relationship between a Dataset and a backend is a fact about **one
+connector instance at one time**, never about the Dataset:
+
+- **Keyed by instance, never by Dataset alone.** Whatever describes a backend
+  — its connection, a map from Dataset chunk ids to its native ids, whether it
+  is "connected", its fingerprint — is recorded per connector instance. A tool
+  must not keep a single "current connection" per Dataset: when a second
+  application, or a second instance in the same application, attaches the
+  same folder, one slot means the last writer silently replaces the other's
+  connection, and each then runs against a backend it did not check.
+- **Never shared across instances.** A record made for one instance is not
+  used for another, even of the same connector type, even over what looks
+  like the same backend, even when both held identical chunks when the record
+  was made. Two instances may diverge at any moment afterwards.
+- **One record per act.** Attaching produces its own record, identified by its
+  own id that the application keeps; an audit likewise
+  ([below](#audits--rag-connectoraudits)). Several applications can therefore
+  use one Dataset folder at once, each finding its own records by id.
+- **An instance is identified by its connection.** `connection_sha256` (sha256
+  over the connection document as canonical JSON) tells instances of one
+  connector type apart without storing their configuration in the Dataset.
+  Connection documents are secret-free by contract, but they can still name
+  hosts and paths, which a Dataset does not need to carry.
+- **The Dataset is never updated to follow the backend.** When a backend has
+  moved on, the choice is the application's: reattach (new ids for the same
+  text), take a **new** Dataset from the backend's current corpus as a copy (a
+  re-chunk is a new Dataset, rule 3), or keep using the old one where it still
+  matches. Test Sets cite the old Dataset's chunk ids, so migrating them is a
+  separate decision, and nothing here makes it. Taking the copy is a
+  **sync** ([below](#syncing-into-a-copy--rag-connectorsyncs)).
+
+## Audits — `.rag-connector/audits/`
+
+An audit compares a Dataset with one connector instance's whole corpus as it is
+now, and records what differs. **It changes nothing**: not the core, not an
+attachment, not the backend. A Dataset may hold any number of audits, from
+any application and any instance, each in its own directory:
+
+```
+.rag-connector/
+  extension.json                the area's envelope
+  audits/<audit-id>/
+    audit.json                  the summary
+    chunks.jsonl                one row per Dataset chunk, plus one per
+                                backend chunk no Dataset chunk matched
+```
+
+`<audit-id>` is `audit-<UTC time>-<8 hex>`, so audits sort by time. An audit is
+written once and never edited. Like the rest of a tool-private area, audits do
+not travel with a shared copy ([below](#sharing-a-dataset)): they describe a
+backend the recipient may not have.
+
+**Reading the corpus.** The audit reads the corpus once through the corpus read
+(`pull_all_chunks`). A connector that cannot read its corpus, and a backend
+failure, raise: neither is ever recorded as "every chunk missing". A corpus
+read that returns two chunks under one id is a broken read and refuses the
+audit. An empty corpus read is recorded as what it is.
+
+**Matching** is by id, then by exact text, and **never by position**:
+
+1. A backend chunk with the same `chunk_id`.
+2. Otherwise a backend chunk with the same text (sha256), only when exactly
+   one unmatched Dataset chunk and exactly one unmatched backend chunk carry
+   that text. Anything else is reported as ambiguous, not assigned.
+
+Each Dataset chunk gets one status; each unmatched backend chunk is `added`:
+
+| Status | Means |
+| --- | --- |
+| `unchanged` | Same id, same text. Metadata may still differ (below). |
+| `text_changed` | Same id, different text — an edit, or a re-chunk that reused positional ids. |
+| `id_changed` | Same text under another id — what an index rebuild does. Any id map made before is stale for this chunk. |
+| `ambiguous` | Its text matches several unmatched backend chunks. The candidates are listed. |
+| `missing` | Neither its id nor its text is in the backend. |
+| `added` | A backend chunk that matched no Dataset chunk. |
+
+For every matched chunk the row also lists what else differs:
+`fields_changed` (`doc_id`, `source_file`, `doc_chunk_index`, `char_start`,
+`char_end`, `content_module_id`), and `metadata_keys_added`,
+`metadata_keys_removed`, `metadata_keys_changed`. `metadata.document_filepath`
+is ignored on both sides, since the writer strips it from the core.
+`global_index` is not compared: it is host-assigned.
+
+**Documents** are grouped by `doc_id`: `unchanged` (every chunk unchanged,
+nothing added under the doc), `removed` (no chunk found by id or text, and no
+backend chunk has the `doc_id`), `added` (a backend `doc_id` with no Dataset
+chunk behind it) and `changed` (anything else). Each row gives the chunk count
+on both sides and the chunk statuses.
+
+**Chunking profiles.** For each side: chunk count, document count, chunk length
+in characters (min, median, mean, p90, max), chunks per document, the metadata
+keys and how many chunks carry each, and the exact repeated text between
+neighbouring chunks of a document (`neighbour_overlap_chars`). These are
+**observed**, not declared settings: a chunker that trims at boundaries shows
+less overlap than it was configured with. Compare the two sides; do not read
+either as a recovered `chunk_size` or `chunk_overlap`.
+
+**Signals** name what was observed, each with a count; they are never a
+verdict. `chunk_ids_changed`, `chunk_text_changed`, `chunks_missing`,
+`chunks_added`, `chunks_ambiguous`, `documents_removed`, `documents_added`,
+`documents_chunk_count_changed` (present on both sides with a different number
+of chunks, as a re-chunk does), `metadata_keys_added`, `metadata_keys_removed`,
+`chunk_metadata_changed`, `chunk_fields_changed`.
+
+**`in_sync`** is true only when the backend's chunk inventory (same definition
+as the Dataset's) equals the Dataset's and no matched chunk's metadata or
+fields differ.
+
+**`audit.json`** records, besides the counts, signals, profiles and documents:
+`format_version` (`"1"`), `created_at`, the Dataset (`dataset_id`,
+`core_sha256`, `chunk_inventory_sha256`, `chunk_count`, `chunking`), the
+instance (`connector_type`, `connection_sha256`, and the application's own
+`instance_label` and `host`, any of which may be `null`), and the backend
+(`chunk_count`, `chunk_inventory_sha256`). An audit is recorded only in the
+Dataset whose core it was made against.
+
+## Syncing into a copy — `.rag-connector/syncs/`
+
+A **sync** follows a backend that has moved on without changing the Dataset
+that fell behind: it writes a **new** Dataset from one connector instance's
+corpus as it is now (exactly as `export` does), and records which Dataset it
+follows and, optionally, which audit of that Dataset motivated it. The source
+Dataset is read and verified, and **never written**: not its core, not its
+private area. A legacy folder records no core hash to cite, and is refused.
+The source's Test Sets keep citing the source's chunk ids; whether, and how, to
+move them to the copy is the application's decision.
+
+Lineage is recorded in two places, split by what kind of fact it is:
+
+- **In the new core**, the manifest key `derived_from`: the source's
+  `dataset_id` and `core_sha256`. That one Dataset was made from another is a
+  fact about the two Datasets, true for as long as both exist, so it is
+  written once with the core, covered by `core_sha256`, and travels with
+  every shared copy. It is written **only at creation**: like any manifest
+  key, adding it to an existing core is an edit readers refuse. It changes no
+  identity rule: `dataset_id` is still the chunk inventory's, so a sync of an
+  unchanged backend has the source's `dataset_id` and a different
+  `core_sha256` (its `created_at` and `derived_from` differ).
+- **In the new Dataset's private area**, `.rag-connector/syncs/<sync-id>/sync.json`:
+  the connector instance the copy was taken from and the audit that motivated
+  it. Both describe one backend (rule 9), and the audit lives in the
+  **source's** private area, which a shared copy does not carry, so this
+  record stays private too.
+
+```
+.rag-connector/
+  extension.json            the area's envelope (core_sha256 of the NEW core)
+  syncs/<sync-id>/
+    sync.json
+```
+
+`<sync-id>` is `sync-<UTC time>-<8 hex>`. A Dataset made by a sync holds one,
+written in the same step as the core: the core and the record are staged
+together and moved into place at once, so a backend failure or an empty corpus
+leaves nothing behind.
+
+**Citing an audit.** The audit must be recorded in the source Dataset, must
+have been made against the source's core, by the same connector type, and for
+the **same connector instance**: both the audit and the sync must carry a
+`connection_sha256`, and they must be equal. Otherwise the sync is refused —
+an audit of one instance says nothing about another (rule 9). The backend may
+still have moved on between the audit and the sync; that is recorded, not
+refused, as `backend_matches_audit`.
+
+**`sync.json`** records `sync_id`, `format_version` (`"1"`), `created_at`;
+`source` and `dataset` (each `dataset_id`, `core_sha256`,
+`chunk_inventory_sha256`, `chunk_count`); `same_chunk_inventory_as_source`
+(same ids and texts — metadata may still differ); the instance (`connector`:
+`connector_type`, `connection_sha256`, `instance_label`, `host`,
+`retrieval_mode`); and `audit`: `null`, or the cited `audit_id`, its
+`created_at` and `in_sync`, the backend chunk inventory it saw, and
+`backend_matches_audit` (whether that equals the copy's inventory).
 
 ## Envelopes
 
@@ -408,6 +662,29 @@ from rag_connector.dataset import (
 | `write_extension_envelope(folder, tool, *, tool_version, format_version, created_at=None, overwrite=False)` | Creates `extensions/<tool>/extension.json` recording the verified core. Still writes the 1.0 location. |
 | `chunker_chunking(...)`, `exported_chunking(connector_type)` | The two defined `chunking` blocks. |
 
+```python
+from rag_connector.audit import (
+    audit_dataset, record_audit, read_audit, list_audits, connection_sha256,
+)
+```
+
+| Function | Does |
+| --- | --- |
+| `audit_dataset(dataset, pipeline, *, connector_type, connection=None, instance_label=None, host=None)` | Compares a read `Dataset` with the connector's corpus and returns a `DatasetAudit`. Writes nothing. |
+| `record_audit(folder, audit)` | Stores it under `.rag-connector/audits/<audit-id>/`, after checking the folder holds the audited core. |
+| `list_audits(folder)`, `read_audit(path)` | Every recorded `audit.json`, oldest first; one audit with its chunk rows. |
+| `connection_sha256(connection)` | The instance identity recorded in an audit. |
+
+```python
+from rag_connector.sync import sync_dataset, list_syncs
+```
+
+| Function | Does |
+| --- | --- |
+| `sync_dataset(source, pipeline, out_dir, *, connector_type, connection=None, audit_id=None, instance_label=None, host=None, name=None)` | Writes a new Dataset from the connector's corpus with `derived_from` naming `source`, and its `sync.json`; returns a `DatasetSync` (`dataset`, `record`, `path`). Never writes `source`. `name` defaults to the source's. |
+| `list_syncs(folder)` | Every `sync.json` in a Dataset folder, oldest first. |
+| `Dataset.derived_from` | The manifest's `derived_from`, or `None`. |
+
 ## Command line
 
 ```bash
@@ -418,6 +695,19 @@ rag-connector dataset build --folder ./my-documents --out ./my-dataset \
 # From a connector's own corpus, as its system chunked it:
 rag-connector dataset export --connector my-rag --params '{"endpoint": "..."}' \
   --out ./my-dataset [--name "..."]
+```
+
+```bash
+# Compare a Dataset with a connector instance's corpus; records the audit:
+rag-connector dataset audit --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}' [--label staging] [--host my-app] [--no-record]
+rag-connector dataset audits --dataset ./my-dataset   # one JSON line per audit
+
+# Take a NEW Dataset from the instance's corpus as it is now; the source is
+# never changed. --audit cites an audit of the source for the same instance:
+rag-connector dataset sync --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}' --out ./my-dataset-2 [--audit <audit-id>] \
+  [--name "..."] [--label staging] [--host my-app]
 ```
 
 `export` reads the whole corpus through the connector's corpus read
@@ -458,7 +748,7 @@ defines only the envelopes.
 
 | Tool name | Written today | Reserved | Contents defined by |
 | --- | --- | --- | --- |
-| `rag-connector` | — | `.rag-connector/` | This spec |
+| `rag-connector` | `.rag-connector/audits/`, `.rag-connector/syncs/` | `.rag-connector/attachments/` | This spec |
 | `testset-kit` | `testsets/`, `extensions/testset-kit/` | `analysis/testset-kit/` | testset-kit: the Test Set spec (`contract/CORE.md`) and its output contract (`contract/OUTPUT.md`) |
 | `ragauge` | `extensions/ragauge/` | `analysis/ragauge/` | RAGauge |
 | `pelorus` | `extensions/pelorus/` (on export) | — | Pelorus |
