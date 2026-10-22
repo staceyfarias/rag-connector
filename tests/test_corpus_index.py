@@ -314,3 +314,54 @@ def test_cli_prepare_status_lookup(dataset, capsys):
 def test_cli_refuses_a_folder_that_is_not_a_dataset(tmp_path, capsys):
     assert main(["index", "prepare", "--dataset", str(tmp_path)]) == 1
     assert "rag-connector index:" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# Extraction rules: general, with corpus-specific stopwords passed in
+# ---------------------------------------------------------------------------
+
+def _terms(chunks, **kw):
+    return {entry["term"] for entry in corpus_index.build(chunks, **kw)["entries"]}
+
+
+def test_any_capitalized_word_and_number_is_a_numbered_name():
+    terms = _terms([
+        _chunk("a:0", "a", "Guide", 0, "Take Route 66 to Building 4, then see Sec. 12."),
+        _chunk("a:1", "a", "Guide", 1,
+               "Meetings are at Post 1966, Post 12 and Post 40 on Aug. 14."),
+    ])
+    assert {"Route 66", "Building 4", "Sec. 12", "Post 1966", "Post 12"} <= terms
+    assert not any(term.startswith("Aug") for term in terms)
+
+
+def test_dates_postal_codes_and_list_numbers_are_not_names():
+    terms = _terms([_chunk("a:0", "a", "Guide", 0,
+                           "The club grew. Since 1947 it has met at 12 Main St, Delray Beach "
+                           "33483, near Gannet Rock. See the Conventions. 4 delegates attend. "
+                           "Members chartered it as Chartered 1946 records show.")])
+    assert "Delray Beach" in terms
+    assert not {"Since 1947", "Beach 33483", "Conventions. 4", "Chartered 1946"} & terms
+
+
+def test_a_line_initial_word_counts_only_when_the_corpus_numbers_with_it():
+    lines = "Arrive 30 minutes early.\nPost 1966 meets monthly.\nVisit Post 12 or Post 40."
+    terms = _terms([_chunk("a:0", "a", "Guide", 0, lines)])
+    assert "Post 1966" in terms
+    assert "Arrive 30" not in terms
+
+
+def test_stopwords_are_added_by_the_caller_and_recorded(dataset):
+    chunks = [_chunk("a:0", "a", "Guide", 0, "Contact the Commodore about Harbor Club dues.")]
+    assert "Commodore" in _terms(chunks)
+    assert "Commodore" not in _terms(chunks, stopwords=["commodore"])
+
+    corpus_index.prepare(dataset, stopwords=["Portmere", "harbor"])
+    index = corpus_index.load(dataset)
+    assert index["stopwords"] == ["harbor", "portmere"]
+    assert corpus_index.find(index, "Portmere")["entries"] == []
+
+
+def test_cli_prepare_takes_stopwords(dataset, capsys):
+    assert main(["index", "prepare", "--dataset", str(dataset),
+                 "--stopword", "Portmere"]) == 0
+    assert corpus_index.load(dataset)["stopwords"] == ["portmere"]

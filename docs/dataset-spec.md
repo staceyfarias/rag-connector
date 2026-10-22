@@ -312,7 +312,11 @@ separately from freezing them and replaceable at any time:
   `rag_connector.corpus_index`). Names, document titles and section headings,
   each with the chunk ids that hold it, the previous and next chunk in that
   document, and identical copies elsewhere. Taken from the chunk text by
-  pattern; no model is called. `index.json` is the full map, `index.md` says
+  pattern; no model is called. The patterns are general (capitalized
+  phrases, headings, and numbered names such as `Route 66` or `Sec. 12`,
+  with dates and postal codes left out); a corpus whose own capitalized
+  words name nothing passes them as extra stopwords
+  (`prepare --stopword WORD`), and the index records the list it used. `index.json` is the full map, `index.md` says
   how it is laid out, and `index/terms/<letter>.md` and
   `index/threads/<letter>.md` are the slices to read. A label found in too
   many places to narrow a search is left out, and ordinary wording is never
@@ -700,8 +704,8 @@ from rag_connector import corpus_index, signal_index
 
 | Function | Does |
 | --- | --- |
-| `corpus_index.prepare(folder)` | Writes the book index into `analysis/rag-connector/` and returns its counts. |
-| `corpus_index.build(chunks)` | The book index body from `ChunkRecord`s or chunk-row mappings; writes nothing. |
+| `corpus_index.prepare(folder, *, stopwords=())` | Writes the book index into `analysis/rag-connector/` and returns its counts. |
+| `corpus_index.build(chunks, *, stopwords=())` | The book index body from `ChunkRecord`s or chunk-row mappings; writes nothing. |
 | `corpus_index.load(folder)`, `corpus_index.find(index, query)` | The index on this core, or `None`; the entries and threads whose label contains `query`. |
 | `signal_index.build(folder, *, model=MODEL, label=None, limit=None, workers=6)` | Labels the documents not labelled yet and rewrites the signal index. `label` is `(system, prompt) -> (text, input_tokens, output_tokens)`; the default calls the Anthropic API (`llm` extra). |
 | `signal_index.load(folder)`, `signal_index.find(payload, query)` | The signal index on this core, or `None`; the subjects whose words contain `query`. |
@@ -733,7 +737,7 @@ from rag_connector.sync import sync_dataset, list_syncs
 
 ```bash
 # The corpus index, in analysis/rag-connector/ (no model call):
-rag-connector index prepare --dataset ./my-dataset
+rag-connector index prepare --dataset ./my-dataset [--stopword WORD ...]
 rag-connector index status --dataset ./my-dataset
 rag-connector index lookup --dataset ./my-dataset "Port St. Joe"
 

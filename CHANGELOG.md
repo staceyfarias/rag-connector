@@ -19,6 +19,16 @@ Additive.
   The model call needs the new optional `llm` extra (`anthropic`); nothing in
   the core imports it.
 
+- **The book index's extraction rules are corpus-neutral.** testset-kit's
+  draft was tuned to one corpus: only `Post`, `District` and `Sec.` could
+  lead a numbered name, and words such as `commander`, `chairman` and
+  `accused` were stopwords. Now any capitalized word and a number is a
+  numbered name (`Route 66`, `Building 4`), except dates, a postal code after
+  an address comma, and a list number after a sentence; a line-initial or
+  year-like one counts only when the corpus itself numbers things with that
+  word. Corpus-specific stopwords are passed in (`stopwords=`,
+  `--stopword`) and recorded in `index.json` (format version 2).
+
 - **Analysis areas** (`write_analysis_envelope`, `list_analyses`,
   `AnalysisEnvelope`). The spec's `analysis/<tool>/analysis.json` envelope,
   until now documented only: it records the core it was built on and lists

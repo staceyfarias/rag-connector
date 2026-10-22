@@ -151,6 +151,9 @@ def _add_index_commands(subparsers: argparse._SubParsersAction) -> None:
         help="write the book index (names, titles, headings -> chunk ids); "
              "calls no model",
     )
+    prepare.add_argument("--stopword", action="append", default=[], metavar="WORD",
+                         help="a capitalized word that names nothing in this corpus; "
+                              "repeatable, recorded in the index")
     status = commands.add_parser("status", help="how big the indexes are")
     lookup = commands.add_parser(
         "lookup", help="print book-index entries and threads whose label contains QUERY",
@@ -180,7 +183,7 @@ def _run_index_command(args: argparse.Namespace) -> int:
 
     folder = Path(args.dataset)
     if args.index_command == "prepare":
-        counts = corpus_index.prepare(folder)
+        counts = corpus_index.prepare(folder, stopwords=args.stopword)
         print(f"indexed {counts['documents']} documents, {counts['chunks']} chunks, "
               f"{counts['entries']} entries, {counts['threads']} threads")
         print(f"  {corpus_index.markdown_path(folder)}")

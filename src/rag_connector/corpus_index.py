@@ -60,7 +60,7 @@ FORMAT_VERSION = "1"
 INDEX_NAME = "index.json"
 INDEX_MD = "index.md"
 KIND = "rag-connector-corpus-index"
-VERSION = 1
+VERSION = 2
 MAX_LOCATIONS = 12
 MAX_COPIES = 8
 
@@ -73,24 +73,35 @@ _START = rf"(?:St\.|Ft\.|{_WORD})"
 _CONT = rf"(?:(?:of|de|du|la|van|von)\s+)?(?:St\.|Ft\.|{_INITIAL}|{_WORD})"
 _PHRASE = re.compile(rf"\b{_START}(?:\s+{_CONT}){{1,5}}\b")
 _SINGLE = re.compile(rf"\b{_WORD}\b")
-_NUMBERED = re.compile(r"\b(?:Post|District|Sec\.)\s+\d+[A-Za-z]?(?:\.\d+)?\b")
+# A capitalized word and a number: "Route 66", "Building 4", "Sec. 12".
+_NUMBERED = re.compile(r"\b([A-Z][a-z]+\.?)\s+(\d+[A-Za-z]?(?:\.\d+)?)\b")
+_POSTAL = re.compile(r"\d{5}")
+_TOWN = re.compile(r"(?:\s*[A-Z][A-Za-z.'-]*)*\s*")
+# A year after one of these is a date, not part of a name ("Since 1947").
+_BEFORE_YEAR = frozenset("""
+since until through fall spring summer winter fiscal class copyright
+established est founded year
+""".split())
 _YEAR = re.compile(r"^(?:19|20)\d{2}$")
 _CONNECTORS = frozenset("of de du la van von".split())
 _LEADING = frozenset("the a an any this these that those".split())
+# Capitalized words that name nothing on their own: calendar words, document
+# structure, and common English. General on purpose; a corpus that needs more
+# passes them to build(stopwords=...), and the index records what it used.
 _SINGLE_STOP = frozenset("""
 monday tuesday wednesday thursday friday saturday sunday
 january february march april may june july august september october november december
-chapter section article part page note table figure appendix introduction overview
-summary contents index manual guide
+jan feb mar apr jun jul aug sep sept oct nov dec since until through
+and but nor yet
+chapter section sections article part page note table figure appendix introduction
+paragraph slide item step line box suite
+overview summary contents index manual guide
 the this that these those each every following additional other another such
 have has had do does did make made take taken give given get got
-there here both name power large elected rules sections duties street
-contact address membership events announcements chairman commander
-bring build built break brief call come came going going
+there here both name street contact address membership events announcements
+bring build built break brief call come came going
 shall upon pursuant said same under into over about after before
 when where what which who how not from with your their its
-accused fails failed request requested requests waive waived
-materials relied term office present arms
 """.split())
 
 
@@ -180,7 +191,52 @@ def _line_initial(text: str, start: int) -> bool:
     return False
 
 
-def _phrase_surface(surface: str) -> str:
+def _after_address_comma(text: str, start: int) -> bool:
+    """Only a town name between a comma and here: "12 Main St, Delray Beach 33483"."""
+    comma = text.rfind(",", 0, start)
+    return comma >= 0 and bool(_TOWN.fullmatch(text[comma + 1:start]))
+
+
+def _numbered(text: str, stop: frozenset[str]):
+    """Numbered names in ``text`` as (match, lead word, line-initial)."""
+    for match in _NUMBERED.finditer(text):
+        word, number = match.group(1), match.group(2)
+        bare = word.rstrip(".").casefold()
+        if len(bare) < 3 or bare in stop:
+            continue
+        if word.endswith(".") and len(bare) > 4:
+            continue  # a sentence ending, then a list number; not "Sec." or "Bldg."
+        if _YEAR.fullmatch(number) and bare in _BEFORE_YEAR:
+            continue
+        if _POSTAL.fullmatch(number) and _after_address_comma(text, match.start()):
+            continue  # a town and its postal code
+        yield match, bare, _line_initial(text, match.start())
+
+
+def numbered_leads(texts: Iterable[str],
+                   stop: frozenset[str] = _SINGLE_STOP) -> dict[str, tuple[bool, int]]:
+    """How the corpus uses each lead word of a numbered name.
+
+    For each word: whether it is ever used mid-sentence, and how many distinct
+    numbers that are not year-like follow it. A capital that only starts a line
+    ("Arrive 30 minutes early") is a weak name; one the corpus also uses
+    mid-sentence ("... at Post 1966") is not. And a year-like number is part of
+    a name only after a word the corpus numbers things with: "Post 1966" when
+    there is also a "Post 12", but not "Chartered 1946".
+    """
+    mid: set[str] = set()
+    numbers: dict[str, set[str]] = {}
+    for text in texts:
+        for match, bare, initial in _numbered(text, stop):
+            if not initial:
+                mid.add(bare)
+            if not _YEAR.fullmatch(match.group(2)):
+                numbers.setdefault(bare, set()).add(match.group(2))
+    return {bare: (bare in mid, len(numbers.get(bare, ())))
+            for bare in mid | set(numbers)}
+
+
+def _phrase_surface(surface: str, stop: frozenset[str]) -> str:
     """Drop a leading article and a trailing initial. Keep a phrase that
     names something: at least two words, one of them not a common word."""
     parts = surface.split()
@@ -197,12 +253,14 @@ def _phrase_surface(surface: str) -> str:
         and not re.fullmatch(r"[A-Z]\.", part)
         and part.casefold() not in {"st.", "ft."}
     ]
-    if not any(part.casefold() not in _SINGLE_STOP for part in content):
+    if not any(part.casefold() not in stop for part in content):
         return ""
     return " ".join(parts)
 
 
-def _mentions(text: str) -> list[tuple[str, str]]:
+def _mentions(text: str, stop: frozenset[str] = _SINGLE_STOP,
+              leads: Mapping[str, tuple[bool, int]] | None = None
+              ) -> list[tuple[str, str]]:
     """(kind, surface) pairs. kind is 'entity'. Headings are handled apart."""
     found: list[tuple[str, str]] = []
     seen: set[str] = set()
@@ -216,11 +274,17 @@ def _mentions(text: str) -> list[tuple[str, str]]:
         seen.add(key)
         found.append((kind, surface))
 
-    for match in _NUMBERED.finditer(text):
-        add("entity", match.group(0).replace("sec.", "Sec."))
+    for match, bare, initial in _numbered(text, stop):
+        if leads is not None:
+            used_mid, counted = leads.get(bare, (False, 0))
+            if initial and not used_mid:
+                continue
+            if _YEAR.fullmatch(match.group(2)) and counted < 2:
+                continue
+        add("entity", match.group(0))
         covered.append(match.span())
     for match in _PHRASE.finditer(text):
-        surface = _phrase_surface(match.group(0))
+        surface = _phrase_surface(match.group(0), stop)
         if surface:
             add("entity", surface)
         covered.append(match.span())
@@ -228,7 +292,7 @@ def _mentions(text: str) -> list[tuple[str, str]]:
         if any(start <= match.start() and match.end() <= end for start, end in covered):
             continue
         word = match.group(0)
-        if len(word) < 4 or word.casefold() in _SINGLE_STOP or _line_initial(text, match.start()):
+        if len(word) < 4 or word.casefold() in stop or _line_initial(text, match.start()):
             continue
         add("entity", word)
     return found
@@ -256,9 +320,16 @@ def _prefer_primary(chunks: list[dict]) -> dict:
     return min(chunks, key=rank)
 
 
-def build(chunks: Iterable[ChunkRecord | Mapping[str, Any]]) -> dict[str, Any]:
-    """The index body: entries and threads. No dataset files are read."""
+def build(chunks: Iterable[ChunkRecord | Mapping[str, Any]], *,
+          stopwords: Iterable[str] = ()) -> dict[str, Any]:
+    """The index body: entries and threads. No dataset files are read.
+
+    ``stopwords`` adds capitalized words that name nothing in this corpus (a
+    title used on every page, say) to the general list.
+    """
+    stop = _SINGLE_STOP | {word.casefold() for word in stopwords}
     chunks = _rows(chunks)
+    leads = numbered_leads((str(c.get("text") or "") for c in chunks), stop)
     by_doc: dict[str, list[dict]] = {}
     for chunk in chunks:
         by_doc.setdefault(_doc_of(chunk), []).append(chunk)
@@ -342,7 +413,7 @@ def build(chunks: Iterable[ChunkRecord | Mapping[str, Any]]) -> dict[str, Any]:
                 add_entry("topic", source, loc, digest)
             for title in _headings(str(chunk.get("text") or "")):
                 add_entry("topic", title, loc, digest)
-            for _, surface in _mentions(str(chunk.get("text") or "")):
+            for _, surface in _mentions(str(chunk.get("text") or ""), stop, leads):
                 add_entry("entity", surface, loc, digest)
 
     n_docs = len(groups)
@@ -494,6 +565,7 @@ def render_guide(index: dict[str, Any]) -> str:
         f"- dataset_id: {index.get('dataset_id')}",
         f"- chunk_inventory_sha256: {index.get('chunk_inventory_sha256')}",
         f"- core_sha256: {index.get('core_sha256')}",
+        f"- extra stopwords: {', '.join(index.get('stopwords') or []) or 'none'}",
         f"- built_at: {index.get('built_at')}",
         f"- documents: {counts['documents']}",
         f"- chunks: {counts['chunks']}",
@@ -608,14 +680,17 @@ def _write(folder: str | os.PathLike[str], index: dict[str, Any]) -> dict[str, A
     return index
 
 
-def prepare(folder: str | os.PathLike[str]) -> dict[str, Any]:
+def prepare(folder: str | os.PathLike[str], *,
+            stopwords: Iterable[str] = ()) -> dict[str, Any]:
     """Write the book index from the Dataset's chunks and return its counts.
 
     Replaces any book index already there and leaves a signal index alone.
+    ``stopwords`` is passed to :func:`build` and recorded in the index.
     """
     dataset = open_area(folder)
     chunks = list(dataset.chunks)
-    body = build(chunks)
+    extra = sorted({word.casefold() for word in stopwords})
+    body = build(chunks, stopwords=extra)
     index = {
         "kind": KIND,
         "version": VERSION,
@@ -624,6 +699,7 @@ def prepare(folder: str | os.PathLike[str]) -> dict[str, Any]:
         "chunk_inventory_sha256": dataset.chunk_inventory_sha256,
         "core_sha256": dataset.core_sha256,
         "built_at": _now(),
+        "stopwords": extra,
         "counts": {
             "documents": body["documents"],
             "chunks": len(chunks),
