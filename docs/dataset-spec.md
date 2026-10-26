@@ -305,7 +305,7 @@ recognized by its envelope, `analysis/<tool>/analysis.json`
 
 #### `analysis/rag-connector/` — the corpus index
 
-This package's own analysis area holds two indexes over the chunks, built
+This package's own analysis area holds three indexes over the chunks, built
 separately from freezing them and replaceable at any time:
 
 - **The book index** (`rag-connector index prepare`,
@@ -331,10 +331,56 @@ separately from freezing them and replaceable at any time:
   Labelling progress is working state, kept privately in
   `.rag-connector/index/signal_progress.jsonl`, so a later run sends only the
   documents not labelled yet. It needs the optional `llm` extra.
+- **The search index** (`rag-connector index search-db`, also built by
+  `index prepare` unless `--no-search-db`; `rag_connector.search_index`).
+  One SQLite file, `search.sqlite`, holding every chunk row with full-text
+  indexes over its text, the copy groups and heading context. No model is
+  called and nothing outside the standard library is needed. Its layout is
+  below, so a tool can query the file directly with any SQLite that has FTS5.
 
-Rebuilding the book index leaves the signal index in place. Both name the
-core they were built on; a reader given an area built on another core gets no
-index, and the next build replaces the area as a whole.
+Rebuilding the book index leaves the signal index and the search index in
+place, and rebuilding the search index leaves the other two. All of them
+name the core they were built on; a reader given an area built on another
+core gets no index, and the next build replaces the area as a whole.
+
+##### `search.sqlite` — the search index
+
+Format `rag-connector-search-index`, version `1`. Written to a temporary file
+beside the target and moved into place, so a reader never sees half of one.
+`build(..., out=)` (CLI `--out`) writes it anywhere else instead, leaving the
+Dataset folder untouched.
+
+| Table | Holds |
+| --- | --- |
+| `meta(key, value)` | `format`, `format_version`, `built_at`, `tool_version`, `sqlite_version`, `dataset_id`, `dataset_name`, `core_sha256`, `chunk_inventory_sha256`, `chunks_file_bytes` (the size of `data/chunks.jsonl` it read), `chunk_count`, `document_count`, the tokenizers, and the overlap parameters (JSON). |
+| `chunks` | One row per chunk. `n` (integer key, the FTS rowid), `chunk_id` (unique), `doc_id`, `doc_chunk_index`, `source` (the document title: `metadata.source_document_name`, else `source_file`), `source_file`, `chunk_label`, `task_id` (the content module: `metadata.task_id`, else `content_module_id`; NULL for channel general information), `step_id`, `source_scope`, `resource_type`, `type`, `content_module_id`, `text` (exactly as in the Dataset), `plain` (the text with Markdown backslash escapes removed, `\$18` -> `$18`; NULL where that changes nothing), `heading_before` (the last heading in the document before this chunk), `headings` (JSON `[[offset in plain, heading], ...]` for headings inside the chunk), `copy_rep` (the chunk standing for its near-copy group), `metadata` (JSON object). Indexed on `(doc_id, doc_chunk_index)`, `task_id`, `resource_type`, `type`, `source`. |
+| `chunks_plain` (view) | `n`, `chunk_id`, `plain` as `COALESCE(plain, text)`: the text that is searched. |
+| `chunks_fts` | FTS5, contentless, tokenizer `unicode61 remove_diacritics 2`, columns `plain` and `source`; rowid = `chunks.n`. Word queries: AND/OR/NOT, `"phrases"`, `prefix*`, `NEAR(...)`, `bm25()`. |
+| `chunks_trigram` | FTS5, contentless, tokenizer `trigram`, `detail=none`, column `plain`. A candidate filter for case-insensitive substrings of 3+ characters: match every trigram of the needle (`"$54" AND "549"`), then confirm the needle in `chunks_plain.plain`. |
+| `copy_groups(group_id, kind, chunk_id)` | Copy groups of two or more chunks. `identical` (`I<n>`): the same text once whitespace is collapsed. `near` (`N<n>`): the same words once case, punctuation, accents, Markdown escapes and UTF-8-read-as-cp1252 damage are ignored; listed only when its members are not all one identical text. `overlap` (`O<n>`): the same passage chunked differently or lightly reworded (below). A chunk is in at most one group of each kind. |
+| `overlap_pairs(chunk_a, chunk_b, shared_shingles, containment, containment_larger)` | Every overlapping pair, between `copy_rep` chunks (`chunk_a < chunk_b`): `containment` is the shared shingles over the smaller chunk's, `containment_larger` over the larger chunk's. |
+
+Overlap: words as for `near`, shingles of 8 words; two chunks overlap when
+at least 0.8 of the smaller chunk's shingles are in the other. Chunks under
+30 words are not compared. Candidate pairs come from an inverted index over 1
+in 4 shingles (chosen by CRC-32, so the same shingle is chosen in every
+chunk), leaving out a sampled shingle found in more than 1000 chunks
+(boilerplate); each candidate is then measured on all its shingles. An
+overlap group is the connected pairs whose `containment_larger` is at least
+0.5 (the two chunks are mostly the same passage), with every near copy of a
+member added, so two members of a group need not overlap each other
+directly. A short chunk that only sits inside longer ones (a repeated
+footer, say) stays a pair and does not join those longer chunks into one
+group.
+
+Headings: a Markdown heading line, a line that is only bold text, or a FAQ
+question line (one short sentence ending in `?` that starts a block and is not
+a transcript line). The heading for a position in a chunk is the last heading
+in the chunk before it, else `heading_before`.
+
+A reader checks `meta.core_sha256` against the Dataset's manifest and
+`chunks_file_bytes` against `data/chunks.jsonl` before trusting the file; an
+index that differs describes another corpus.
 
 ### `docs/` — documentation
 
@@ -643,7 +689,8 @@ find what is in the area without knowing the tool:
 ```
 
 Each `path` is relative to the area. `format` is a short name (`markdown`,
-`json`, `jsonl`, `csv`, `html`) and `description` is one line for a person.
+`json`, `jsonl`, `csv`, `html`, `sqlite`) and `description` is one line for a
+person.
 
 ## Sharing a Dataset
 
@@ -711,6 +758,18 @@ from rag_connector import corpus_index, signal_index
 | `signal_index.load(folder)`, `signal_index.find(payload, query)` | The signal index on this core, or `None`; the subjects whose words contain `query`. |
 
 ```python
+from rag_connector import search_index
+```
+
+| Function | Does |
+| --- | --- |
+| `search_index.build(folder, out=None, *, dataset=None)` | Verifies the Dataset and writes `search.sqlite` into `analysis/rag-connector/` (listing it in the envelope), or to `out` (a file or a directory) without writing the Dataset folder. Returns the path. |
+| `search_index.write_search_db(chunks, path, *, meta=None)` | The writer underneath, from `ChunkRecord`s or chunk-row mappings; reads no Dataset. |
+| `search_index.open_index(folder, *, path=None, allow_stale=False)` | Opens the index read-only. Raises `SearchIndexMissing`, or `StaleSearchIndex` when it was built from another core. |
+| `SearchIndex.search(all=, any=, not_=, phrase=, near=(a, b, ..., N), regex=, substring=, word=True, modules=, general_only=False, docs=, exclude_docs=, types=, titles=False, limit=None)` | A `SearchResult`: `total`, `hits` (all of them unless `limit`), `by_doc`, `by_module`. Each hit has the chunk's ids and metadata columns, `heading`, `snippet`, `score` (bm25, higher is better, for word queries) and `copies`. Module, chunk and doc ids accept an unambiguous prefix; an ambiguous one raises `AmbiguousIdError`. |
+| `SearchIndex.neighbors(chunk, radius=1)`, `.outline(doc)`, `.copies(chunk)`, `.chunk(chunk)`, `.modules()` | Chunks around one in its document; a document's chunks in order with their headings; a chunk's identical, near and overlap copies; one chunk whole; every module with its counts. |
+
+```python
 from rag_connector.audit import (
     audit_dataset, record_audit, read_audit, list_audits, connection_sha256,
 )
@@ -744,6 +803,16 @@ rag-connector index lookup --dataset ./my-dataset "Port St. Joe"
 # The signal index (llm extra and ANTHROPIC_API_KEY; resumes where it stopped):
 rag-connector index signal --dataset ./my-dataset [--model ...] [--limit N] [--workers N]
 rag-connector index signal-lookup --dataset ./my-dataset "roster"
+
+# The search index (search.sqlite; also built by `index prepare`):
+rag-connector index search-db --dataset ./my-dataset [--out PATH]
+rag-connector index search --dataset ./my-dataset [--db PATH] [--term T ...] [--any T ...] \
+  [--not T ...] [--phrase TEXT ...] [--near A B ... --within N] [--regex RE ...] \
+  [--substring S ...] [--substring-terms] [--titles] [--module ID ...] [--general] \
+  [--doc DOC ...] [--exclude-doc DOC ...] [--type T ...] [--limit N] [--json]
+rag-connector index neighbors --dataset ./my-dataset CHUNK [--radius N] [--json]
+rag-connector index outline --dataset ./my-dataset DOC_OR_CHUNK [--json]
+rag-connector index copies --dataset ./my-dataset CHUNK [--json]
 ```
 
 ```bash

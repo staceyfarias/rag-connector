@@ -6,6 +6,24 @@ Notable changes to rag-connector. Dates are the day the work landed.
 
 Additive.
 
+- **A search index over a Dataset** (`rag_connector.search_index`;
+  `rag-connector index search-db|search|neighbors|outline|copies`). One SQLite
+  file, `analysis/rag-connector/search.sqlite` (or anywhere with `--out`),
+  built with the standard library only, so tools stop re-parsing
+  `data/chunks.jsonl` for every search. Word search (FTS5 `unicode61`,
+  accents folded): AND, OR, NOT, phrase, prefix and NEAR, ranked by bm25.
+  Substring search (FTS5 `trigram`) for what word search splits (`$18`,
+  `41.5`, `BE-FAST`), and Python regular expressions. Filters by module
+  (`task_id`, prefixes accepted, ambiguity refused), general information,
+  document and type. Every hit is returned unless a limit is asked for, and
+  the total is always reported. Copy groups are computed at build time:
+  identical, near (case, punctuation, accents and encoding damage ignored)
+  and overlap (the same passage chunked differently, by 8-word shingle
+  containment >= 0.8). Each hit carries the heading it sits under, even when
+  the heading is in an earlier chunk. The file records the core it was built
+  from and a reader refuses a stale one. `index prepare` builds it too unless
+  `--no-search-db`. Analysis envelopes accept the artifact format `sqlite`.
+
 - **A corpus index over a Dataset** (`rag_connector.corpus_index`,
   `rag_connector.signal_index`; `rag-connector index prepare|status|lookup|
   signal|signal-lookup`). Moved from testset-kit so every product reads one

@@ -99,7 +99,7 @@ EXTENSIONS_DIR = "extensions"
 EXTENSION_ENVELOPE_FILE = "extension.json"
 ANALYSIS_DIR = "analysis"
 ANALYSIS_ENVELOPE_FILE = "analysis.json"
-_ARTIFACT_FORMATS = ("markdown", "json", "jsonl", "csv", "html")
+_ARTIFACT_FORMATS = ("markdown", "json", "jsonl", "csv", "html", "sqlite")
 
 #: Domain tag hashed in front of the core digest, so a core hash can never be
 #: mistaken for a hash of anything else, and a future definition can change it.

@@ -299,6 +299,48 @@ rag-connector index signal --dataset ./my-dataset
 rag-connector index signal-lookup --dataset ./my-dataset "roster"
 ```
 
+### A search index
+
+A third index is a full-text search index: one SQLite file,
+`analysis/rag-connector/search.sqlite`, holding every chunk with its metadata,
+two full-text indexes (whole words, and case-insensitive substrings), the copy
+groups, and the heading each chunk sits under. It needs only the standard
+library (SQLite FTS5) and calls no model. `index prepare` builds it alongside
+the book index (`--no-search-db` skips it). Any tool can open the file
+directly; the spec documents its tables.
+
+```bash
+rag-connector index search-db --dataset ./my-dataset [--out ./elsewhere/search.sqlite]
+rag-connector index search --dataset ./my-dataset --term "blood pressure" --not "child*"
+rag-connector index search --dataset ./my-dataset --near summarized forward --within 10
+rag-connector index search --dataset ./my-dataset --substring '$18' --module 64c140a8
+rag-connector index search --dataset ./my-dataset --regex '\b\d+(\.\d+)? ?mg\b' --general
+rag-connector index neighbors --dataset ./my-dataset 4a6c729d --radius 2
+rag-connector index outline --dataset ./my-dataset 4a6c729d
+rag-connector index copies --dataset ./my-dataset 4a6c729d
+```
+
+`--term` (every one must match), `--any` (at least one) and `--not` (none)
+take words: several words are a phrase, and a trailing `*` makes a prefix.
+`--substring` finds what word search splits (`$18`, `41.5`, `BE-FAST`), and
+`--regex` takes a Python regular expression. The filters are `--module` (a
+`task_id` or an unambiguous prefix), `--general` (chunks with no module),
+`--doc`, `--exclude-doc` and `--type`. Every hit is printed unless `--limit` is
+given, and the total is always reported. `--json` prints the whole result. A
+search refuses an index built from another core. From Python:
+
+```python
+from rag_connector import search_index
+
+search_index.build("./my-dataset")
+with search_index.open_index("./my-dataset") as index:
+    result = index.search(all=["stroke"], near=("face", "arm", 5), modules=["64c140a8"])
+    print(result.total, [hit["chunk_id"] for hit in result.hits])
+    index.neighbors("4a6c729d", radius=1)
+    index.outline("4a6c729d")
+    index.copies("4a6c729d")
+```
+
 See [the Dataset spec](docs/dataset-spec.md#analysisrag-connector--the-corpus-index).
 
 ## Installed connectors

@@ -154,6 +154,8 @@ def _add_index_commands(subparsers: argparse._SubParsersAction) -> None:
     prepare.add_argument("--stopword", action="append", default=[], metavar="WORD",
                          help="a capitalized word that names nothing in this corpus; "
                               "repeatable, recorded in the index")
+    prepare.add_argument("--no-search-db", action="store_true",
+                         help="write only the book index, not search.sqlite")
     status = commands.add_parser("status", help="how big the indexes are")
     lookup = commands.add_parser(
         "lookup", help="print book-index entries and threads whose label contains QUERY",
@@ -173,20 +175,236 @@ def _add_index_commands(subparsers: argparse._SubParsersAction) -> None:
         "signal-lookup", help="print signal-index subjects whose words contain QUERY",
     )
     signal_lookup.add_argument("query")
-    for command in (prepare, status, lookup, signal, signal_lookup):
+    search_db = commands.add_parser(
+        "search-db",
+        help="build the full-text search index (search.sqlite); calls no model",
+    )
+    search_db.add_argument("--out", default=None, metavar="PATH",
+                           help="write the file here (a file, or a directory to hold "
+                                "search.sqlite) instead of the Dataset's analysis area; "
+                                "nothing in the Dataset folder is written")
+    search = commands.add_parser(
+        "search",
+        help="full-text search: words, phrases, NEAR, substrings, regex, filters",
+    )
+    search.add_argument("--term", action="append", default=[], metavar="TERM",
+                        help="every --term must match (AND); several words are a "
+                             "phrase, a trailing * a prefix")
+    search.add_argument("--any", action="append", default=[], metavar="TERM",
+                        help="at least one --any must match (OR)")
+    search.add_argument("--not", dest="not_", action="append", default=[], metavar="TERM",
+                        help="no --not may match")
+    search.add_argument("--phrase", action="append", default=[], metavar="TEXT",
+                        help="an exact word sequence")
+    search.add_argument("--near", nargs="+", default=None, metavar="TERM",
+                        help="two or more terms within --within words of each other")
+    search.add_argument("--within", type=int, default=10, metavar="N",
+                        help="the word distance for --near (default 10)")
+    search.add_argument("--regex", action="append", default=[], metavar="PATTERN",
+                        help="a Python regular expression, case-insensitive "
+                             "unless it says (?-i)")
+    search.add_argument("--substring", action="append", default=[], metavar="TEXT",
+                        help="a case-insensitive substring, punctuation included "
+                             "($18, 41.5, BE-FAST)")
+    search.add_argument("--substring-terms", action="store_true",
+                        help="match --term/--any/--not as substrings, not whole words")
+    search.add_argument("--titles", action="store_true",
+                        help="let word terms match the document title too")
+    search.add_argument("--module", action="append", default=[], metavar="ID",
+                        help="only this module (task_id, or an unambiguous prefix)")
+    search.add_argument("--general", action="store_true",
+                        help="only chunks with no module (channel general info); "
+                             "with --module, those modules plus general")
+    search.add_argument("--doc", action="append", default=[], metavar="DOC",
+                        help="only this document (doc_id, prefix, or exact title)")
+    search.add_argument("--exclude-doc", action="append", default=[], metavar="DOC",
+                        help="leave this document out")
+    search.add_argument("--type", action="append", default=[], metavar="TYPE",
+                        help="only this resource_type or type (video, url, "
+                             "general_info, ...)")
+    search.add_argument("--limit", type=int, default=None,
+                        help="show at most N hits (the total is still reported)")
+    neighbors = commands.add_parser(
+        "neighbors", aliases=["neighbours"],
+        help="a chunk with the chunks around it in its document, full text",
+    )
+    neighbors.add_argument("chunk", help="a chunk id or an unambiguous prefix")
+    neighbors.add_argument("--radius", type=int, default=1)
+    outline = commands.add_parser(
+        "outline", help="a document's chunks in order, with their headings",
+    )
+    outline.add_argument("doc", help="a doc id, prefix, exact title, or a chunk id in it")
+    copies = commands.add_parser(
+        "copies", help="a chunk's identical, near and overlapping copies",
+    )
+    copies.add_argument("chunk", help="a chunk id or an unambiguous prefix")
+    for command in (search, neighbors, outline, copies):
+        command.add_argument("--db", default=None, metavar="PATH",
+                             help="a search index built with --out (default: the "
+                                  "Dataset's analysis/rag-connector/search.sqlite)")
+        command.add_argument("--json", action="store_true", help="print JSON")
+    for command in (prepare, status, lookup, signal, signal_lookup, search_db, search,
+                    neighbors, outline, copies):
         command.add_argument("--dataset", required=True, metavar="PATH",
                              help="the Dataset folder")
+
+
+def _emit(text: str) -> None:
+    """Write to stdout without failing on a console that cannot show a character."""
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        text.encode(encoding)
+    except UnicodeEncodeError:
+        text = text.encode(encoding, errors="replace").decode(encoding)
+    except LookupError:
+        pass
+    sys.stdout.write(text)
+
+
+def _emit_json(payload) -> None:
+    """JSON, escaped to ASCII unless stdout is UTF-8, so it always parses."""
+    encoding = (getattr(sys.stdout, "encoding", None) or "").lower().replace("-", "")
+    _emit(json.dumps(payload, indent=2, ensure_ascii=encoding != "utf8") + "\n")
+
+
+def _short(value) -> str:
+    return "(general)" if value is None else str(value)[:8]
+
+
+def _format_search(result) -> str:
+    lines = [f"{result.total} chunks match, in {len(result.by_doc)} documents"
+             + (f" (showing {len(result.hits)})" if result.truncated else "")]
+    if result.by_module:
+        lines.append("modules: " + ", ".join(f"{_short(m['task_id'])} {m['hits']}"
+                                             for m in result.by_module))
+    for number, hit in enumerate(result.hits, 1):
+        bits = [hit["chunk_id"], hit["source"],
+                f"chunk {hit['doc_chunk_index']}"
+                + (f" ({hit['chunk_label']})" if hit["chunk_label"] else ""),
+                f"module {_short(hit['task_id'])}"]
+        if hit["resource_type"] or hit["type"]:
+            bits.append(hit["resource_type"] or hit["type"])
+        if hit["score"] is not None:
+            bits.append(f"score {hit['score']}")
+        lines.append("")
+        lines.append(f"{number}. " + " | ".join(bits))
+        if hit["heading"]:
+            lines.append(f"   under: {hit['heading']}")
+        lines.append(f"   {hit['snippet']}")
+        if hit["copies"]:
+            lines.append("   copies: " + ", ".join(
+                f"{kind} {info['group']} ({info['size']})"
+                for kind, info in sorted(hit["copies"].items())))
+    if result.by_doc:
+        lines += ["", "by document:"]
+        lines += [f"  {d['hits']:>5}  {d['source']}  [{d['doc_id']}]" for d in result.by_doc]
+    return "\n".join(lines) + "\n"
+
+
+def _format_neighbors(items) -> str:
+    lines = []
+    for item in items:
+        mark = "  <== asked for" if item["target"] else ""
+        label = f" ({item['chunk_label']})" if item["chunk_label"] else ""
+        lines.append(f"=== {item['chunk_id']} | {item['source']} | chunk "
+                     f"{item['doc_chunk_index']}{label}{mark}")
+        if item["heading_before"]:
+            lines.append(f"[under: {item['heading_before']}]")
+        lines.append(item["plain"].rstrip())
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _format_outline(items) -> str:
+    if not items:
+        return "no chunks\n"
+    lines = [f"{items[0]['source']}  [{items[0]['doc_id']}]  module "
+             f"{_short(items[0]['task_id'])}  {len(items)} chunks"]
+    for item in items:
+        heading = item["heading"] or (f"(under: {item['heading_before']})"
+                                      if item["heading_before"] else "")
+        lines.append(f"  {item['doc_chunk_index']!s:>4}  {item['chunk_label'] or '-':<8} "
+                     f"{item['chunk_id']}  {item['chars']:>6}  {heading}")
+    return "\n".join(lines) + "\n"
+
+
+def _format_copies(found) -> str:
+    lines = [found["chunk_id"]]
+    for kind in ("identical", "near", "overlap"):
+        items = found[kind]
+        if not items:
+            lines.append(f"  {kind}: none")
+            continue
+        group = found.get(kind + "_group")
+        lines.append(f"  {kind}" + (f" ({group})" if group else "") + f": {len(items)}")
+        for item in items:
+            extra = ""
+            if kind == "overlap":
+                c = item.get("containment")
+                extra = (f"  containment {c} / larger {item['containment_larger']}"
+                         if c is not None else "  (linked through another chunk)")
+                if not item["grouped"]:
+                    extra += "  (contained, not grouped)"
+            lines.append(f"    {item['chunk_id']}  {item['source']}  chunk "
+                         f"{item['doc_chunk_index']}{extra}")
+    return "\n".join(lines) + "\n"
+
+
+def _run_search_command(args: argparse.Namespace) -> int:
+    from . import search_index
+
+    folder = Path(args.dataset)
+    if args.index_command == "search-db":
+        path = search_index.build(folder, out=args.out)
+        with search_index.SearchIndex(path) as index:
+            meta = index.meta
+        print(f"search index: {meta['chunk_count']} chunks, {meta['document_count']} "
+              f"documents, {path.stat().st_size / 1e6:.1f} MB")
+        print(f"  {path}")
+        return 0
+    with search_index.open_index(folder, path=args.db) as index:
+        if args.index_command == "search":
+            near = (*args.near, args.within) if args.near else None
+            result = index.search(
+                all=args.term, any=args.any, not_=args.not_, phrase=args.phrase,
+                near=near, regex=args.regex, substring=args.substring,
+                word=not args.substring_terms, modules=args.module,
+                general_only=args.general, docs=args.doc, exclude_docs=args.exclude_doc,
+                types=args.type, titles=args.titles, limit=args.limit)
+            if args.json:
+                _emit_json(result.to_dict())
+            else:
+                _emit(_format_search(result))
+        elif args.index_command in ("neighbors", "neighbours"):
+            items = index.neighbors(args.chunk, radius=args.radius)
+            _emit_json(items) if args.json else _emit(_format_neighbors(items))
+        elif args.index_command == "outline":
+            items = index.outline(args.doc)
+            _emit_json(items) if args.json else _emit(_format_outline(items))
+        else:
+            found = index.copies(args.chunk)
+            _emit_json(found) if args.json else _emit(_format_copies(found))
+    return 0
 
 
 def _run_index_command(args: argparse.Namespace) -> int:
     from . import corpus_index, signal_index
 
     folder = Path(args.dataset)
+    if args.index_command in ("search-db", "search", "neighbors", "neighbours",
+                              "outline", "copies"):
+        return _run_search_command(args)
     if args.index_command == "prepare":
         counts = corpus_index.prepare(folder, stopwords=args.stopword)
         print(f"indexed {counts['documents']} documents, {counts['chunks']} chunks, "
               f"{counts['entries']} entries, {counts['threads']} threads")
         print(f"  {corpus_index.markdown_path(folder)}")
+        if not args.no_search_db:
+            from . import search_index
+
+            path = search_index.build(folder)
+            print(f"search index: {path.stat().st_size / 1e6:.1f} MB")
+            print(f"  {path}")
         return 0
     if args.index_command == "signal":
         result = signal_index.build(folder, model=args.model or signal_index.MODEL,
@@ -219,10 +437,25 @@ def _run_index_command(args: argparse.Namespace) -> int:
             subjects = sum(len(d.get("subjects") or []) for d in signal["documents"])
             print(f"signal index: {len(signal['documents'])} documents, {subjects} subjects "
                   f"(built {signal['built_at']}, {', '.join(signal['models'])})")
+        print(_search_status(folder))
         print(f"  {corpus_index.analysis_dir(folder)}")
         return 0
     print(corpus_index.format_find(corpus_index.find(index, args.query)), end="")
     return 0
+
+
+def _search_status(folder: Path) -> str:
+    from . import search_index
+
+    try:
+        with search_index.open_index(folder) as index:
+            meta = index.meta
+    except search_index.SearchIndexMissing:
+        return "search index: none (`rag-connector index search-db` builds one)"
+    except search_index.SearchIndexError as exc:
+        return f"search index: not usable: {exc}"
+    return (f"search index: {meta['chunk_count']} chunks (built {meta['built_at']}, "
+            f"{search_index.search_db_path(folder).stat().st_size / 1e6:.1f} MB)")
 
 
 def _add_datasets_dir_command(subparsers: argparse._SubParsersAction) -> None:

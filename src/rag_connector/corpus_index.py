@@ -643,6 +643,9 @@ _ARTIFACTS = (
      "Signal index guide: subjects a model labelled, with the chunk span to open"),
     ("index/signal.json", "json",
      "Signal index: model-written labels per document; chunk ids from the Dataset"),
+    ("search.sqlite", "sqlite",
+     "Search index: every chunk with full-text (word and substring) indexes, "
+     "copy groups and headings"),
 )
 
 
