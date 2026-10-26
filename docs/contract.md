@@ -29,7 +29,7 @@ supply **one** of the two corpus reads:
 
 | Method | Purpose |
 | --- | --- |
-| `query(text, top_k=5) -> list[RetrievedChunk]` | Run retrieval, best-first. Abstract. |
+| `query(text, top_k=5, *, answer_metadata=None, filter=None) -> list[RetrievedChunk]` | Run retrieval, best-first. Abstract. Both keywords are optional; see [Query from the answer's context](#query-from-the-answers-context-queryanswer_metadata) and [Query filters](#query-filters-queryfilter). |
 | `list_chunks(*, cursor=None, limit=1000) -> ChunkPage` | One page of the corpus, plus the cursor for the next. **Preferred.** |
 | `pull_all_chunks() -> list[ChunkRecord]` | Enumerate the entire corpus. |
 
@@ -273,6 +273,8 @@ All boundary failures derive from `ConnectorError` (itself a `RuntimeError`):
 | --- | --- |
 | `ConnectorOperationalError` | The operation is supported, but the backend failed. **Missing evidence, not evidence of nothing.** |
 | `UnsupportedCapability` | The connector does not implement a requested optional capability. |
+| `UnsupportedFilterError` | A subclass of `UnsupportedCapability`: the connector cannot honour a `query(filter=...)` filter, or an operator or field in it. Carries `.operators` and `.fields`. |
+| `InvalidFilterError` | A `query(filter=...)` filter is not in the neutral syntax. Also a `ValueError`. |
 | `ConnectorContractError` | Returned data violates the portable contract. |
 | `ConnectorRegistrationError` | A connector could not be registered or reconstructed safely. Also a `ValueError`, so hosts that caught a duplicate registration that way before the typed class existed keep working. |
 
@@ -359,6 +361,7 @@ reference deliberately carries no override — `base.py` derives pages from
 | Dataset listing | `list_datasets()` | `list[DatasetRef]` | `reference.py` | not checked |
 | Run snapshot | `run_snapshot()` | JSON object with `settings` and `observations` | `reference.py` | checked when implemented |
 | Declared prompt templates | `prompt_templates()` / `render_rag_block(chunks)` / `generate_from_prompt(prompt, *, contexts=(), llm=None, decoding=None)` | `Sequence[PromptTemplate]` / `str` / `GeneratedAnswer` (with `.trace`) | `reference.py` | checked when declared |
+| Query filters | `query_filter_operators()` + `query(..., filter=...)` | `frozenset[str]` of operators | `reference.py` declares none and refuses a filter | declaration checked; a keyword without a declaration is probed |
 
 An override is what gets checked, not mere structural presence: a capability
 left to its base default is reported as skipped, which is a supported
@@ -617,7 +620,8 @@ every call (RAGauge does; `[]` when the key is empty).
 A connector may ignore it. If it uses it, it uses it only to choose the
 context the question is asked from (SWI: the first entry's module becomes the
 active module, when the connection says so) and returns the system's own
-retrieval from there: never filter, rerank or add results with it. Whether it
+retrieval from there: never filter, rerank or add results with it (an
+explicit narrowing is the separate `filter` keyword, below). Whether it
 was used is part of the connector's configuration, so declare it in
 `run_snapshot().settings` and `info()`: a run that used it was told where the
 answer lives, and a host never compares it with a run that did not. The
@@ -626,6 +630,70 @@ declared key is `answer_metadata_used: true` in the snapshot settings
 
 A connector written before this parameter does not accept it;
 `query_accepts_answer_metadata(pipeline)` tells a host to call plain `query`.
+
+### Query filters (`query(..., filter=...)`)
+
+A host may narrow one query by chunk metadata: `query(text, top_k, *,
+filter={...})`. The filter is applied **on top of** the system's own scoping
+(its collection boundary, tenant or channel rules), never in place of it, so
+it can only narrow what the system would search. Where a backend partition
+must stay closed, the connector ANDs the caller's filter with it and says so.
+
+**Syntax** (`rag_connector.filters`): a documented subset of MongoDB's query
+language, which is also Pinecone's metadata filter language and close to
+Chroma's `where`.
+
+| Form | Meaning |
+| --- | --- |
+| `{"field": value}` | equality (`$eq`) |
+| `{"field": {"$eq" \| "$ne": scalar}}` | equal / not equal |
+| `{"field": {"$in" \| "$nin": [scalar, ...]}}` | one of / none of (non-empty list) |
+| `{"field": {"$gt" \| "$gte" \| "$lt" \| "$lte": number}}` | numeric range |
+| `{"field": {"$exists": true \| false}}` | the field is (not) present |
+| `{"$and": [filter, ...]}`, `{"$or": [filter, ...]}` | combine (non-empty lists) |
+
+Top-level keys are ANDed, and several operators on one field are ANDed. A
+scalar is a string, number or bool. `null`, bare lists (array equality),
+nested documents and every other operator are outside the subset. `None` and
+`{}` mean no filter. `validate_filter(filter)` returns a normalized,
+JSON-serializable copy or raises `InvalidFilterError` naming the path of the
+problem; `filter_operators` / `filter_fields` list what a filter uses;
+`and_filters(*filters)` ANDs filters without merging keys.
+
+**Declaring support.** A connector declares the operators it honours with
+`query_filter_operators() -> frozenset[str]` (the `RagPipeline` default is
+empty: no filter support). It may depend on the connector's configuration
+(a connector with two backends may filter on one and not the other). A host
+reads it with `supported_filter_operators(pipeline)`, which is empty unless
+`query` also accepts the keyword, and passes `filter` only to a connector
+that declares the operators the filter uses. `query_accepts_filter(pipeline)`
+answers the signature question alone; a `**kwargs` query written before the
+keyword counts as accepting it, which is exactly why acceptance is not
+support.
+
+**Never ignored.** A connector that cannot honour every part of a filter (an
+operator, a field it cannot filter on, the configured backend) raises
+`UnsupportedFilterError` before any backend call; it never drops a filter or
+part of one, because a dropped filter turns a narrowed query into an
+unnarrowed one and every result measured through it into the wrong evidence.
+`require_filter_operators(filter, self.query_filter_operators(), connector=...)`
+does the validation and the operator check in one call. The validator FAILs a
+connector that takes the keyword, declares nothing, and returns results for
+a probe filter.
+
+**Record what was applied.** Results retrieved under a filter should say so
+(the effective filter, in result metadata or the run snapshot), so a
+filtered run is never compared as if it were the system's own retrieval.
+
+**`filter` is not `answer_metadata`.** `answer_metadata` describes where the
+expected answer lives and may only choose the context a question is asked
+from; it is never used to filter (above). `filter` is an explicit narrowing
+the host asks for. A connector keeps them apart: it never derives a filter
+from `answer_metadata`, and never treats a filter as answer metadata.
+
+A connector written before this keyword does not accept it and keeps
+working unchanged: `supported_filter_operators` is empty for it, so a host
+never sends one.
 
 ## Reserved surface
 

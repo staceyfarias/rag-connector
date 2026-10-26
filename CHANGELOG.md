@@ -24,6 +24,21 @@ Additive.
   from and a reader refuses a stale one. `index prepare` builds it too unless
   `--no-search-db`. Analysis envelopes accept the artifact format `sqlite`.
 
+- **`query()` takes an optional metadata `filter`** (keyword-only). The
+  syntax is a documented Mongo-style subset (`$eq $ne $in $nin $gt $gte $lt
+  $lte $exists`, `$and`/`$or`, top-level keys ANDed) in the new
+  `rag_connector.filters` (`validate_filter`, `filter_operators`,
+  `filter_fields`, `and_filters`, `require_filter_operators`). A connector
+  declares the operators it honours with `RagPipeline.query_filter_operators()`
+  (default: none); hosts read `supported_filter_operators(pipeline)` and pass a
+  filter only where it is declared. A connector that cannot honour a filter
+  raises the new `UnsupportedFilterError` (an `UnsupportedCapability`); a
+  malformed one raises `InvalidFilterError` (a `ValueError`). Connectors
+  written before the keyword keep working unchanged. The Reference RAG accepts
+  the keyword and refuses any filter; the validator checks the declaration and
+  FAILs a connector that takes the keyword and ignores a filter.
+  `answer_metadata` is still never used to filter.
+
 - **A corpus index over a Dataset** (`rag_connector.corpus_index`,
   `rag_connector.signal_index`; `rag-connector index prepare|status|lookup|
   signal|signal-lookup`). Moved from testset-kit so every product reads one

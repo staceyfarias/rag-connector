@@ -23,6 +23,7 @@ class RagConnector(Protocol):
     def query(
         self, text: str, top_k: int = 5, *,
         answer_metadata: Sequence[Mapping[str, Any]] | None = None,
+        filter: Mapping[str, Any] | None = None,  # noqa: A002 - contract name
     ) -> list[RetrievedChunk]: ...
 
     def pull_all_chunks(self) -> list[ChunkRecord]: ...
@@ -127,6 +128,57 @@ def query_accepts_answer_metadata(pipeline: object) -> bool:
         return False
     return any(p.name == "answer_metadata" or p.kind is p.VAR_KEYWORD
                for p in params)
+
+
+def query_accepts_filter(pipeline: object) -> bool:
+    """Whether ``pipeline.query`` takes the optional ``filter`` keyword (or
+    ``**kwargs``).
+
+    Accepting the keyword is not support: a ``**kwargs`` query written before
+    the parameter existed would swallow a filter silently. A host gates on
+    :func:`supported_filter_operators`, which requires both.
+    """
+    import inspect
+
+    query = getattr(pipeline, "query", None)
+    if query is None:
+        return False
+    try:
+        params = inspect.signature(query).parameters.values()
+    except (TypeError, ValueError):
+        return False
+    return any(p.name == "filter" or p.kind is p.VAR_KEYWORD for p in params)
+
+
+def supported_filter_operators(pipeline: object) -> frozenset[str]:
+    """The filter operators ``pipeline.query(..., filter=...)`` honours, as
+    the pipeline declares them; empty when it takes no filter.
+
+    The host's gate: pass ``filter`` only when this is non-empty and covers
+    :func:`rag_connector.filters.filter_operators` of the filter (or let the
+    connector raise :class:`~rag_connector.errors.UnsupportedFilterError`).
+    Empty for a pipeline whose ``query`` does not accept the keyword, for one
+    that declares nothing (the :class:`RagPipeline` default), and for one
+    whose declaration raises. Operators outside the neutral syntax are
+    dropped from the answer: a host cannot send them anyway.
+    """
+    from .filters import FILTER_OPERATORS
+
+    if not query_accepts_filter(pipeline):
+        return frozenset()
+    declare = getattr(pipeline, "query_filter_operators", None)
+    if declare is None:
+        return frozenset()
+    try:
+        declared = declare()
+    except Exception:
+        return frozenset()
+    if isinstance(declared, str):
+        return frozenset()
+    try:
+        return frozenset(declared) & FILTER_OPERATORS
+    except TypeError:
+        return frozenset()
 
 
 #: The three methods that make up the declared-prompt-template capability.
