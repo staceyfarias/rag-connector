@@ -323,6 +323,7 @@ class RagPipeline(ABC):
     def query(
         self, text: str, top_k: int = 5, *,
         answer_metadata: Optional[Sequence[Mapping[str, Any]]] = None,
+        filter: Mapping[str, Any] | None = None,  # noqa: A002 - contract name
     ) -> list[RetrievedChunk]:
         """Retrieve the top-k chunks for a query, ranked best-first.
 
@@ -332,7 +333,29 @@ class RagPipeline(ABC):
         context the question is asked from (a module, a section) when the
         system scopes retrieval that way. Never filter, rerank or add results
         with it. See docs/contract.md.
+
+        ``filter`` (optional; a host sends it only to a connector that
+        declares support, see :meth:`query_filter_operators`): a metadata
+        filter in the neutral syntax of :mod:`rag_connector.filters`, applied
+        on top of the system's own scoping, never in place of it. ``None``
+        and ``{}`` mean no filter. A connector that cannot honour every part
+        of a filter raises
+        :class:`~rag_connector.errors.UnsupportedFilterError`; it never
+        drops a filter or an operator silently.
         """
+
+    def query_filter_operators(self) -> frozenset[str]:
+        """The filter operators ``query(..., filter=...)`` honours.
+
+        Empty (the default) means the connector takes no filter. A connector
+        that does returns the subset of
+        :data:`rag_connector.filters.FILTER_OPERATORS` it can honour for its
+        current configuration (it may depend on the configured backend), and
+        still raises :class:`~rag_connector.errors.UnsupportedFilterError`
+        for a field it cannot filter on. Hosts read it through
+        :func:`rag_connector.supported_filter_operators`.
+        """
+        return frozenset()
 
     # -- Corpus reading -----------------------------------------------------
     #

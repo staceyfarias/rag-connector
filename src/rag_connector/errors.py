@@ -30,3 +30,28 @@ class ConnectorRegistrationError(ConnectorError, ValueError):
     boundary class without breaking an ``except ValueError`` that predates it.
     """
 
+
+
+class InvalidFilterError(ConnectorError, ValueError):
+    """A ``query(..., filter=...)`` filter is not in the neutral syntax.
+
+    Raised by :func:`rag_connector.filters.validate_filter` before any backend
+    call. Also a ``ValueError``: the caller passed a malformed argument.
+    """
+
+
+class UnsupportedFilterError(UnsupportedCapability):
+    """A connector cannot honour a query filter, or an operator or field in it.
+
+    A connector raises this rather than ignore any part of a filter: a filter
+    that is silently dropped turns a narrowed query into an unnarrowed one,
+    and every result measured through it into the wrong evidence. A subclass
+    of :class:`UnsupportedCapability`, so hosts that already catch that keep
+    working. ``operators`` names the operators that could not be honoured
+    (empty when the reason is a field, or filtering as a whole).
+    """
+
+    def __init__(self, message: str, *, operators=(), fields=()):
+        super().__init__(message)
+        self.operators = frozenset(operators)
+        self.fields = frozenset(fields)

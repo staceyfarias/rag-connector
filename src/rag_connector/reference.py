@@ -55,6 +55,7 @@ from .base import (
 )
 from .embedding import EmbeddingClient, get_embedding_client
 from .errors import ConnectorOperationalError
+from .filters import require_filter_operators
 from .fingerprints import embedding_fingerprint
 
 # The ingest kit is NOT part of the connector contract -- it is what a host runs
@@ -490,7 +491,7 @@ class ReferenceRagConnector(RagPipeline):
     # way to destroy the corpus it is meant to read. See that module.
 
     def query(self, text: str, top_k: int = 5, *,
-              answer_metadata=None) -> list[RetrievedChunk]:
+              answer_metadata=None, filter=None) -> list[RetrievedChunk]:  # noqa: A002
         """Ranked retrieval: embed the query, search Chroma, map to RetrievedChunks.
 
         The reference pattern for the two rules that matter: ``chunk_id`` comes
@@ -501,7 +502,13 @@ class ReferenceRagConnector(RagPipeline):
         distance is preserved in ``raw_score`` as evidence. A backend failure is
         raised as ``ConnectorOperationalError`` so a host records a retrieval
         error -- never a fake empty-result zero.
+
+        ``filter``: the reference declares no filter support
+        (``query_filter_operators()`` is empty), so any non-empty filter is
+        refused with ``UnsupportedFilterError`` rather than ignored.
         """
+        require_filter_operators(filter, self.query_filter_operators(),
+                                 connector="the Reference RAG")
         try:
             emb = self._embed.embed_query(text)
         except Exception as exc:

@@ -60,10 +60,12 @@ from .base import (
 from .capabilities import (
     DECLARED_PROMPT_METHODS,
     declared_prompt_methods,
+    query_accepts_filter,
     supports,
     supports_declared_prompts,
 )
-from .errors import UnsupportedCapability
+from .errors import UnsupportedCapability, UnsupportedFilterError
+from .filters import FILTER_OPERATORS
 from .prompts import (
     PromptTemplate,
     prompt_template_problems,
@@ -722,6 +724,76 @@ def _check_determinism(report: Report, pipeline: RagPipeline,
             "seed option, use it for evaluation.")
     else:
         report.add("query() is deterministic for a repeated query", PASS)
+
+
+#: A filter no connector can mistake for a real constraint on its corpus.
+_FILTER_PROBE = {"rag_connector_validate_probe": {"$exists": True}}
+
+
+def _check_query_filter(report: Report, pipeline: RagPipeline,
+                        sample_query: str, top_k: int) -> None:
+    """The optional ``query(..., filter=...)`` capability is declared
+    truthfully: declared operators come with a ``filter`` keyword and stay in
+    the neutral syntax; a connector that takes the keyword but declares no
+    operators refuses a filter instead of ignoring it."""
+    name = "query(filter=...) is declared truthfully"
+    try:
+        declared_raw = pipeline.query_filter_operators()
+        declared = (frozenset() if declared_raw is None
+                    else frozenset(declared_raw))
+        if isinstance(declared_raw, str):
+            raise TypeError("a string is not a set of operators")
+    except Exception as exc:
+        report.add(name, FAIL, [f"query_filter_operators() failed: {exc!r}"],
+                   "Return a frozenset of operators from "
+                   "rag_connector.FILTER_OPERATORS (empty for none).")
+        return
+    import inspect
+    try:
+        explicit = "filter" in inspect.signature(pipeline.query).parameters
+    except (TypeError, ValueError):
+        explicit = False
+    if declared:
+        problems = []
+        if not query_accepts_filter(pipeline):
+            problems.append("query() does not accept the filter keyword")
+        unknown = sorted(declared - FILTER_OPERATORS)
+        if unknown:
+            problems.append("operators outside the neutral syntax: "
+                            + ", ".join(unknown))
+        if problems:
+            report.add(name, FAIL, problems,
+                       "Declare only operators query() honours, from "
+                       "rag_connector.FILTER_OPERATORS, and accept "
+                       "query(..., filter=None).")
+        else:
+            report.add(name, PASS,
+                       ["declares " + ", ".join(sorted(declared))])
+        return
+    if not explicit:
+        report.add(name, SKIP, ["no filter support declared; hosts do not "
+                                "send a filter"])
+        return
+    try:
+        pipeline.query(sample_query, top_k=top_k, filter=dict(_FILTER_PROBE))
+    except UnsupportedFilterError:
+        report.add(name, PASS, ["declares no operators and refuses a filter "
+                                "with UnsupportedFilterError"])
+        return
+    except Exception as exc:
+        report.add(name, WARN, [f"a probe filter raised {exc!r}, not "
+                                "UnsupportedFilterError"],
+                   "A connector that takes no filter raises "
+                   "UnsupportedFilterError (rag_connector."
+                   "require_filter_operators does it in one line).")
+        return
+    report.add(name, FAIL,
+               ["query() accepted a filter while declaring no filter "
+                "operators: the filter was ignored"],
+               "Never drop a filter silently. Raise UnsupportedFilterError "
+               "(call rag_connector.require_filter_operators(filter, "
+               "self.query_filter_operators()) first in query()), or declare "
+               "and honour the operators.")
 
 
 def _check_score_direction(report: Report, hits: list[RetrievedChunk],
@@ -1575,6 +1647,7 @@ def validate_pipeline(pipeline: RagPipeline, *, target: str,
                         retrieval_mode)
     _check_derived_results(report, hits, pulled_ids)
     _check_determinism(report, pipeline, probe, top_k, hits)
+    _check_query_filter(report, pipeline, probe, top_k)
     if retrieval_mode == "complete_set":
         _check_cardinality_probe(report, pipeline, probe, top_k)
     _check_score_direction(report, hits, connection, info, retrieval_mode)
