@@ -101,6 +101,19 @@ def _add_dataset_commands(subparsers: argparse._SubParsersAction) -> None:
                        help="the application auditing, e.g. 'ragauge'")
     audit.add_argument("--no-record", action="store_true",
                        help="print the audit without storing it in the Dataset")
+    check = commands.add_parser(
+        "check", help="lite check: count and structure, with optional random text sampling",
+    )
+    check.add_argument("--dataset", required=True, metavar="PATH")
+    check.add_argument("--connector", required=True, metavar="TYPE")
+    check.add_argument("--params", default="{}", metavar="JSON")
+    check.add_argument("--sample-percent", type=float, default=0,
+                       help="percentage of Dataset chunks to sample for exact text "
+                            "(0..100; default 0)")
+    check.add_argument("--seed", type=int, default=None,
+                       help="optional random seed to replay a sample")
+    check.add_argument("--snapshot-at", default=None,
+                       help="optional backend snapshot timestamp (ISO 8601 with timezone)")
     audits = commands.add_parser(
         "audits",
         help="list the audits recorded in a Dataset",
@@ -532,6 +545,34 @@ def _run_audit_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_check_command(args: argparse.Namespace) -> int:
+    import math
+
+    from .dataset import read_dataset_folder
+    from .registry import get_connector, registered_types
+    from .sanity import check_dataset
+
+    if not math.isfinite(args.sample_percent) or not 0 <= args.sample_percent <= 100:
+        raise ValueError("sample_percent must be a finite percentage from 0 to 100")
+    dataset = read_dataset_folder(args.dataset)
+    spec = get_connector(args.connector)
+    if spec is None:
+        print(f"Connector type {args.connector!r} is not registered. "
+              f"Registered types: {registered_types()}", file=sys.stderr)
+        return 1
+    params = json.loads(args.params)
+    pipeline = spec.connect(params)[0] if spec.connect is not None else spec.build(params)
+    try:
+        result = check_dataset(dataset, pipeline, sample_percent=args.sample_percent,
+                               seed=args.seed, snapshot_at=args.snapshot_at)
+    finally:
+        close = getattr(pipeline, "close", None)
+        if callable(close):
+            close()
+    print(json.dumps(result, indent=2, sort_keys=True))
+    return 0
+
+
 def _run_sync_command(args: argparse.Namespace) -> int:
     from .registry import get_connector, registered_types
     from .sync import sync_dataset
@@ -595,6 +636,9 @@ def _run_dataset_command(args: argparse.Namespace) -> int:
 
     if args.dataset_command == "audit":
         return _run_audit_command(args)
+
+    if args.dataset_command == "check":
+        return _run_check_command(args)
 
     if args.dataset_command == "sync":
         return _run_sync_command(args)

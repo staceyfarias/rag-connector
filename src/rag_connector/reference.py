@@ -54,7 +54,7 @@ from .base import (
     cosine_distance_to_similarity,
 )
 from .embedding import EmbeddingClient, get_embedding_client
-from .errors import ConnectorOperationalError
+from .errors import ConnectorContractError, ConnectorOperationalError
 from .filters import require_filter_operators
 from .fingerprints import embedding_fingerprint
 
@@ -557,9 +557,54 @@ class ReferenceRagConnector(RagPipeline):
             ),
             "corpus read",
         )
+        return self._chunks_from_response(res)
+
+    def count_chunks(self) -> int:
+        """Read the bound collection's count without hydrating chunks."""
+        return self._read(lambda: self._collection.count(), "chunk count")
+
+    def list_chunk_inventory(self, *, cursor=None, limit=1000):
+        """Read structure through Chroma metadata, excluding text and vectors."""
+        from .models import ChunkInventoryEntry, ChunkInventoryPage
+
+        offset = int(cursor) if cursor is not None else 0
+        if offset < 0 or limit <= 0:
+            raise ValueError("offset must be nonnegative and limit positive")
+        res = self._read(
+            lambda: self._collection.get(include=["metadatas"], offset=offset, limit=limit),
+            "chunk inventory",
+        )
+        ids = res.get("ids") or []
+        metas = res.get("metadatas") or []
+        if len(ids) != len(metas):
+            raise ConnectorContractError("Chroma returned incomplete inventory metadata")
+        items = []
+        for cid, meta in zip(ids, metas):
+            meta = meta or {}
+            idx = meta.get("doc_chunk_index")
+            doc = meta.get("doc_id")
+            if not doc or type(idx) is not int or idx < 0:
+                raise ConnectorContractError("Chroma chunk lacks document identity or position")
+            items.append(ChunkInventoryEntry(meta.get("chunk_id", cid), doc, idx))
+        return ChunkInventoryPage(items, str(offset + len(ids)) if len(ids) == limit else None)
+
+    def get_chunks(self, chunk_ids: list[str]) -> dict[str, ChunkRecord]:
+        """Fetch selected chunks without reading vectors or the whole corpus."""
+        if not chunk_ids:
+            return {}
+        res = self._read(
+            lambda: self._collection.get(ids=list(dict.fromkeys(chunk_ids)),
+                                         include=["documents", "metadatas"]),
+            "chunk fetch",
+        )
+        return {c.chunk_id: c for c in self._chunks_from_response(res)}
+
+    def _chunks_from_response(self, res) -> list[ChunkRecord]:
         ids = res.get("ids") or []
         docs = res.get("documents") or []
         metas = res.get("metadatas") or []
+        if len(ids) != len(docs) or len(ids) != len(metas):
+            raise ConnectorContractError("Chroma returned incomplete chunk payloads")
         embs = res.get("embeddings")
         if embs is None:
             embs = [None] * len(ids)

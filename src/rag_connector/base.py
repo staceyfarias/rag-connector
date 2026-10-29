@@ -30,16 +30,16 @@ from __future__ import annotations
 import hashlib
 import json
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
 from .errors import ConnectorContractError, UnsupportedCapability
 
 if TYPE_CHECKING:  # ``models`` imports FROM this module, so the runtime import
     from collections.abc import Mapping, Sequence
 
-    from .models import ChunkPage, DatasetRef  # lives inside the method (below).
+    from .models import ChunkInventoryPage, ChunkPage, DatasetRef, SnapshotValidity
 
     # ``prompts`` imports FROM this module too, so the dependency runs one way
     # only: prompts -> base at runtime, base -> prompts for annotations. With
@@ -322,7 +322,7 @@ class RagPipeline(ABC):
     @abstractmethod
     def query(
         self, text: str, top_k: int = 5, *,
-        answer_metadata: Optional[Sequence[Mapping[str, Any]]] = None,
+        answer_metadata: Sequence[Mapping[str, Any]] | None = None,
         filter: Mapping[str, Any] | None = None,  # noqa: A002 - contract name
     ) -> list[RetrievedChunk]:
         """Retrieve the top-k chunks for a query, ranked best-first.
@@ -466,6 +466,45 @@ class RagPipeline(ABC):
             json.dumps(items, ensure_ascii=False).encode("utf-8")
         ).hexdigest()
         return digest[:16]
+
+    def check_snapshot(self, snapshot_at: str) -> SnapshotValidity:
+        """Check corpus mutations since an ISO 8601 timestamp with timezone.
+
+        Independently optional. Use authoritative history for this binding,
+        including edits and deletions. Matching counts, sampled records, or
+        the latest surviving record's timestamp do not establish validity.
+        Return unknown when history/consistency is insufficient, including an
+        unrecognized or future snapshot instant. Backend failures raise.
+        The caller must supply a timestamp associated with its actual backend
+        snapshot; this operation cannot prove that a local export was atomic.
+        It neither downloads the corpus nor applies or promises a delta.
+        """
+        raise UnsupportedCapability(
+            f"{type(self).__name__} cannot validate a snapshot timestamp"
+        )
+
+    def count_chunks(self) -> int:
+        """Count chunks in this binding without reading their payloads.
+
+        Independently optional. Use the same collection/namespace scope as
+        corpus reads. Never substitute an index-wide count for a subset.
+        Unsupported operations raise; backend failures propagate as errors.
+        """
+        raise UnsupportedCapability(f"{type(self).__name__} cannot count chunks")
+
+    def list_chunk_inventory(
+        self, *, cursor: str | None = None, limit: int = 1000,
+    ) -> ChunkInventoryPage:
+        """Page through IDs, document IDs and within-document positions.
+
+        Independently optional; must not hydrate text or vectors or fall back
+        to a full corpus read. Return real fields, never guessed positions.
+        Cursors are opaque, and None terminates enumeration. A backend failure
+        raises rather than returning an empty or truncated inventory.
+        """
+        raise UnsupportedCapability(
+            f"{type(self).__name__} cannot enumerate chunk structure"
+        )
 
     def get_chunks(self, chunk_ids: list[str]) -> dict[str, ChunkRecord]:
         """Fetch a specific set of chunks by id, keyed by ``chunk_id``.

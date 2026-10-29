@@ -345,15 +345,18 @@ Today `RagPipeline.fingerprint()` covers the corpus domain, and
 ## Optional capabilities
 
 Beyond the two abstract methods, a connector may implement any of the following.
-Each is **independently optional**: no capability implies another. They are real
-— the bundled `ReferenceRagConnector` satisfies every one in this table, so
-each has a working reference to copy. (One nuance: for paged corpus reading the
+Each is **independently optional**: no capability implies another. The bundled
+`ReferenceRagConnector` supplies the implementations indicated below.
+(For paged corpus reading the
 reference deliberately carries no override — `base.py` derives pages from
 `pull_all_chunks`, and that derived default is the implementation it uses.)
 
 | Capability | Method | Returns | Reference impl | Validator |
 | --- | --- | --- | --- | --- |
 | Paged corpus reading | `list_chunks(*, cursor=None, limit=1000)` | `ChunkPage` | derived default (`base.py`) | checked when overridden |
+| Chunk count | `count_chunks()` | nonnegative `int` | `reference.py` | checked by lite check |
+| Chunk structure | `list_chunk_inventory(*, cursor=None, limit=1000)` | `ChunkInventoryPage` | `reference.py` | checked by lite check |
+| Snapshot validity | `check_snapshot(snapshot_at)` | `SnapshotValidity` | unsupported: no authoritative Chroma mutation history | result checked by lite check |
 | Query embedding | `describe_space()` / `embed_queries(texts)` | `EmbeddingSpaceDescriptor` / `EmbeddingBatch` | `reference.py` | not checked |
 | Indexed chunk vectors | `get_chunk_vectors(ids)` | `dict[str, list[float]]` | `reference.py` | checked when overridden |
 | Health | `health()` | `ConnectorHealth` | `reference.py` | not checked |
@@ -366,6 +369,47 @@ reference deliberately carries no override — `base.py` derives pages from
 An override is what gets checked, not mere structural presence: a capability
 left to its base default is reported as skipped, which is a supported
 configuration rather than a failure.
+
+### Lite checks and snapshot validity
+
+`ChunkCounter`, `ChunkInventoryReader`, and `SnapshotValidator` are independent
+protocols. Their `RagPipeline` defaults raise `UnsupportedCapability`; use
+`supports(pipeline, method_name)` to distinguish an override from a base default.
+Count and inventory have the same binding scope as corpus reads and must not
+silently scan full chunk payloads. See [lite checks](dataset-spec.md#lite-sanity-checks)
+for types, sampling, and the command-line interface.
+
+Text sampling supplements these checks: `check_dataset(..., sample_percent=20)`
+runs count, the full structural inventory comparison, and a 20% random text
+sample together. Separate result sections preserve each operation's evidence
+and support status; they are not mutually exclusive modes. Matching a sample
+does not override a structural difference or establish full corpus equality.
+
+`check_snapshot(snapshot_at)` accepts an ISO 8601 timestamp with an explicit
+timezone, associated by the caller with an actual backend corpus snapshot.
+It returns `SnapshotValidity(status, detail="")`:
+
+- `valid`: authoritative backend evidence establishes no corpus mutations
+  since the timestamp.
+- `out_of_sync`: a corpus mutation occurred after the timestamp, including an
+  addition, deletion, or text/metadata edit that preserved counts and IDs.
+- `unknown`: the operation is implemented, but history, timestamp recognition,
+  or consistency guarantees are insufficient to answer (including a timestamp
+  in the future).
+
+Unsupported is distinct from unknown: the former raises `UnsupportedCapability`.
+Backend failures propagate as errors. A count match, sample match, or maximum
+timestamp over surviving records cannot establish validity: deleted records
+would disappear from that evidence. Implementations must have authoritative
+history covering the requested interval; they must not infer it from local
+Dataset creation time. This check concerns corpus changes, not embedding-space
+or retrieval-policy changes, which have separate fingerprints.
+
+The method does not guarantee a local export was an atomic snapshot or return
+a delta. An out-of-sync result can motivate a full pull to compare against the
+frozen Dataset, or creation of a fresh Dataset. That choice belongs to the host.
+The Reference RAG leaves this capability unsupported rather than guessing from
+Chroma counts or metadata.
 
 ### Declared prompt templates
 

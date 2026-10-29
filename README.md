@@ -258,6 +258,52 @@ convention, with no code needed, so a person or a coding agent finds everything
 in one known file. It is not corpus. See
 [the Dataset spec](docs/dataset-spec.md#findingsmd--findings-about-the-dataset).
 
+### Checking a Dataset against a connector cheaply
+
+For a routine sanity check, `dataset check` compares the backend's chunk count
+and complete structural inventory: `chunk_id`, `doc_id`, and zero-based
+`doc_chunk_index`. Per-document chunk counts are derived from that inventory;
+a separate "chunk n of m" field is unnecessary. It reads no chunk text by
+default and never silently falls back to a full corpus pull.
+
+```bash
+# Count and structure only (the default):
+rag-connector dataset check --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}'
+# Count + full structure + exact text for a uniform random 20% sample:
+rag-connector dataset check --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}' --sample-percent 20 --seed 42
+```
+
+These run together: `--sample-percent 20` adds text sampling to the count and
+full structural checks; it does not replace them or sample only 20% of the
+inventory. The result reports the evidence from each part separately. A
+detected difference in any checked part warrants investigation, even if the
+other parts match.
+
+Sampling defaults to 0%, accepts 0–100%, and rounds up to whole chunks. Omit
+`--seed` for a fresh sample. Matching structure gives useful assurance, but an
+edit can preserve IDs and chunk positions; a sample can miss edits outside the
+selected chunks. Choose sample size for the changes you need to detect, not
+as a universal confidence percentage. Even 100% text sampling does not compare
+all the metadata checked by a full audit.
+
+Optionally add `--snapshot-at 2026-10-29T12:00:00Z` to ask whether the backend's
+corpus changed since a known snapshot timestamp. The independent
+`check_snapshot(timestamp)` capability returns `valid`, `out_of_sync`, or
+`unknown`; it requires authoritative backend change history, including edits
+and deletions. The timestamp is supplied explicitly, not inferred from local
+Dataset creation time. A stale result can motivate a full audit or fresh
+Dataset; it neither supplies a delta nor triggers a full pull automatically.
+
+Count, structure, sampling, and timestamp checks are independently optional.
+The JSON result reports unsupported operations explicitly, while backend
+errors raise. Inspect each section's status and comparison result: a zero
+exit code means the check ran, not that the backend matches. The Reference RAG
+supports count, metadata-only structure reads, and direct sampled text fetches;
+timestamp validation is unsupported. See [lite checks and sampling guidance](docs/dataset-spec.md#lite-sanity-checks)
+and the [snapshot validity contract](docs/contract.md#lite-checks-and-snapshot-validity).
+
 ### Auditing a Dataset against a connector
 
 A Dataset never changes; the system behind a connector does. An audit reads a
@@ -277,6 +323,21 @@ What the backend says about a Dataset is kept per connector instance, never
 per Dataset: two applications, or two environments, attaching the same Dataset
 each have their own records. See
 [the Dataset spec](docs/dataset-spec.md#the-dataset-is-static-the-backend-is-not).
+
+### Syncing into a new Dataset
+
+When the backend has moved on, `dataset sync` reads its full corpus into a
+**new Dataset**, recording lineage to the source. It leaves the source and its
+Test Sets unchanged. Moving Test Sets or handling a delta is the host's decision.
+
+```bash
+rag-connector dataset sync --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}' --out ./my-dataset-2
+```
+
+The output directory must be new or empty. An optional `--audit <audit-id>`
+cites a recorded full audit of the source for the same connector instance.
+See [sync into a copy](docs/dataset-spec.md#syncing-into-a-copy--rag-connectorsyncs).
 
 ### A corpus index
 
@@ -366,6 +427,19 @@ python -m ruff check .
 `reference` is in there because the Reference RAG's own tests need chromadb and
 fastembed. Without it the suite still runs clean — those tests skip, naming the
 install that turns them back on.
+
+To exercise lite checks, full audits, and sync against actual Pelorus content:
+
+```bash
+python -m pytest tests/test_sanity.py tests/test_pelorus_sanity.py tests/test_sync.py
+```
+
+The [Pelorus integration tests](tests/test_pelorus_sanity.py) use three bundled
+documents (18 chunks) in a real local Chroma collection, with fixed test vectors
+and no embedding model download. Nine scenarios cover an unchanged corpus,
+added/deleted chunks, changed IDs/documents/positions, sampled and unsampled
+text edits, and extra metadata edits. Each checks that sync produces a matching
+new Dataset while preserving the source. See the [expected outcomes and test boundaries](docs/dataset-spec.md#reproducing-the-pelorus-check-scenarios).
 
 See [Contract](https://github.com/staceyfarias/rag-connector/blob/main/docs/contract.md) and the
 [Connector author guide](https://github.com/staceyfarias/rag-connector/blob/main/docs/connector-author-guide.md).

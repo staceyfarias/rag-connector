@@ -18,6 +18,8 @@ from .base import (
 from .capabilities import (
     DECLARED_PROMPT_METHODS,
     AnswerGenerator,
+    ChunkCounter,
+    ChunkInventoryReader,
     ChunkVectorReader,
     ContentPublisher,
     DatasetLister,
@@ -29,11 +31,12 @@ from .capabilities import (
     QueryTelemetryReader,
     RagConnector,
     RunSnapshotProvider,
+    SnapshotValidator,
     declared_prompt_methods,
-    supports,
     query_accepts_answer_metadata,
     query_accepts_filter,
     supported_filter_operators,
+    supports,
     supports_chunk_vectors,
     supports_declared_prompts,
 )
@@ -70,6 +73,8 @@ from .filters import (
     validate_filter,
 )
 from .models import (
+    ChunkInventoryEntry,
+    ChunkInventoryPage,
     ChunkPage,
     ConnectorDescriptor,
     ConnectorHealth,
@@ -79,6 +84,7 @@ from .models import (
     RetrievalResult,
     RetrievedItem,
     ScoreSemantics,
+    SnapshotValidity,
 )
 from .prompts import (
     CACHE_BREAKPOINT_AFTER_RAG_BLOCK,
@@ -114,6 +120,12 @@ from .run_snapshot import (
 )
 
 __all__ = [
+    "SnapshotValidator",
+    "SnapshotValidity",
+    "ChunkCounter",
+    "ChunkInventoryEntry",
+    "ChunkInventoryPage",
+    "ChunkInventoryReader",
     "ITEM_COVERED_IDS_KEY",
     "ITEM_CURATED_KEY",
     "ITEM_INDEX_KEY",

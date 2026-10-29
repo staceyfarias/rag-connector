@@ -168,6 +168,51 @@ reference implementation for each and says which the validator now checks. A
 smaller [Reserved surface](contract.md#reserved-surface) of types nothing
 produces yet is listed separately; do not build against those.
 
+### Lite corpus checks and snapshot validity
+
+Implement these methods independently when the backend can answer them:
+
+| Method | Return | Backend requirement |
+| --- | --- | --- |
+| `count_chunks()` | Nonnegative `int` | Payload-free count for exactly the bound corpus. |
+| `list_chunk_inventory(*, cursor=None, limit=1000)` | `ChunkInventoryPage` | Complete pagination of real `ChunkInventoryEntry(chunk_id, doc_id, doc_chunk_index)` values, excluding text and vectors. |
+| `get_chunks(chunk_ids)` | `dict[str, ChunkRecord]` | Direct fetch of selected IDs for optional text sampling. Missing IDs are absent. |
+| `check_snapshot(snapshot_at)` | `SnapshotValidity` | Authoritative corpus mutation history since an ISO 8601 timestamp with timezone. |
+
+`ChunkCounter`, `ChunkInventoryReader`, and `SnapshotValidator` are available
+from `rag_connector`, as are their value types. Count and inventory must use
+the same namespace, collection, filters, and identity mapping as corpus reads.
+Do not return an index-wide count for a narrower binding, or derive document
+positions from page order. The inventory cursor is opaque; `None` terminates
+enumeration. A backend failure must raise rather than masquerade as an empty
+or complete page.
+
+Leave unsupported methods at their raising base defaults, or raise
+`UnsupportedCapability` if support depends on the binding. A host gates on
+`supports(pipeline, method_name)`. The lite checker skips the base `get_chunks`
+fallback because it reads the full corpus; an override used for sampling must
+perform a direct fetch instead. With `sample_percent=20`, the lite checker runs
+count, the complete structural inventory comparison, and a 20% text sample
+together. It reports each operation independently and does not turn a passing
+sample into the full audit's `in_sync` verdict. Independence here concerns
+backend capabilities, not mutually exclusive check modes.
+
+For `check_snapshot`, return `SnapshotValidity("valid", detail)` only when
+history establishes no corpus mutations after the requested instant. Return
+`out_of_sync` when it establishes a mutation, and `unknown` when history or
+consistency evidence is insufficient. Include deletions and text/metadata
+edits that preserve IDs and counts. A maximum timestamp among surviving records
+does not account for deletions. Unknown evidence is distinct from a backend
+failure, which raises, and from an unsupported operation. Embedding-space and
+retrieval-policy changes remain separate fingerprint domains.
+
+The Reference RAG demonstrates count, inventory, and direct text fetches;
+timestamp validation stays unsupported. Use the
+[Pelorus integration scenarios](dataset-spec.md#reproducing-the-pelorus-check-scenarios)
+as a regression template for your backend. Add backend-specific history tests
+before declaring snapshot validation supported. For the exact contracts, see
+[lite checks and snapshot validity](contract.md#lite-checks-and-snapshot-validity).
+
 ## Configuration and secrets
 
 Publish a `ConnectorSpec` through the `rag_connector.connectors` package entry

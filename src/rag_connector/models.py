@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 from .base import ChunkRecord, GeneratedAnswer, RetrievedChunk
 
@@ -33,6 +33,42 @@ class RetrievalResult:
 class ChunkPage:
     items: Sequence[ChunkRecord]
     next_cursor: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ChunkInventoryEntry:
+    """Structure only; IDs must agree with corpus and retrieval reads."""
+
+    chunk_id: str
+    doc_id: str
+    doc_chunk_index: int
+
+
+@dataclass(frozen=True, slots=True)
+class ChunkInventoryPage:
+    items: Sequence[ChunkInventoryEntry]
+    next_cursor: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class SnapshotValidity:
+    """Backend evidence of corpus changes since a timezone-aware timestamp.
+
+    valid: authoritative evidence of no corpus mutations since the instant.
+    out_of_sync: evidence of a corpus mutation after the instant, including
+    text/metadata edits and deletions even when IDs/counts stayed unchanged.
+    unknown: supported check, but insufficient history or consistency evidence.
+    This concerns the bound corpus, not embeddings or retrieval policy.
+    """
+
+    status: Literal["valid", "out_of_sync", "unknown"]
+    detail: str = ""
+
+    def __post_init__(self):
+        if self.status not in ("valid", "out_of_sync", "unknown"):
+            raise ValueError("Invalid snapshot validity status")
+        if not isinstance(self.detail, str):
+            raise ValueError("Snapshot validity detail must be a string")
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,6 +184,9 @@ class ConnectorHealth:
 
 
 __all__ = [
+    "SnapshotValidity",
+    "ChunkInventoryEntry",
+    "ChunkInventoryPage",
     "ChunkPage",
     "ChunkRecord",
     "ConnectorDescriptor",

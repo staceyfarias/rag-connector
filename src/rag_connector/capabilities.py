@@ -7,11 +7,13 @@ from typing import Any, Protocol, runtime_checkable
 
 from .base import ChunkRecord, GeneratedAnswer, RagPipeline, RetrievedChunk
 from .models import (
+    ChunkInventoryPage,
     ChunkPage,
     ConnectorHealth,
     DatasetRef,
     EmbeddingBatch,
     EmbeddingSpaceDescriptor,
+    SnapshotValidity,
 )
 from .prompts import PromptTemplate, RenderedPrompt
 
@@ -38,6 +40,23 @@ class RagConnector(Protocol):
 @runtime_checkable
 class HealthCapability(Protocol):
     def health(self) -> ConnectorHealth: ...
+
+
+@runtime_checkable
+class SnapshotValidator(Protocol):
+    def check_snapshot(self, snapshot_at: str) -> SnapshotValidity: ...
+
+
+@runtime_checkable
+class ChunkCounter(Protocol):
+    def count_chunks(self) -> int: ...
+
+
+@runtime_checkable
+class ChunkInventoryReader(Protocol):
+    def list_chunk_inventory(
+        self, *, cursor: str | None = None, limit: int = 1000,
+    ) -> ChunkInventoryPage: ...
 
 
 @runtime_checkable

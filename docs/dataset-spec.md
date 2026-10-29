@@ -595,6 +595,139 @@ instance (`connector_type`, `connection_sha256`, and the application's own
 (`chunk_count`, `chunk_inventory_sha256`). An audit is recorded only in the
 Dataset whose core it was made against.
 
+## Lite sanity checks
+
+`rag_connector.sanity.check_dataset(dataset, pipeline, *, sample_percent=0, seed=None, snapshot_at=None)`
+checks a frozen Dataset against independently optional backend operations:
+
+- `check_snapshot(snapshot_at)` optionally asks whether the bound corpus has
+  changed since an explicit backend snapshot timestamp. Returns `valid`,
+  `out_of_sync`, or `unknown`; see the [snapshot validity contract](contract.md#lite-checks-and-snapshot-validity).
+- `count_chunks()` reports the count in the connector's bound collection,
+  index, namespace, or subset, without hydrating chunk payloads.
+- `list_chunk_inventory(cursor=None, limit=1000)` enumerates every chunk's
+  `chunk_id`, `doc_id`, and zero-based `doc_chunk_index`, without text or
+  vectors. It returns `ChunkInventoryPage` containing `ChunkInventoryEntry`
+  values and an opaque `next_cursor` (`None` at the end). Positions must come
+  from the backend, never enumeration order. Per-document counts are derived
+  from this inventory; no separate "chunk n of m" field is required.
+- An optional uniform random sample fetches chunks by ID using `get_chunks`
+  and compares their exact text. Sampling requires a direct implementation of
+  `get_chunks`; the base method's full-corpus fallback is never called.
+
+Each capability is independently optional. The result has separate `count`,
+`structure`, `text_sample`, and `snapshot` sections. Unsupported operations have status
+`unsupported`; a 0% sample has status `not_requested`. Backend failures raise,
+and malformed or duplicate inventory entries and repeated cursors raise
+`ConnectorContractError`. The checker never substitutes a full corpus read.
+It changes and records nothing in the Dataset.
+
+No snapshot timestamp is inferred from the Dataset's `created_at`: export time
+alone does not establish a backend snapshot boundary. Supply `snapshot_at`
+only when the backend snapshot's timestamp is known. The lite check reports
+this evidence alongside count, structure and sampling; it does not skip those
+checks or automatically pull content when the snapshot is stale. Hosts may
+call the optional `pipeline.check_snapshot(timestamp)` method independently
+to decide whether to run a lite check, full audit, or sync into a new Dataset.
+
+The default is 0%: count and structure only. Any finite percentage from 0 to
+100 is allowed, rounded up to whole chunks and capped at the Dataset size.
+With `sample_percent=20`, a single lite check runs count, the **complete**
+structural inventory comparison, and a 20% random text sample together.
+Sampling supplements structure; it never reduces the inventory comparison to
+a sample. Results remain separate evidence sections, so a difference in one
+part remains visible even when another part matches. Unsupported capabilities
+remain explicit rather than being treated as matching evidence.
+Sampling is without replacement from the Dataset's chunk IDs; missing sampled
+IDs are reported. The result records the random seed, selected IDs, requested
+percentage, population size, fetched count, and missing or differing IDs.
+Use a fixed seed to replay a sample, or omit it for a fresh one.
+
+Choose sample size for the changes you need to detect, rather than treating a
+percentage as a universal assurance level. If a fraction `p` of chunks changed,
+an independent sample of `n` chunks has approximately `1 - (1-p)^n` probability
+of detecting at least one change (sampling without replacement improves this
+for a finite population). For example, 300 random chunks detect a 1% changed
+fraction with about 95% probability. This assumes uniform random sampling and
+does not assert that a successful sample proves equality.
+
+The lite result deliberately has no full-audit `in_sync` verdict: matching
+structure and sampled text leave other text, metadata, vectors, and retrieval
+policy unverified. Even 100% text sampling does not compare all fields that
+the full audit compares. Counts and inventory reads are observations taken
+at different times; `count_matches_inventory` exposes disagreement, including
+when a backend changes during the check. The API does not promise an atomic
+backend snapshot. Full audits remain available through `audit_dataset` and
+`dataset audit`, and sync still creates a complete new Dataset.
+
+```bash
+rag-connector dataset check --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}'
+rag-connector dataset check --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}' --sample-percent 20 --seed 42
+rag-connector dataset check --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}' --snapshot-at 2026-10-29T12:00:00Z
+```
+
+The command prints the result as JSON. A zero exit code means the check ran;
+inspect each section's status and `matches` for its evidence. Unsupported
+operations do not become successful comparisons. The built-in Reference RAG
+implements count and metadata-only inventory through Chroma and fetches
+sampled text by ID without vectors. Other connectors opt in separately.
+
+### Reproducing the Pelorus check scenarios
+
+The integration suite in [`tests/test_pelorus_sanity.py`](../tests/test_pelorus_sanity.py)
+loads the frozen chunks of three bundled Pelorus Space documents: `faq.md`,
+`card_check_in_and_muster_deadlines.md`, and `itinerary_grand_solar_tour.md`.
+Together they provide 18 chunks. Each scenario mutates a real local Chroma
+collection through its backend operations, then checks it through the Reference
+RAG's corpus interface. Fixed test vectors avoid an embedding model download;
+these tests measure corpus integrity, not retrieval quality.
+
+From a repository checkout:
+
+```bash
+python -m pip install -e ".[dev,reference]"
+python -m pytest tests/test_sanity.py tests/test_pelorus_sanity.py tests/test_sync.py
+```
+
+The Pelorus scenarios run count, full structure, and a 20% text sample together
+in one lite check. The fixed-seed sample rounds up to four chunks. The table
+shows both the component evidence and whether the combined lite check exposes
+the change. Added/deleted chunks also differ in count.
+
+| Scenario | Structure | Sampled text | Combined lite check | Full audit |
+| --- | --- | --- | --- | --- |
+| Unchanged | Matches | Matches | No difference found | In sync |
+| Add a chunk outside the sampled IDs | Differs | Matches | Change detected | Out of sync |
+| Delete a sampled chunk | Differs | Missing ID | Change detected | Out of sync |
+| Replace a sampled chunk's ID | Differs | Missing ID | Change detected | Out of sync |
+| Change a chunk's document ID | Differs | Matches | Change detected | Out of sync |
+| Change a chunk's document position | Differs | Matches | Change detected | Out of sync |
+| Edit sampled text, preserving IDs and positions | Matches | Differs | Change detected | Out of sync |
+| Edit unsampled text, preserving IDs and positions | Matches | Matches | No difference found | Out of sync |
+| Edit extra metadata only | Matches | Matches | No difference found | Out of sync |
+
+"Combined lite check" describes these observations together, not an extra
+API verdict or proof that untested content matches.
+
+The sampled and unsampled edits are deliberately placed to test both outcomes;
+this is a reproducible demonstration of sampling's limits, not a statistical
+confidence benchmark. In every scenario, the suite syncs to a new Dataset,
+verifies the new copy with a full audit, checks its lineage, and confirms the
+source folder's bytes remain unchanged. It also inspects backend requests to
+confirm lite enumeration excludes text and vectors, and only selected IDs are
+hydrated for the sample.
+
+Timestamp validity remains unsupported by the Reference RAG: Chroma supplies
+no authoritative mutation history for this operation. The separate
+[`tests/test_sanity.py`](../tests/test_sanity.py) checks `valid`, `out_of_sync`,
+`unknown`, unsupported, and failure responses with controlled connectors.
+Those tests validate the portable behavior; an external connector also needs
+backend-specific tests proving that its history detects same-count edits and
+deletions since the requested timestamp.
+
 ## Syncing into a copy — `.rag-connector/syncs/`
 
 A **sync** follows a backend that has moved on without changing the Dataset
@@ -783,11 +916,13 @@ from rag_connector.audit import (
 | `connection_sha256(connection)` | The instance identity recorded in an audit. |
 
 ```python
+from rag_connector.sanity import check_dataset
 from rag_connector.sync import sync_dataset, list_syncs
 ```
 
 | Function | Does |
 | --- | --- |
+| `check_dataset(dataset, pipeline, *, sample_percent=0, seed=None, snapshot_at=None)` | Returns JSON-safe evidence for count, structure, optional sampled text, and optional snapshot validity. Unsupported operations are explicit. Writes nothing and never falls back to a full corpus pull. |
 | `sync_dataset(source, pipeline, out_dir, *, connector_type, connection=None, audit_id=None, instance_label=None, host=None, name=None)` | Writes a new Dataset from the connector's corpus with `derived_from` naming `source`, and its `sync.json`; returns a `DatasetSync` (`dataset`, `record`, `path`). Never writes `source`. `name` defaults to the source's. |
 | `list_syncs(folder)` | Every `sync.json` in a Dataset folder, oldest first. |
 | `Dataset.derived_from` | The manifest's `derived_from`, or `None`. |
@@ -826,6 +961,11 @@ rag-connector dataset export --connector my-rag --params '{"endpoint": "..."}' \
 ```
 
 ```bash
+# Lite count/structure check, optionally sampling text and checking a timestamp:
+rag-connector dataset check --dataset ./my-dataset --connector my-rag \
+  --params '{"endpoint": "..."}' [--sample-percent 20] [--seed 42] \
+  [--snapshot-at 2026-10-29T12:00:00Z]
+
 # Compare a Dataset with a connector instance's corpus; records the audit:
 rag-connector dataset audit --dataset ./my-dataset --connector my-rag \
   --params '{"endpoint": "..."}' [--label staging] [--host my-app] [--no-record]
