@@ -23,7 +23,7 @@ class RagConnector(Protocol):
     retrieval_mode: str
 
     def query(
-        self, text: str, top_k: int = 5, *,
+        self, text: str, top_k: int | None = None, *,
         answer_metadata: Sequence[Mapping[str, Any]] | None = None,
         filter: Mapping[str, Any] | None = None,  # noqa: A002 - contract name
     ) -> list[RetrievedChunk]: ...
@@ -259,7 +259,7 @@ def supports_chunk_vectors(pipeline: object) -> bool:
 
 @runtime_checkable
 class AnswerGenerator(Protocol):
-    def generate(self, text: str, *, top_k: int = 5, llm=None) -> GeneratedAnswer: ...
+    def generate(self, text: str, *, top_k: int | None = None, llm=None) -> GeneratedAnswer: ...
 
 
 @runtime_checkable

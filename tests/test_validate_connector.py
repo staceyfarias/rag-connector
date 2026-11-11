@@ -243,6 +243,14 @@ class SecretSnapshotConnector(GoodConnector):
         }
 
 
+class RequiresTopKConnector(GoodConnector):
+    """``query`` demands a top_k: an evaluation host, which passes none
+    (2026-10-08), cannot call it."""
+
+    def query(self, text, top_k):
+        return super().query(text, top_k)
+
+
 def _statuses(report):
     return {c.name: c.status for c in report.checks}
 
@@ -260,6 +268,18 @@ def test_compliant_connector_is_ready():
     assert _status_of(report, "stability") == PASS
     # Retrieval-only: generation is SKIP (supported config), never a failure.
     assert _status_of(report, "generate()") == SKIP
+
+
+def test_query_without_top_k_passes_for_a_defaulted_connector():
+    report = validate_pipeline(GoodConnector(), target="good", sample_query="alpha")
+    assert _status_of(report, "top_k unset") == PASS
+
+
+def test_a_connector_that_requires_top_k_is_not_ready():
+    report = validate_pipeline(RequiresTopKConnector(), target="needs-k",
+                               sample_query="alpha")
+    assert _status_of(report, "top_k unset") == FAIL
+    assert not report.ready
 
 
 def test_valid_run_snapshot_is_checked():

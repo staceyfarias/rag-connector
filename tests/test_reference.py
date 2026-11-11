@@ -238,6 +238,29 @@ def test_reference_registry_connects_to_a_shared_instance(monkeypatch, tmp_path)
 
 
 @pytest.mark.reference_extra
+def test_reference_depth_is_the_connections_own_unless_a_caller_asks(monkeypatch, tmp_path):
+    # top_k is unset by default (2026-10-08). The fixture corpus has more than
+    # 5 chunks (two files of ~230 characters, chunk size 80, overlap 10), so:
+    # no depth anywhere -> the historical 5; the connection's top_k 2 -> 2; a
+    # caller's top_k 3 overrides the connection -> 3.
+    connector = _provision(tmp_path)
+    assert len(connector.pull_all_chunks()) > 5
+    assert len(connector.query("apple")) == 5
+    monkeypatch.setattr(
+        "rag_connector.reference.get_embedding_client",
+        lambda *args, **kwargs: FakeEmbeddingClient(),
+    )
+    spec = get_connector("reference")
+    shallow, connection = spec.connect({**connector.connection(), "top_k": 2})
+    assert connection["top_k"] == 2
+    assert len(shallow.query("apple")) == 2
+    assert len(shallow.query("apple", top_k=3)) == 3
+    rebuilt = spec.build(shallow.connection())
+    assert len(rebuilt.query("apple")) == 2
+    assert "top_k" not in connector.connection()     # unset stays absent
+
+
+@pytest.mark.reference_extra
 def test_reference_pagination_and_fetch_are_consistent(tmp_path):
     connector = _provision(tmp_path)
     first = connector.list_chunks(limit=2)
