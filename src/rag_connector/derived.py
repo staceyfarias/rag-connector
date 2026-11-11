@@ -58,6 +58,9 @@ __all__ = [
     "ITEM_ROLES",
     "ITEM_ROLE_CONTEXT",
     "ITEM_ROLE_KEY",
+    "ITEM_ORIGIN_KEY",
+    "ITEM_ORIGIN_KEYWORD",
+    "ITEM_ORIGIN_NEIGHBOUR",
     "ITEM_ROLE_MATCH",
     "ReturnedItem",
     "item_group_problems",
@@ -93,10 +96,17 @@ ITEM_CURATED_KEY = "item_curated"
 #: ``match`` | ``context``: whether the row was scored against the query or
 #: added around a match by the system. Optional.
 ITEM_ROLE_KEY = "item_role"
+#: Why a context row was added: ``neighbour`` (chunk expansion around a match),
+#: ``keyword`` (a separate keyword / lexical search), ``parent``, or another
+#: short label. Optional, and encouraged: it lets a host say which part of the
+#: pipeline delivered an answer the core search did not rank.
+ITEM_ORIGIN_KEY = "item_origin"
+ITEM_ORIGIN_NEIGHBOUR = "neighbour"
+ITEM_ORIGIN_KEYWORD = "keyword"
 
 ITEM_KEYS = (
     ITEM_INDEX_KEY, ITEM_COVERED_IDS_KEY, ITEM_KIND_KEY, ITEM_LABEL_KEY, ITEM_CURATED_KEY,
-    ITEM_ROLE_KEY,
+    ITEM_ROLE_KEY, ITEM_ORIGIN_KEY,
 )
 
 #: The row was scored against the query (its score, or None if not exposed).
@@ -246,6 +256,13 @@ def derived_result_problems(hit: Any) -> list[str]:
                             "so its score must be None")
         if kind == ITEM_KIND_GAP:
             problems.append(f"a gap has no {ITEM_ROLE_KEY}")
+    if ITEM_ORIGIN_KEY in meta:
+        origin = meta.get(ITEM_ORIGIN_KEY)
+        if not isinstance(origin, str) or not origin.strip():
+            problems.append(f"{ITEM_ORIGIN_KEY} must be a non-empty string")
+        elif meta.get(ITEM_ROLE_KEY) != ITEM_ROLE_CONTEXT:
+            problems.append(f"{ITEM_ORIGIN_KEY} labels context rows; declare "
+                            f"{ITEM_ROLE_KEY}='context' with it")
 
     if ITEM_CURATED_KEY in meta and not isinstance(meta.get(ITEM_CURATED_KEY), str):
         problems.append(f"{ITEM_CURATED_KEY} must be a string")

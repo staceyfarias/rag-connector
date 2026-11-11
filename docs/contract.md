@@ -204,6 +204,7 @@ Two grouping keys already in use are part of the same vocabulary:
 | --- | --- |
 | `item_index` | Optional non-negative integer: which returned item the row belongs to, 0-based. Rows sharing an index are **one** item occupying one ranked slot, and must declare the same `item_kind`; except in a `passage`, they must also declare the same `item_covered_ids`. Without it, each row is its own item. |
 | `item_role` | Optional: `match` (the row was scored against the query; `score` is that score, and `None` means the system did not expose one) or `context` (the system added the row around a match and never scored it; its `score` must be `None`). |
+| `item_origin` | Optional, on context rows: why the system added the row -- `neighbour` (chunk expansion around a match), `keyword` (a separate keyword search), `parent`, or another short label. Encouraged. |
 | `item_label` | Optional string: the connector's own name for what the item is. Recorded and shown verbatim; nothing interprets it. |
 
 The rules:
@@ -278,18 +279,46 @@ items is legal and expected (neighbor expansion, for instance).
 
 ### Ranking basis (2026-11-10)
 
-A host never assumes row order is a ranking. It reads the declared mode and the
-rows' scores and roles (`rag_connector.ranking.ranking_basis`):
+A host never assumes row order is a ranking. It ranks only what was **matched
+and scored**, and uses everything else only to decide whether the answer was
+returned (`rag_connector.ranking.ranking_basis`):
 
-| Mode | Rank-based measures (reciprocal rank, nDCG, top-k, first item) |
+| Row | Used for |
 | --- | --- |
-| `scored` | Ranked by score. Every matched row (`item_role` `match`, or no role) must carry a score, in descending order. A missing score or out-of-order rows is an **error**: the host does not fall back to row order. |
-| `ordered` | Ranked by returned order: the connector's own ranking, which may fuse channels whose scores are not comparable (vector similarity, keyword relevance). Scores are evidence. |
-| `complete_set` | The system decides cardinality. With `info()["result_order"] == "ranked"`, ranked by returned order (the system's own ranking). Otherwise **not applicable**: the result is a set. Order-free measures (answer returned, payload, set precision) always apply. |
+| Scored match (`item_role` `match`, or no role, with a score) | Ranking: the host sorts these by score itself |
+| Context (`item_role` `context`: chunk expansion, a parent section, a separate keyword search; `item_origin` says which) | Answer returned only; never ranked |
+| Unscored match (matched, but no score returned) | Answer returned only |
 
-Context rows (`item_role` `context`) are never scored and are ignored here. A
-connector that merges channels on different score scales must declare `ordered`
-and return its merged order; a host cannot compare those scores.
+| Mode | What may be assumed |
+| --- | --- |
+| `scored` | Every match row carries a score; a missing one is an **error** (no fallback to row order). |
+| `ordered` | The connector vouches that its returned order is a ranking: match rows are ranked in returned order. |
+| `complete_set` | No order is assumed: match rows that carry a score are ranked by it; with none, rank-based measures are **not applicable**. |
+
+So what matched decides the rank, and what a system adds around a match (its
+neighbour configuration, a separate keyword search) only decides what else is
+returned. See "Hybrid and keyword search" below. `info()["result_order"]` is informational and never makes a
+host trust row order.
+
+#### Hybrid and keyword search: one ranking, labelled context
+
+There is one ranking: the core search's. Everything a system adds beside it is
+context, which counts toward answer returned and is never ranked.
+
+- **A system that merges its searches** into one ranked list (reciprocal rank
+  fusion, weighted scores) declares `scored` with the merged score, or
+  `ordered` with the merged order. That is valid, and enough to measure the
+  overall impact of a change.
+- **A system that keeps a keyword search separate** (as SWI's production
+  retrieval does) returns the core (vector) hits as `match` rows with their
+  scores, and the keyword-only hits as `context` rows. Keyword relevance (BM25)
+  and vector similarity are on different scales; never map one onto the other.
+- **Label context with its origin** (`item_origin`: `neighbour` for chunk
+  expansion, `keyword` for a separate keyword search). Encouraged even when the
+  order is merged: it lets a host say which part of the pipeline delivered an
+  answer the core search did not rank -- where to make a change, not only
+  whether a change helped. Unlabelled context still counts toward answer
+  returned.
 
 `resolve_retrieval_mode(live_mode, dataset_override)` returns
 `(resolved_mode, source)`. The **only** legal override is `scored → ordered`

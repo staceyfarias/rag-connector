@@ -1,36 +1,46 @@
-"""Ranking basis: whether a returned result can be read as a ranking, and how.
+"""Ranking basis: what in a returned result may be ranked, and how.
 
 ``docs/contract.md`` ("Ranking basis") is the normative text. A host never
-assumes that row order is a ranking. It reads the connector's declared
-``retrieval_mode`` and the rows' scores and roles (``rag_connector.derived``):
+assumes that row order is a ranking. It ranks only what was **matched and
+scored** against the query, and uses everything else only to decide whether
+the answer was returned:
 
 =================  ==========================================================
-``scored``         The ranking is the scores, best first. Every row that was
-                   matched against the query (``item_role`` ``match``, or no
-                   role) must carry a score, and the rows must be in
-                   descending score order. Anything else is an **error**: the
-                   host does not fall back to row order.
-``ordered``        The ranking is the returned order: the connector's own,
-                   possibly fusing channels whose scores are not comparable
-                   (vector similarity and keyword relevance). Scores are
-                   evidence only.
-``complete_set``   The system decides cardinality. Unless the connector
-                   declares ``result_order: ranked`` in ``info()`` (then the
-                   returned order is its ranking), the result is a set, not a
-                   ranking. Rank-based measures
-                   (reciprocal rank, nDCG, top-k, first item) are **not
-                   applicable**; order-free measures (answer returned,
-                   payload, set precision) are.
+row                used for
+=================  ==========================================================
+scored match       ranking: the host sorts these by score itself (reciprocal
+                   rank, first item, top-k)
+context            answer returned only: added by the system beside the core
+                   (vector) search -- chunk expansion around a match, or a
+                   separate keyword search -- never ranked. ``item_origin``
+                   (``neighbour`` / ``keyword``) says which; encouraged, so a
+                   host can show which part of the pipeline delivered an
+                   answer the core search did not rank
+unscored match     answer returned only: matched, but with no score
 =================  ==========================================================
 
-Context rows (``item_role`` ``context``) are never scored, by design, and are
-ignored by these checks. Scores are compared only within one result.
+A row with no ``item_role`` is a match. The declared ``retrieval_mode`` decides
+what may be assumed:
+
+``scored``         Every match row must carry a score; a missing one is an
+                   **error** -- the host does not fall back to row order.
+``ordered``        The connector vouches that its returned order is a
+                   ranking: match rows are ranked in returned order (context
+                   rows still never are).
+``complete_set``   No order is assumed. Match rows that carry a score are
+                   ranked by it; with none, rank-based measures are **not
+                   applicable**.
+
+So decoupling holds here too: what matched decides the rank, and what a system
+adds around a match (its neighbour configuration) only decides what else is
+returned. ``info()["result_order"]`` is informational; it never makes a host
+trust row order.
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 __all__ = [
@@ -44,85 +54,126 @@ __all__ = [
     "ranking_basis",
 ]
 
-#: Declared order semantics (``info()["result_order"]``). ``ranked``: the
-#: returned order is the connector's ranking. ``set``: it is not. Matters for
-#: ``complete_set``, where cardinality is the system's and order is otherwise
-#: not a ranking.
-RESULT_ORDER_RANKED = "ranked"
-RESULT_ORDER_SET = "set"
-
-#: Ranked by the scores (``scored``).
+#: Match rows ranked by their scores.
 RANKING_SCORES = "scores"
-#: Ranked by the connector's returned order (``ordered``).
+#: Match rows ranked in returned order (``ordered``: the connector vouches).
 RANKING_RETURNED_ORDER = "returned_order"
-#: Not a ranking (``complete_set``): rank-based measures do not apply.
+#: Nothing to rank: no scored match row and no order vouched for.
 RANKING_NOT_APPLICABLE = "not_applicable"
 #: The result contradicts its declared mode: rank-based measures are refused.
 RANKING_ERROR = "error"
 
+#: Informational order semantics a connector may declare in ``info()``.
+RESULT_ORDER_RANKED = "ranked"
+RESULT_ORDER_SET = "set"
+
 
 @dataclass(frozen=True)
 class RankingBasis:
-    """How one result may be read as a ranking.
+    """What one result contributes to ranking.
 
-    ``status`` is one of the ``RANKING_*`` values; ``reason`` says why in a
-    sentence a person can read; ``rankable`` is True when rank-based measures
-    may be computed (``scores`` or ``returned_order``).
+    ``ranked_ids`` are the match rows' chunk ids in rank order (first
+    occurrence wins); ``context_rows`` and ``unscored_match_rows`` count the
+    rows that count only toward "answer returned". ``rankable`` is True when
+    rank-based measures may be computed from ``ranked_ids``.
     """
 
     status: str
     reason: str
+    ranked_ids: tuple[str, ...] = ()
+    context_rows: int = 0
+    unscored_match_rows: int = 0
+    scores: tuple[float, ...] = field(default=(), repr=False)
+    #: Every returned chunk id (what "answer returned" reads), and the context
+    #: rows' ids by ``item_origin`` (``"unlabelled"`` when none was declared).
+    returned_ids: tuple[str, ...] = ()
+    context_by_origin: dict = field(default_factory=dict)
 
     @property
     def rankable(self) -> bool:
         return self.status in (RANKING_SCORES, RANKING_RETURNED_ORDER)
 
 
-def _role(row: Any) -> Any:
+def _get(row: Any, key: str, meta_key: str | None = None) -> Any:
     if isinstance(row, dict):
-        return row.get("role")
-    meta = getattr(row, "metadata", None)
-    return meta.get("item_role") if isinstance(meta, dict) else None
-
-
-def _score(row: Any) -> Any:
-    return row.get("score") if isinstance(row, dict) else getattr(row, "score", None)
+        return row.get(key)
+    if meta_key is not None:
+        meta = getattr(row, "metadata", None)
+        return meta.get(meta_key) if isinstance(meta, dict) else None
+    return getattr(row, key, None)
 
 
 def ranking_basis(retrieval_mode: str, rows: Sequence[Any],
-                  result_order: str | None = None) -> RankingBasis:
-    """The ranking basis of one result.
+                  result_order: str | None = None) -> RankingBasis:  # noqa: ARG001
+    """What one result may rank, and in what order.
 
     ``rows`` are the returned rows in returned order: ``RetrievedChunk``
-    objects, or dicts with ``score`` and ``role`` (as a host's stored run sheet
-    holds them). An empty result is ``returned_order`` (nothing to rank, and
-    nothing contradicts the mode).
+    objects, or dicts with ``chunk_id``, ``score`` and ``role`` (as a host's
+    stored run sheet holds them). ``result_order`` is accepted for callers that
+    pass a connector's declaration; it does not change the basis.
     """
     mode = str(retrieval_mode or "scored")
-    if mode == "complete_set" and result_order == RESULT_ORDER_RANKED:
-        return RankingBasis(RANKING_RETURNED_ORDER,
-                            "the system decides how many results, and returns "
-                            "them in its own ranked order (result_order ranked)")
-    if mode == "complete_set":
-        return RankingBasis(RANKING_NOT_APPLICABLE,
-                            "the system returns a set, not a ranking "
-                            "(retrieval_mode complete_set)")
-    if mode == "ordered":
-        return RankingBasis(RANKING_RETURNED_ORDER,
-                            "the connector's returned order is its ranking "
-                            "(retrieval_mode ordered)")
-    if mode != "scored":
+    if mode not in ("scored", "ordered", "complete_set"):
         return RankingBasis(RANKING_ERROR, f"unknown retrieval_mode {mode!r}")
-    matched = [r for r in rows if _role(r) in (None, "match")]
-    missing = sum(1 for r in matched if _score(r) is None)
-    if missing:
+    match, context = [], 0
+    returned: list[str] = []
+    by_origin: dict[str, list[str]] = {}
+    for row in rows:
+        cid = _get(row, "chunk_id")
+        if cid is not None and str(cid) not in returned:
+            returned.append(str(cid))
+        role = _get(row, "role", "item_role")
+        if role == "context":
+            context += 1
+            origin = _get(row, "origin", "item_origin") or "unlabelled"
+            if cid is not None:
+                by_origin.setdefault(str(origin), []).append(str(cid))
+            continue
+        match.append((_get(row, "chunk_id"), _get(row, "score")))
+    scored = [(cid, float(score)) for cid, score in match if score is not None]
+    unscored = len(match) - len(scored)
+
+    def ids(pairs):
+        seen, out = set(), []
+        for cid, _ in pairs:
+            if cid is not None and str(cid) not in seen:
+                seen.add(str(cid))
+                out.append(str(cid))
+        return tuple(out)
+
+    if mode == "scored" and unscored:
         return RankingBasis(
             RANKING_ERROR,
-            f"declared scored, but {missing} of {len(matched)} matched rows "
-            "carry no score; row order is not assumed to be a ranking")
-    scores = [float(_score(r)) for r in matched]
-    if any(b > a for a, b in zip(scores, scores[1:])):
+            f"declared scored, but {unscored} of {len(match)} matched rows carry no "
+            "score; row order is not assumed to be a ranking",
+            context_rows=context, unscored_match_rows=unscored,
+            returned_ids=tuple(returned),
+            context_by_origin={k: tuple(v) for k, v in by_origin.items()})
+    if mode == "ordered":
         return RankingBasis(
-            RANKING_ERROR,
-            "declared scored, but the rows are not in descending score order")
-    return RankingBasis(RANKING_SCORES, "ranked by score (retrieval_mode scored)")
+            RANKING_RETURNED_ORDER,
+            "match rows ranked in returned order (retrieval_mode ordered: the "
+            "connector vouches for it); context rows never ranked",
+            ranked_ids=ids(match), context_rows=context,
+            returned_ids=tuple(returned),
+            context_by_origin={k: tuple(v) for k, v in by_origin.items()})
+    if not scored:
+        return RankingBasis(
+            RANKING_NOT_APPLICABLE,
+            "no matched row carries a score, and no order is vouched for "
+            f"(retrieval_mode {mode}): rank-based measures do not apply",
+            context_rows=context, unscored_match_rows=unscored,
+            returned_ids=tuple(returned),
+            context_by_origin={k: tuple(v) for k, v in by_origin.items()})
+    ordered = sorted(scored, key=lambda pair: -pair[1])      # stable on ties
+    reason = "match rows ranked by score"
+    if unscored:
+        reason += (f"; {unscored} matched row(s) with no comparable score count "
+                   "only toward answer returned")
+    if context:
+        reason += f"; {context} context row(s) count only toward answer returned"
+    return RankingBasis(RANKING_SCORES, reason, ranked_ids=ids(ordered),
+                        context_rows=context, unscored_match_rows=unscored,
+                        scores=tuple(score for _, score in ordered),
+                        returned_ids=tuple(returned),
+                        context_by_origin={k: tuple(v) for k, v in by_origin.items()})
