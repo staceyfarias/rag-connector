@@ -2,7 +2,7 @@
 
 Notable changes to rag-connector. Dates are the day the work landed.
 
-## Unreleased
+## 0.3.0a1 — 2026-11-11
 
 Contract change (2026-10-08), compatible with existing connectors.
 
