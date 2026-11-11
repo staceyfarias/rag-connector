@@ -17,9 +17,9 @@ covered chunk ids      ``metadata["item_covered_ids"]`` — the corpus chunks th
                        through these, never through its own row id.
 text                   ``RetrievedChunk.text`` — what was served: the chunk's
                        text, or a summary representing the covered chunks.
-kind                   ``metadata["item_kind"]`` — ``chunk``, ``summary`` or
-                       ``gap``. ``group`` is accepted as a synonym of
-                       ``summary`` for compatibility.
+kind                   ``metadata["item_kind"]`` — ``chunk``, ``passage``,
+                       ``summary`` or ``gap``. ``group`` is accepted as a
+                       synonym of ``summary`` for compatibility.
 curated (optional)     ``metadata["item_curated"]`` — curator notes, kept
                        separate from ``text`` and never part of it.
 =====================  ========================================================
@@ -27,6 +27,18 @@ curated (optional)     ``metadata["item_curated"]`` — curator notes, kept
 Two grouping keys that already exist in use are documented here too:
 ``item_index`` (rows sharing an index are one returned item) and ``item_label``
 (the connector's own free-form name for the item, never interpreted).
+
+**Passages and row roles (2026-11-10).** Some systems return a matched chunk
+together with chunks they add around it (neighbour expansion, a parent
+section). Each of those rows is real corpus text that can be graded, but only
+the matched row was scored against the query. A ``passage`` item is several
+verbatim corpus chunks served as one unit: its rows share an ``item_index``,
+each is credited through its own ``chunk_id``, and the item covers the union
+of its rows. ``metadata["item_role"]`` says what each row is: ``match`` (scored
+against the query; ``score`` is that score, and ``None`` means the system did
+not expose it) or ``context`` (added by the system around a match, never
+scored: its ``score`` is ``None`` by design). The item ranks by its match
+row(s). :func:`read_items` groups rows into items with these rules applied.
 
 These key names were first defined by RAGauge (``src/scoring/item_groups.py``)
 and copied by Pelorus Query. They live here now, as the one source both import.
@@ -42,6 +54,14 @@ from typing import Any
 
 __all__ = [
     "DerivedResult",
+    "ITEM_KIND_PASSAGE",
+    "ITEM_ROLES",
+    "ITEM_ROLE_CONTEXT",
+    "ITEM_ROLE_KEY",
+    "ITEM_ROLE_MATCH",
+    "ReturnedItem",
+    "item_group_problems",
+    "read_items",
     "ITEM_COVERED_IDS_KEY",
     "ITEM_CURATED_KEY",
     "ITEM_INDEX_KEY",
@@ -70,18 +90,31 @@ ITEM_KIND_KEY = "item_kind"
 ITEM_LABEL_KEY = "item_label"
 #: Curator notes, separate from the served text. Optional.
 ITEM_CURATED_KEY = "item_curated"
+#: ``match`` | ``context``: whether the row was scored against the query or
+#: added around a match by the system. Optional.
+ITEM_ROLE_KEY = "item_role"
 
 ITEM_KEYS = (
     ITEM_INDEX_KEY, ITEM_COVERED_IDS_KEY, ITEM_KIND_KEY, ITEM_LABEL_KEY, ITEM_CURATED_KEY,
+    ITEM_ROLE_KEY,
 )
+
+#: The row was scored against the query (its score, or None if not exposed).
+ITEM_ROLE_MATCH = "match"
+#: The row was added by the system around a match and never scored.
+ITEM_ROLE_CONTEXT = "context"
+ITEM_ROLES = (ITEM_ROLE_MATCH, ITEM_ROLE_CONTEXT)
 
 #: The row is the corpus chunk it names.
 ITEM_KIND_CHUNK = "chunk"
+#: The row is the corpus chunk it names, served with other chunks as one item
+#: (rows sharing ``item_index``); the item covers the union of its rows.
+ITEM_KIND_PASSAGE = "passage"
 #: The row stands for its covered chunks; its text represents them.
 ITEM_KIND_SUMMARY = "summary"
 #: A verified "the corpus does not answer this". Covers no chunks.
 ITEM_KIND_GAP = "gap"
-ITEM_KINDS = (ITEM_KIND_CHUNK, ITEM_KIND_SUMMARY, ITEM_KIND_GAP)
+ITEM_KINDS = (ITEM_KIND_CHUNK, ITEM_KIND_PASSAGE, ITEM_KIND_SUMMARY, ITEM_KIND_GAP)
 
 #: Older spellings still accepted, mapped to their current kind. ``group`` is
 #: what RAGauge and Pelorus emit today for a result covering several chunks.
@@ -127,6 +160,7 @@ class DerivedResult:
     index: int | None = None
     label: str | None = None
     kind_declared: bool = False
+    role: str | None = None
 
     @property
     def credited_ids(self) -> tuple[str, ...]:
@@ -190,6 +224,29 @@ def derived_result_problems(hit: Any) -> list[str]:
                 f"declares {ITEM_COVERED_IDS_KEY}={list(covered)!r}"
             )
 
+    if kind == ITEM_KIND_PASSAGE:
+        chunk_id = getattr(hit, "chunk_id", None)
+        if chunk_id is None:
+            problems.append("a passage row must carry its corpus chunk's own chunk_id")
+        elif isinstance(covered, (list, tuple)) and list(covered) != [chunk_id]:
+            problems.append(
+                f"a passage row covers exactly itself ({[chunk_id]!r}); the item "
+                f"covers the union of its rows, but this row declares "
+                f"{ITEM_COVERED_IDS_KEY}={list(covered)!r}")
+        if ITEM_INDEX_KEY not in meta:
+            problems.append(f"a passage row must declare {ITEM_INDEX_KEY}: its "
+                            "rows are one item")
+
+    if ITEM_ROLE_KEY in meta:
+        role = meta.get(ITEM_ROLE_KEY)
+        if role not in ITEM_ROLES:
+            problems.append(f"{ITEM_ROLE_KEY} {role!r} is not one of {ITEM_ROLES}")
+        elif role == ITEM_ROLE_CONTEXT and getattr(hit, "score", None) is not None:
+            problems.append("a context row was never scored against the query, "
+                            "so its score must be None")
+        if kind == ITEM_KIND_GAP:
+            problems.append(f"a gap has no {ITEM_ROLE_KEY}")
+
     if ITEM_CURATED_KEY in meta and not isinstance(meta.get(ITEM_CURATED_KEY), str):
         problems.append(f"{ITEM_CURATED_KEY} must be a string")
     if ITEM_LABEL_KEY in meta and meta.get(ITEM_LABEL_KEY) is not None and not isinstance(
@@ -230,6 +287,7 @@ def read_derived_result(hit: Any) -> DerivedResult:
         index=meta.get(ITEM_INDEX_KEY),
         label=meta.get(ITEM_LABEL_KEY),
         kind_declared=declared,
+        role=meta.get(ITEM_ROLE_KEY),
     )
 
 
@@ -240,6 +298,7 @@ def derived_result_metadata(
     curated: str | None = None,
     index: int | None = None,
     label: str | None = None,
+    role: str | None = None,
 ) -> dict[str, Any]:
     """Build the ``metadata`` keys for one returned row, checked.
 
@@ -283,12 +342,130 @@ def derived_result_metadata(
         meta[ITEM_INDEX_KEY] = index
     if label is not None:
         meta[ITEM_LABEL_KEY] = label
+    if role is not None:
+        meta[ITEM_ROLE_KEY] = role
 
     class _Row:  # the structural check reads attributes off a row
         chunk_id = None
         metadata = meta
 
-    problems = [p for p in derived_result_problems(_Row()) if "chunk result" not in p]
+    problems = [p for p in derived_result_problems(_Row())
+                if "chunk result" not in p and "passage row must carry" not in p]
     if problems:
         raise ValueError("; ".join(problems))
     return meta
+
+
+# --- items: rows grouped by item_index ---------------------------------------
+
+
+@dataclass(frozen=True)
+class ReturnedItem:
+    """One returned item: the rows sharing an ``item_index`` (or one row).
+
+    ``covered_ids`` is what id-keyed scoring credits: the union of the rows'
+    own ids for a ``passage``, the declared covered ids otherwise. ``score`` is
+    the best score among the item's ``match`` rows (a row with no role counts
+    as a match), or ``None`` when none carries one. ``roles`` gives each row's
+    declared role in row order (``None`` where undeclared).
+    """
+
+    index: int | None
+    kind: str
+    covered_ids: tuple[str, ...]
+    row_ranks: tuple[int, ...]
+    score: float | None
+    roles: tuple[str | None, ...]
+    label: str | None = None
+
+    @property
+    def has_match(self) -> bool:
+        return any(role in (None, ITEM_ROLE_MATCH) for role in self.roles)
+
+
+def item_group_problems(hits: Sequence[Any]) -> tuple[list[str], list[str]]:
+    """Rules across rows sharing an ``item_index``: ``(failures, warnings)``.
+
+    Rows of one item declare the same kind. For every kind but ``passage`` they
+    also declare the same covered ids (a host reads them once); passage rows
+    each cover themselves. A passage item with no ``match`` row warns: nothing
+    in it was scored against the query.
+    """
+    failures: list[str] = []
+    warnings: list[str] = []
+    groups: dict[int, list[Any]] = {}
+    for hit in hits:
+        index = _metadata(hit).get(ITEM_INDEX_KEY)
+        if isinstance(index, int) and not isinstance(index, bool):
+            groups.setdefault(index, []).append(hit)
+    for index, rows in groups.items():
+        kinds = {_metadata(r).get(ITEM_KIND_KEY) for r in rows}
+        first = getattr(rows[0], "rank", "?")
+        if len(kinds) > 1:
+            failures.append(
+                f"rows of item_index {index} (first at rank {first}) declare "
+                f"different item_kind values {sorted(map(str, kinds))}")
+            continue
+        kind = next(iter(kinds))
+        if kind == ITEM_KIND_PASSAGE:
+            if not any(_metadata(r).get(ITEM_ROLE_KEY, ITEM_ROLE_MATCH) == ITEM_ROLE_MATCH
+                       for r in rows):
+                warnings.append(
+                    f"passage item_index {index} (first at rank {first}) has no "
+                    "match row: nothing in it was scored against the query")
+            continue
+        covered = {repr(_metadata(r).get(ITEM_COVERED_IDS_KEY)) for r in rows}
+        if len(covered) > 1:
+            failures.append(
+                f"rows of item_index {index} (first at rank {first}) declare "
+                "different item_covered_ids")
+    return failures, warnings
+
+
+def read_items(hits: Sequence[Any]) -> list[ReturnedItem]:
+    """Group returned rows into items, in first-seen order, rules applied.
+
+    A row without ``item_index`` is its own item. Raises ``ValueError`` when a
+    row or a group is malformed (see :func:`derived_result_problems` and
+    :func:`item_group_problems`).
+    """
+    problems = [p for hit in hits for p in derived_result_problems(hit)]
+    problems += item_group_problems(hits)[0]
+    if problems:
+        raise ValueError("malformed item declarations: " + "; ".join(problems))
+    order: list[Any] = []
+    rows_by: dict[Any, list[tuple[int, Any]]] = {}
+    for position, hit in enumerate(hits):
+        index = _metadata(hit).get(ITEM_INDEX_KEY)
+        key = ("i", index) if index is not None else ("r", position)
+        if key not in rows_by:
+            rows_by[key] = []
+            order.append(key)
+        rows_by[key].append((position, hit))
+    items: list[ReturnedItem] = []
+    for key in order:
+        rows = rows_by[key]
+        results = [read_derived_result(hit) for _, hit in rows]
+        kind = results[0].kind
+        if kind == ITEM_KIND_PASSAGE:
+            covered: list[str] = []
+            for result in results:
+                for cid in result.credited_ids:
+                    if cid not in covered:
+                        covered.append(cid)
+        else:
+            covered = list(results[0].credited_ids)
+        scores = [getattr(hit, "score", None)
+                  for (_, hit), result in zip(rows, results)
+                  if result.role in (None, ITEM_ROLE_MATCH)]
+        scores = [x for x in scores if x is not None]
+        items.append(ReturnedItem(
+            index=results[0].index,
+            kind=kind,
+            covered_ids=tuple(covered),
+            row_ranks=tuple(getattr(hit, "rank", position) for position, hit in rows),
+            score=max(scores) if scores else None,
+            roles=tuple(result.role for result in results),
+            label=results[0].label,
+        ))
+    return items

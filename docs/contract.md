@@ -195,14 +195,15 @@ fields:
 | --- | --- | --- |
 | covered chunk ids | `metadata["item_covered_ids"]` | The corpus chunk ids the result stands for. Id-keyed scoring (which chunks were retrieved) credits the result through these, never through its own row id. |
 | text | `RetrievedChunk.text` | What was served: the chunk's text, or a summary representing the covered chunks. Content-based judgement reads this. |
-| kind | `metadata["item_kind"]` | `chunk`, `summary` or `gap`. `group` is accepted as a synonym of `summary`, because that is what existing connectors emit. |
+| kind | `metadata["item_kind"]` | `chunk`, `passage`, `summary` or `gap`. `group` is accepted as a synonym of `summary`, because that is what existing connectors emit. |
 | curated (optional) | `metadata["item_curated"]` | Curator notes about the result, kept separate from `text` and never part of it, so a host can report them without grading them as corpus content. |
 
 Two grouping keys already in use are part of the same vocabulary:
 
 | Key | Meaning |
 | --- | --- |
-| `item_index` | Optional non-negative integer: which returned item the row belongs to, 0-based. Rows sharing an index are **one** item occupying one ranked slot, and must declare the same `item_covered_ids` and `item_kind`. Without it, each row is its own item. |
+| `item_index` | Optional non-negative integer: which returned item the row belongs to, 0-based. Rows sharing an index are **one** item occupying one ranked slot, and must declare the same `item_kind`; except in a `passage`, they must also declare the same `item_covered_ids`. Without it, each row is its own item. |
+| `item_role` | Optional: `match` (the row was scored against the query; `score` is that score, and `None` means the system did not expose one) or `context` (the system added the row around a match and never scored it; its `score` must be `None`). |
 | `item_label` | Optional string: the connector's own name for what the item is. Recorded and shown verbatim; nothing interprets it. |
 
 The rules:
@@ -230,10 +231,31 @@ The rules:
 6. **An unknown kind is refused**, not guessed.
 7. **Vendor extras** go in `<vendor>_*` keys (`acme_extract_id`). This
    contract never defines or reads them.
+8. **Passages (2026-11-10).** A `passage` is several verbatim corpus chunks
+   served as one item, such as a matched chunk with the neighbours a system
+   expands around it. Its rows share an `item_index` and each is a real corpus
+   chunk credited through its own `chunk_id` (covered ids absent, or exactly
+   `[chunk_id]`). The item covers the **union** of its rows. Text is judged
+   row by row, as corpus text, never as a summary.
+9. **Row roles tell "no score" apart from "not scored by design".** A `match`
+   row was scored against the query: a `None` score there means the system did
+   not expose it. A `context` row was added around a match and never scored:
+   its score is `None` by design, and declaring one is refused. An item's
+   score is the best score among its match rows (a row without a role counts
+   as a match), and items rank by it. A passage with no match row warns.
+
+**Why passages exist.** Before them, a matched chunk and its neighbours could
+not be one item: rows sharing an index had to declare the same covered ids, a
+`chunk` covers exactly itself, and only a `summary` could cover several chunks,
+which would grade verbatim corpus text as a generated summary. Hosts that took
+an item's coverage from its first row would also miss an answer sitting in a
+neighbour. `read_items(hits)` groups rows into items with these rules applied.
 
 `rag_connector.derived` holds the key constants, `derived_result_metadata(...)`
-to build a row's keys, `read_derived_result(hit)` to read one with the defaults
-applied, and `derived_result_problems(hit)` for the structural checks.
+to build a row's keys (including `role`), `read_derived_result(hit)` to read one
+with the defaults applied, `derived_result_problems(hit)` and
+`item_group_problems(hits)` for the structural checks, and `read_items(hits)` to
+group rows into items (covered ids, best match score, row roles).
 `rag-connector validate` checks every declaring row: malformed declarations
 fail; zero coverage without `gap`, a summary carrying a real corpus id, and an
 undeclared kind warn.

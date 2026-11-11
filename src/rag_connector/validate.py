@@ -622,11 +622,9 @@ def _check_derived_results(report: Report, hits: list[RetrievedChunk],
     of the rules a host relies on to read a derived result correctly.
     """
     from .derived import (
-        ITEM_COVERED_IDS_KEY,
-        ITEM_INDEX_KEY,
         ITEM_KEYS,
-        ITEM_KIND_KEY,
         derived_result_problems,
+        item_group_problems,
         read_derived_result,
     )
 
@@ -648,18 +646,10 @@ def _check_derived_results(report: Report, hits: list[RetrievedChunk],
 
     # Rows sharing an item_index are ONE item; a host reads its covered ids and
     # kind once, so rows that disagree leave the item's meaning to row order.
-    by_index: dict = {}
-    for hit in declaring:
-        index = hit.metadata.get(ITEM_INDEX_KEY)
-        if not isinstance(index, int) or isinstance(index, bool):
-            continue
-        key = (repr(hit.metadata.get(ITEM_COVERED_IDS_KEY)),
-               hit.metadata.get(ITEM_KIND_KEY))
-        first = by_index.setdefault(index, (hit.rank, key))
-        if first[1] != key:
-            failures.append(
-                f"rows at rank {first[0]} and {hit.rank} share item_index "
-                f"{index} but declare different item_covered_ids or item_kind")
+    # Passage rows each cover themselves (the item covers their union).
+    group_failures, group_warnings = item_group_problems(declaring)
+    failures += group_failures
+    warnings += group_warnings
 
     if not failures:
         for hit in declaring:
@@ -670,7 +660,7 @@ def _check_derived_results(report: Report, hits: list[RetrievedChunk],
                     f"chunks as kind {result.kind!r}: a host credits it with "
                     "nothing and does NOT read it as a verified 'no answer' -- "
                     "declare item_kind='gap' if that is what it is")
-            if (result.kind != "chunk" and hit.chunk_id is not None
+            if (result.kind not in ("chunk", "passage") and hit.chunk_id is not None
                     and str(hit.chunk_id) in pulled_ids):
                 warnings.append(
                     f"rank {hit.rank}: a {result.kind} result carries the real "
@@ -686,9 +676,11 @@ def _check_derived_results(report: Report, hits: list[RetrievedChunk],
         report.add(name, FAIL, details + failures[:8],
                    "Follow docs/contract.md, 'Derived results': item_covered_ids "
                    "is a list of distinct chunk-id strings, item_kind is one of "
-                   "chunk / summary / gap ('group' accepted as summary), a gap "
-                   "covers no chunks, a chunk covers exactly itself, and rows "
-                   "sharing an item_index agree. A host that has to guess what a "
+                   "chunk / passage / summary / gap ('group' accepted as "
+                   "summary), a gap covers no chunks, a chunk or passage row "
+                   "covers exactly itself, item_role is match or context (a "
+                   "context row has no score), and rows sharing an item_index "
+                   "agree on their kind. A host that has to guess what a "
                    "result stands for grades the wrong thing.")
     elif warnings:
         report.add(name, WARN, details + warnings[:8],

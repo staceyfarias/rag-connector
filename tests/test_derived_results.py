@@ -255,3 +255,81 @@ def test_an_undeclared_kind_warns_with_the_default_it_was_read_as():
     check = next(c for c in report.checks if "Derived" in c.name)
     assert check.status == WARN
     assert any("read as 'summary'" in d for d in check.details)
+
+
+# --- passages and row roles (2026-11-10) -------------------------------------
+
+from rag_connector.derived import (  # noqa: E402
+    ITEM_ROLE_KEY,
+    item_group_problems,
+    read_items,
+)
+
+
+def _row(chunk_id, rank, score, **meta):
+    return RetrievedChunk(chunk_id=chunk_id, text=f"text of {chunk_id}",
+                          score=score, rank=rank, metadata=meta)
+
+
+def _passage(index, rows):
+    """rows: (chunk_id, rank, score, role)."""
+    return [_row(cid, rank, score, item_index=index, item_kind="passage",
+                 item_role=role) for cid, rank, score, role in rows]
+
+
+def test_a_passage_covers_the_union_of_its_rows_and_ranks_by_its_match():
+    hits = _passage(0, [("a:0", 0, None, "context"), ("a:1", 1, 0.42, "match")]) + \
+        _passage(1, [("b:0", 2, 0.61, "match")])
+    items = read_items(hits)
+    assert [i.covered_ids for i in items] == [("a:0", "a:1"), ("b:0",)]
+    assert [i.score for i in items] == [0.42, 0.61]
+    assert items[0].roles == ("context", "match")
+    assert items[0].has_match
+
+
+def test_a_context_row_with_a_score_is_refused():
+    hit = _row("a:0", 0, 0.3, item_index=0, item_kind="passage", item_role="context")
+    assert any("context row" in p for p in derived_result_problems(hit))
+
+
+def test_a_match_row_may_have_no_score_when_the_system_exposes_none():
+    hit = _row("a:0", 0, None, item_index=0, item_kind="passage", item_role="match")
+    assert derived_result_problems(hit) == []
+    assert read_items([hit])[0].score is None
+
+
+def test_an_unknown_role_is_refused():
+    hit = _row("a:0", 0, None, item_index=0, item_kind="passage", item_role="neighbour")
+    assert any("item_role" in p for p in derived_result_problems(hit))
+
+
+def test_a_passage_row_must_be_a_real_chunk_in_an_item():
+    no_index = _row("a:0", 0, 0.5, item_kind="passage", item_role="match")
+    assert any("item_index" in p for p in derived_result_problems(no_index))
+    no_id = _row(None, 0, 0.5, item_index=0, item_kind="passage")
+    assert any("chunk_id" in p for p in derived_result_problems(no_id))
+    covers_other = _row("a:0", 0, 0.5, item_index=0, item_kind="passage",
+                        item_covered_ids=["a:1"])
+    assert any("covers exactly itself" in p for p in derived_result_problems(covers_other))
+
+
+def test_mixed_kinds_in_one_item_fail_and_a_matchless_passage_warns():
+    mixed = [_row("a:0", 0, 0.5, item_index=0, item_kind="passage", item_role="match"),
+             _row("a:1", 1, None, item_index=0, item_kind="chunk")]
+    failures, _ = item_group_problems(mixed)
+    assert failures
+    only_context = _passage(0, [("a:0", 0, None, "context")])
+    failures, warnings = item_group_problems(only_context)
+    assert not failures and warnings
+
+
+def test_the_builder_writes_the_role():
+    meta = derived_result_metadata(kind="passage", index=3, role="context")
+    assert meta == {"item_kind": "passage", "item_index": 3, ITEM_ROLE_KEY: "context"}
+
+
+def test_a_well_formed_passage_response_validates():
+    report = _validate(
+        _passage(0, [("a:0", 0, None, "context"), ("a:1", 1, 0.42, "match")])
+        + _passage(1, [("b:0", 2, 0.61, "match")]))
+    assert _status(report, "Derived-result") == PASS
