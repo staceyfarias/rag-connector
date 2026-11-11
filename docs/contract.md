@@ -276,6 +276,21 @@ Under `scored`, a `None` score is a contract violation — declare `ordered`
 instead of returning `None`. Under `complete_set`, returning more than `top_k`
 items is legal and expected (neighbor expansion, for instance).
 
+### Ranking basis (2026-11-10)
+
+A host never assumes row order is a ranking. It reads the declared mode and the
+rows' scores and roles (`rag_connector.ranking.ranking_basis`):
+
+| Mode | Rank-based measures (reciprocal rank, nDCG, top-k, first item) |
+| --- | --- |
+| `scored` | Ranked by score. Every matched row (`item_role` `match`, or no role) must carry a score, in descending order. A missing score or out-of-order rows is an **error**: the host does not fall back to row order. |
+| `ordered` | Ranked by returned order: the connector's own ranking, which may fuse channels whose scores are not comparable (vector similarity, keyword relevance). Scores are evidence. |
+| `complete_set` | The system decides cardinality. With `info()["result_order"] == "ranked"`, ranked by returned order (the system's own ranking). Otherwise **not applicable**: the result is a set. Order-free measures (answer returned, payload, set precision) always apply. |
+
+Context rows (`item_role` `context`) are never scored and are ignored here. A
+connector that merges channels on different score scales must declare `ordered`
+and return its merged order; a host cannot compare those scores.
+
 `resolve_retrieval_mode(live_mode, dataset_override)` returns
 `(resolved_mode, source)`. The **only** legal override is `scored → ordered`
 ("I distrust this connector's scores"). Meaning cannot be minted into scores,

@@ -63,6 +63,16 @@ from .derived import (
     read_derived_result,
     read_items,
 )
+from .ranking import (
+    RANKING_ERROR,
+    RANKING_NOT_APPLICABLE,
+    RANKING_RETURNED_ORDER,
+    RANKING_SCORES,
+    RESULT_ORDER_RANKED,
+    RESULT_ORDER_SET,
+    RankingBasis,
+    ranking_basis,
+)
 from .errors import (
     ConnectorContractError,
     ConnectorError,
@@ -151,6 +161,14 @@ __all__ = [
     "ReturnedItem",
     "item_group_problems",
     "read_items",
+    "RANKING_ERROR",
+    "RANKING_NOT_APPLICABLE",
+    "RANKING_RETURNED_ORDER",
+    "RANKING_SCORES",
+    "RESULT_ORDER_RANKED",
+    "RESULT_ORDER_SET",
+    "RankingBasis",
+    "ranking_basis",
     "DerivedResult",
     "derived_result_metadata",
     "derived_result_problems",
