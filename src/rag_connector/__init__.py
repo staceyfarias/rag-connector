@@ -66,16 +66,6 @@ from .derived import (
     read_derived_result,
     read_items,
 )
-from .ranking import (
-    RANKING_ERROR,
-    RANKING_NOT_APPLICABLE,
-    RANKING_RETURNED_ORDER,
-    RANKING_SCORES,
-    RESULT_ORDER_RANKED,
-    RESULT_ORDER_SET,
-    RankingBasis,
-    ranking_basis,
-)
 from .errors import (
     ConnectorContractError,
     ConnectorError,
@@ -132,6 +122,16 @@ from .prompts import (
     token_usage_from_response,
     validate_prompt_template,
     validate_prompt_templates,
+)
+from .ranking import (
+    RANKING_ERROR,
+    RANKING_NOT_APPLICABLE,
+    RANKING_RETURNED_ORDER,
+    RANKING_SCORES,
+    RESULT_ORDER_RANKED,
+    RESULT_ORDER_SET,
+    RankingBasis,
+    ranking_basis,
 )
 from .registry import ConnectorSpec
 from .run_snapshot import (
