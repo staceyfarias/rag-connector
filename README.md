@@ -379,6 +379,8 @@ rag-connector index search --dataset ./my-dataset --regex '\b\d+(\.\d+)? ?mg\b' 
 rag-connector index neighbors --dataset ./my-dataset 4a6c729d --radius 2
 rag-connector index outline --dataset ./my-dataset 4a6c729d
 rag-connector index copies --dataset ./my-dataset 4a6c729d
+rag-connector index sql --dataset ./my-dataset --schema
+rag-connector index sql --dataset ./my-dataset "SELECT task_id, count(*) FROM chunks GROUP BY task_id"
 ```
 
 `--term` (every one must match), `--any` (at least one) and `--not` (none)
@@ -388,7 +390,20 @@ take words: several words are a phrase, and a trailing `*` makes a prefix.
 `task_id` or an unambiguous prefix), `--general` (chunks with no module),
 `--doc`, `--exclude-doc` and `--type`. Every hit is printed unless `--limit` is
 given, and the total is always reported. `--json` prints the whole result. A
-search refuses an index built from another core. From Python:
+search refuses an index built from another core.
+
+`index sql` runs one read-only SQL statement over the file, for what the search
+options cannot say (counts by module, a document's chunks under one heading,
+chunks in two copy groups, joins). The file is opened read-only and the
+connection set to `query_only`; ATTACH is refused; at most 500 rows come back
+(`--limit` lowers it) and the statement is stopped after 20 seconds. The console
+view shortens long cells (`--full` prints them whole); `--json` prints
+`{"columns", "rows", "truncated"}`. `--schema` prints the tables and how to
+query them: the full-text tables store no text, so join them on
+`rowid = chunks.n`, and search `chunks_plain` rather than `chunks.plain`, which
+is empty for most chunks. `regexp` and `contains` are available as functions.
+
+From Python:
 
 ```python
 from rag_connector import search_index
@@ -400,6 +415,7 @@ with search_index.open_index("./my-dataset") as index:
     index.neighbors("4a6c729d", radius=1)
     index.outline("4a6c729d")
     index.copies("4a6c729d")
+    index.sql("SELECT chunk_id FROM chunks_plain WHERE contains(plain, '$18')")
 ```
 
 See [the Dataset spec](docs/dataset-spec.md#analysisrag-connector--the-corpus-index).

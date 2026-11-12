@@ -484,3 +484,73 @@ def test_cli_prepare_builds_both_unless_told_not_to(dataset, capsys):
     capsys.readouterr()
     assert main(["index", "status", "--dataset", str(dataset)]) == 0
     assert "search index: 15 chunks" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# Read-only SQL
+# ---------------------------------------------------------------------------
+
+def test_sql_reads_tables_fts_and_functions(index):
+    result = index.sql("SELECT chunk_id FROM chunks WHERE doc_id = 'guide' "
+                       "ORDER BY doc_chunk_index")
+    assert result["columns"] == ["chunk_id"]
+    assert [r[0] for r in result["rows"]] == ["c-guide-0", "c-guide-1", "c-guide-2"]
+    assert result["truncated"] is False
+    # The FTS tables hold no text: join on rowid = chunks.n.
+    fts = index.sql("SELECT c.chunk_id FROM chunks_fts JOIN chunks c ON c.n = chunks_fts.rowid "
+                    "WHERE chunks_fts MATCH 'NEAR(summarized forward, 3)'")
+    assert [r[0] for r in fts["rows"]] == ["c-gen-1"]
+    found = index.sql("SELECT chunk_id FROM chunks_plain WHERE contains(plain, '$18') "
+                      "OR plain REGEXP 'be-fast'")
+    assert sorted(r[0] for r in found["rows"]) == ["c-guide-0", "c-guide-1"]
+
+
+def test_sql_is_read_only_single_statement_and_bounded(index):
+    for statement in ("DELETE FROM chunks", "UPDATE meta SET value = 'x'",
+                      "CREATE TABLE t (x)", "ATTACH 'other.db' AS other",
+                      "SELECT 1; SELECT 2", "", "  ;  "):
+        with pytest.raises(si.SearchIndexError):
+            index.sql(statement)
+    endless = ("WITH RECURSIVE t(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM t) "
+               "SELECT count(*) FROM t")
+    with pytest.raises(si.SearchIndexError, match="stopped after"):
+        index.sql(endless, seconds=0.2)
+    # Still usable afterwards, and the row cap reports truncation instead of hiding it.
+    capped = index.sql("SELECT chunk_id FROM chunks", limit=2)
+    assert len(capped["rows"]) == 2 and capped["truncated"] is True
+    assert index.sql("SELECT count(*) FROM chunks")["rows"] == [[15]]
+
+
+def test_sql_shortens_long_cells(index):
+    long = index.sql(f"SELECT printf('%.{si.SQL_CELL_CHARS + 10}c', 'a')")["rows"][0][0]
+    assert long.startswith("a" * si.SQL_CELL_CHARS) and long.endswith("(+10 chars)")
+    assert index.sql("SELECT x'0102'")["rows"] == [["<2 bytes>"]]
+
+
+def test_schema_names_tables_and_how_to_query(index):
+    text = index.schema()
+    for name in ("CREATE TABLE chunks", "chunks_fts", "chunks_trigram", "chunks_plain",
+                 "copy_groups", "overlap_pairs", "rowid = chunks.n"):
+        assert name in text
+
+
+def test_cli_sql(dataset, capsys):
+    folder = str(dataset)
+    assert main(["index", "search-db", "--dataset", folder]) == 0
+    capsys.readouterr()
+    assert main(["index", "sql", "--dataset", folder,
+                 "SELECT chunk_id, text FROM chunks WHERE chunk_id = 'c-faq-0'"]) == 0
+    out = capsys.readouterr().out
+    assert out.splitlines()[0] == "chunk_id\ttext"
+    assert " / Parking is free" in out and out.rstrip().endswith("-- 1 row")
+    assert main(["index", "sql", "--dataset", folder, "--full",
+                 "SELECT text FROM chunks WHERE chunk_id = 'c-faq-0'"]) == 0
+    assert "\nParking is free" in capsys.readouterr().out
+    assert main(["index", "sql", "--dataset", folder, "--json", "--limit", "1",
+                 "SELECT chunk_id FROM chunks ORDER BY chunk_id"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["truncated"] is True and len(payload["rows"]) == 1
+    assert main(["index", "sql", "--dataset", folder, "DROP TABLE chunks"]) == 1
+    assert "readonly" in capsys.readouterr().err
+    assert main(["index", "sql", "--dataset", folder, "--schema"]) == 0
+    assert "chunks_trigram" in capsys.readouterr().out

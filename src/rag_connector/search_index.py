@@ -89,6 +89,33 @@ OVERLAP_MAX_POSTING = 1000
 SNIPPET_BEFORE = 100
 SNIPPET_AFTER = 200
 
+#: ``SearchIndex.sql`` limits: rows returned, seconds of work, characters per cell.
+SQL_ROW_CAP = 500
+SQL_SECONDS = 20
+SQL_CELL_CHARS = 2000
+
+#: What ``SearchIndex.sql`` users most often need to know about the schema.
+SQL_NOTES = """Read-only SQL over the search index (one statement; at most 500 rows, 20 s).
+- chunks: one row per chunk. chunk_id, doc_id, doc_chunk_index (position in its
+  document), source (document title), task_id (module), step_id, resource_type, type
+  (content | faq | general_info), text, plain (NULL for most chunks), heading_before,
+  headings (JSON list), copy_rep, metadata (JSON).
+- chunks_plain(n, chunk_id, plain): plain text for every chunk; search this, not chunks.plain.
+- chunks_fts (words) is an FTS5 table with no stored text: join on rowid = chunks.n, e.g.
+    SELECT c.chunk_id, c.source FROM chunks_fts JOIN chunks c ON c.n = chunks_fts.rowid
+    WHERE chunks_fts MATCH 'NEAR("tuition assistance" spouse, 10)'
+    ORDER BY bm25(chunks_fts) LIMIT 20
+  MATCH takes FTS5 syntax: AND OR NOT, "phrases", prefix*, NEAR(...). Quote terms with
+  punctuation ("10-10d") or use contains().
+- Fragments, punctuation, numbers ($18, 41.5, BE-FAST): contains(plain, '...') or
+  plain REGEXP '...' over chunks_plain (a full scan, fast at this size). chunks_trigram
+  backs `index search --substring`; it keeps no positions, so it takes no phrase queries.
+- copy_groups(group_id, kind identical|near|overlap, chunk_id); overlap_pairs(chunk_a, chunk_b,
+  shared_shingles, containment, containment_larger).
+- Functions: regexp(pattern, value) / value REGEXP pattern (case-insensitive),
+  contains(value, needle) (case-insensitive substring, punctuation included).
+"""
+
 
 class SearchIndexError(ValueError):
     """A search index cannot answer: stale, malformed, or a bad query."""
@@ -1159,6 +1186,73 @@ class SearchIndex:
                 for row in self.conn.execute(
                     "SELECT task_id, COUNT(*), COUNT(DISTINCT doc_id) FROM chunks "
                     "GROUP BY task_id ORDER BY task_id")]
+
+
+    # -- read-only SQL -------------------------------------------------------
+
+    def sql(self, statement: str, *, limit: int | None = None,
+            seconds: float = SQL_SECONDS) -> dict[str, Any]:
+        """Run one read-only SQL statement; ``{"columns", "rows", "truncated"}``.
+
+        The file is opened read-only and the connection set to ``query_only``,
+        so a statement that would write fails; ATTACH and DETACH are refused.
+        At most ``SQL_ROW_CAP`` rows (or ``limit``, if lower) come back, the
+        statement is stopped after ``seconds``, and a cell longer than
+        ``SQL_CELL_CHARS`` is shortened (blobs show their size). ``regexp`` and
+        ``contains`` are available as functions. Errors raise SearchIndexError.
+        """
+        import time
+
+        text = (statement or "").strip().rstrip(";").strip()
+        if not text:
+            raise SearchIndexError("sql: empty statement")
+        conn = self.conn
+        conn.execute("PRAGMA query_only = ON")
+        deadline = time.monotonic() + seconds
+        conn.set_progress_handler(lambda: 1 if time.monotonic() > deadline else 0, 10_000)
+        conn.set_authorizer(_sql_authorizer)
+        cap = min(int(limit), SQL_ROW_CAP) if limit else SQL_ROW_CAP
+        try:
+            cursor = conn.execute(text)
+            columns = [d[0] for d in cursor.description or []]
+            rows = cursor.fetchmany(cap + 1)
+        except sqlite3.Error as exc:  # including the time limit ("interrupted")
+            reason = f"stopped after {seconds:g} s" if time.monotonic() > deadline else str(exc)
+            raise SearchIndexError(f"sql: {reason}") from exc
+        except ValueError as exc:      # e.g. more than one statement
+            raise SearchIndexError(f"sql: {exc}") from exc
+        finally:
+            conn.set_progress_handler(None, 0)
+            conn.set_authorizer(None)
+        return {"columns": columns,
+                "rows": [[_sql_cell(value) for value in row] for row in rows[:cap]],
+                "truncated": len(rows) > cap}
+
+    def schema(self) -> str:
+        """The CREATE statements of the index's tables and views, plus SQL_NOTES."""
+        names = ("chunks", "chunks_plain", "chunks_fts", "chunks_trigram", "copy_groups",
+                 "overlap_pairs", "meta")
+        rows = self.conn.execute(
+            f"SELECT name, sql FROM sqlite_master WHERE name IN ({_marks(names)})",
+            names).fetchall()
+        found = {row[0]: row[1] for row in rows}
+        statements = [found[name].strip() + ";" for name in names if found.get(name)]
+        return "\n".join(statements) + "\n\n" + SQL_NOTES
+
+
+_DENIED = {sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH}
+
+
+def _sql_authorizer(action: int, *_args: Any) -> int:
+    return sqlite3.SQLITE_DENY if action in _DENIED else sqlite3.SQLITE_OK
+
+
+def _sql_cell(value: Any) -> Any:
+    if isinstance(value, bytes):
+        return f"<{len(value)} bytes>"
+    if isinstance(value, str) and len(value) > SQL_CELL_CHARS:
+        return value[:SQL_CELL_CHARS] + f"... (+{len(value) - SQL_CELL_CHARS} chars)"
+    return value
 
 
 def _marks(values: Sequence[Any]) -> str:

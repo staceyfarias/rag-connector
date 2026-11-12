@@ -2,6 +2,17 @@
 
 Notable changes to rag-connector. Dates are the day the work landed.
 
+## Unreleased
+
+- **Read-only SQL over the search index.** `SearchIndex.sql(statement, limit=,
+  seconds=)` and `rag-connector index sql --dataset DIR "SELECT ..."` run one
+  statement on a connection opened read-only and set to `query_only`, with
+  ATTACH refused, at most 500 rows (`truncated` says when more exist) and a
+  20-second limit. `SearchIndex.schema()` / `index sql --schema` print the
+  tables plus notes on querying them (join the FTS tables on `rowid = chunks.n`;
+  search `chunks_plain`). Moved here from swi-rag-cases' `cases lookup --sql` so
+  any tool, and an investigating agent, can query a Dataset without a case.
+
 ## 0.3.0a1 — 2026-11-11
 
 Contract change (2026-10-08), compatible with existing connectors.

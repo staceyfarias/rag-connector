@@ -251,13 +251,22 @@ def _add_index_commands(subparsers: argparse._SubParsersAction) -> None:
         "copies", help="a chunk's identical, near and overlapping copies",
     )
     copies.add_argument("chunk", help="a chunk id or an unambiguous prefix")
-    for command in (search, neighbors, outline, copies):
+    sql = commands.add_parser(
+        "sql", help="one read-only SQL statement over the search index (--schema: tables, notes)",
+    )
+    sql.add_argument("statement", nargs="?", help="a SELECT (or WITH) statement")
+    sql.add_argument("--schema", action="store_true",
+                     help="print the tables, views and how to query them, then exit")
+    sql.add_argument("--limit", type=int, default=None, help="at most N rows (cap 500)")
+    sql.add_argument("--full", action="store_true",
+                     help="print each cell whole (the console view shortens long cells)")
+    for command in (search, neighbors, outline, copies, sql):
         command.add_argument("--db", default=None, metavar="PATH",
                              help="a search index built with --out (default: the "
                                   "Dataset's analysis/rag-connector/search.sqlite)")
         command.add_argument("--json", action="store_true", help="print JSON")
     for command in (prepare, status, lookup, signal, signal_lookup, search_db, search,
-                    neighbors, outline, copies):
+                    neighbors, outline, copies, sql):
         command.add_argument("--dataset", required=True, metavar="PATH",
                              help="the Dataset folder")
 
@@ -363,6 +372,23 @@ def _format_copies(found) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _format_sql(result, full: bool = False) -> str:
+    def cell(value) -> str:
+        text = "NULL" if value is None else str(value)
+        if not full:
+            text = text.replace("\r", " ").replace("\n", " / ")
+            if len(text) > 160:
+                text = text[:157] + "..."
+        return text
+
+    lines = ["\t".join(result["columns"])]
+    lines += ["\t".join(cell(v) for v in row) for row in result["rows"]]
+    count = len(result["rows"])
+    more = " (more rows exist: narrow the query or use --limit)" if result["truncated"] else ""
+    lines.append(f"-- {count} row{'s' if count != 1 else ''}{more}")
+    return "\n".join(lines) + "\n"
+
+
 def _run_search_command(args: argparse.Namespace) -> int:
     from . import search_index
 
@@ -394,6 +420,14 @@ def _run_search_command(args: argparse.Namespace) -> int:
         elif args.index_command == "outline":
             items = index.outline(args.doc)
             _emit_json(items) if args.json else _emit(_format_outline(items))
+        elif args.index_command == "sql":
+            if args.schema:
+                _emit(index.schema())
+                return 0
+            if not args.statement:
+                raise ValueError("index sql: give a statement, or --schema")
+            result = index.sql(args.statement, limit=args.limit)
+            _emit_json(result) if args.json else _emit(_format_sql(result, args.full))
         else:
             found = index.copies(args.chunk)
             _emit_json(found) if args.json else _emit(_format_copies(found))
@@ -405,7 +439,7 @@ def _run_index_command(args: argparse.Namespace) -> int:
 
     folder = Path(args.dataset)
     if args.index_command in ("search-db", "search", "neighbors", "neighbours",
-                              "outline", "copies"):
+                              "outline", "copies", "sql"):
         return _run_search_command(args)
     if args.index_command == "prepare":
         counts = corpus_index.prepare(folder, stopwords=args.stopword)
