@@ -381,7 +381,14 @@ rag-connector index outline --dataset ./my-dataset 4a6c729d
 rag-connector index copies --dataset ./my-dataset 4a6c729d
 rag-connector index sql --dataset ./my-dataset --schema
 rag-connector index sql --dataset ./my-dataset "SELECT task_id, count(*) FROM chunks GROUP BY task_id"
+rag-connector index search --dataset ./my-dataset --term fee   --filter '{"$or": [{"task_id": {"$in": ["64c140a8-..."]}}, {"task_id": {"$exists": false}}]}'
 ```
+
+`--filter` (on `search`, `lookup`, `neighbors`, `outline`, `copies` and `sql`)
+scopes everything the command reads to the chunks a metadata filter admits, in
+the same syntax as `query(filter=...)`, over the chunk columns (`task_id`,
+`doc_id`, `type`, ...). It is never ignored: an unknown field is an error. See
+[Scoped lookups](docs/contract.md#scoped-lookups-search-index-and-book-index).
 
 `--term` (every one must match), `--any` (at least one) and `--not` (none)
 take words: several words are a phrase, and a trailing `*` makes a prefix.
@@ -416,6 +423,13 @@ with search_index.open_index("./my-dataset") as index:
     index.outline("4a6c729d")
     index.copies("4a6c729d")
     index.sql("SELECT chunk_id FROM chunks_plain WHERE contains(plain, '$18')")
+    index.lookup("Port St. Joe")            # the book index, from the same file
+
+# Everything read through this index is in scope: module 64c140a8 plus general info.
+scope = {"$or": [{"task_id": "64c140a8-..."}, {"task_id": {"$exists": False}}]}
+with search_index.open_index("./my-dataset", filter=scope) as index:
+    index.scope_summary()                   # chunks / documents in scope vs the Dataset
+    index.sql("SELECT count(*) FROM chunks")  # the scoped view; main.chunks is refused
 ```
 
 See [the Dataset spec](docs/dataset-spec.md#analysisrag-connector--the-corpus-index).

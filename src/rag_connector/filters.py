@@ -233,3 +233,98 @@ def and_filters(*filters: Mapping[str, Any] | None) -> dict:
     if len(parts) == 1:
         return parts[0]
     return {"$and": parts}
+
+
+#: Column kinds :func:`to_sql_where` knows: compared as text, or as numbers.
+SQL_TEXT = "text"
+SQL_INTEGER = "integer"
+
+
+def _sql_text(value: Any, path: str) -> str:
+    text = value if isinstance(value, str) else str(value)
+    if "\x00" in text:
+        raise _fail(path, "a value may not contain a NUL character")
+    return "'" + text.replace("'", "''") + "'"
+
+
+def _sql_literal(field: str, kind: str, value: Any, path: str, what: str) -> str:
+    if kind == SQL_INTEGER:
+        if not _is_number(value):
+            raise UnsupportedFilterError(
+                f"{what}: {field!r} holds numbers; compare it with a number, "
+                f"not {value!r}", fields=(field,))
+        return repr(value)
+    # A text column holds each value as its text form: a number or a bool is
+    # compared by the same form the index stored (``str(value)``).
+    return _sql_text(value, path)
+
+
+def to_sql_where(filt: Mapping[str, Any] | None, columns: Mapping[str, str], *,
+                 what: str = "this index", qualifier: str = "") -> str:
+    """Translate a neutral filter into one SQL boolean expression.
+
+    ``columns`` maps each field the filter may name to its column kind,
+    :data:`SQL_TEXT` or :data:`SQL_INTEGER`; ``qualifier`` (``"c."``) is put
+    before each column. Literals are written into the SQL (quoted, never
+    interpolated raw), so the expression can define a view, which takes no
+    bound parameters. An empty filter gives ``"1"``.
+
+    Missing values are SQL NULL and follow MongoDB: ``$ne`` and ``$nin``
+    match a row without the field, ``$exists: false`` matches only such rows,
+    every other operator never does. Raises :class:`InvalidFilterError` for a
+    malformed filter and :class:`UnsupportedFilterError` for a field not in
+    ``columns``, a range operator on a text column, or a non-number compared
+    with a numeric column -- no part of a filter is ever dropped.
+    """
+    normalized = validate_filter(filt)
+    if not normalized:
+        return "1"
+    unknown = sorted(filter_fields(normalized) - set(columns))
+    if unknown:
+        raise UnsupportedFilterError(
+            f"{what} cannot filter on {', '.join(map(repr, unknown))}; its fields are "
+            f"{', '.join(sorted(columns))}", fields=tuple(unknown))
+
+    def column(field: str) -> str:
+        return qualifier + '"' + field.replace('"', '""') + '"'
+
+    def condition(field: str, cond: Any, path: str) -> str:
+        kind = columns[field]
+        col = column(field)
+        if not isinstance(cond, Mapping):
+            cond = {"$eq": cond}
+        parts = []
+        for op, operand in cond.items():
+            op_path = f"{path}[{op!r}]"
+            if op == "$exists":
+                parts.append(f"{col} IS {'NOT ' if operand else ''}NULL")
+            elif op in ("$eq", "$ne"):
+                lit = _sql_literal(field, kind, operand, op_path, what)
+                parts.append(f"{col} = {lit}" if op == "$eq"
+                             else f"({col} IS NULL OR {col} != {lit})")
+            elif op in ("$in", "$nin"):
+                lits = ", ".join(_sql_literal(field, kind, v, op_path, what) for v in operand)
+                parts.append(f"{col} IN ({lits})" if op == "$in"
+                             else f"({col} IS NULL OR {col} NOT IN ({lits}))")
+            else:
+                if kind != SQL_INTEGER:
+                    raise UnsupportedFilterError(
+                        f"{what}: {op} compares numbers and {field!r} holds text",
+                        operators=(op,), fields=(field,))
+                sign = {"$gt": ">", "$gte": ">=", "$lt": "<", "$lte": "<="}[op]
+                parts.append(f"{col} {sign} {repr(operand)}")
+        return parts[0] if len(parts) == 1 else "(" + " AND ".join(parts) + ")"
+
+    def node(filt_node: Mapping[str, Any], path: str) -> str:
+        parts = []
+        for key, value in filt_node.items():
+            key_path = f"{path}[{key!r}]"
+            if key in LOGICAL_OPERATORS:
+                joiner = " AND " if key == "$and" else " OR "
+                inner = [node(part, f"{key_path}[{i}]") for i, part in enumerate(value)]
+                parts.append("(" + joiner.join(inner) + ")")
+            else:
+                parts.append(condition(key, value, key_path))
+        return parts[0] if len(parts) == 1 else "(" + " AND ".join(parts) + ")"
+
+    return node(normalized, "")

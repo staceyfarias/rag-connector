@@ -171,7 +171,8 @@ def _add_index_commands(subparsers: argparse._SubParsersAction) -> None:
                          help="write only the book index, not search.sqlite")
     status = commands.add_parser("status", help="how big the indexes are")
     lookup = commands.add_parser(
-        "lookup", help="print book-index entries and threads whose label contains QUERY",
+        "lookup", help="print book-index entries and threads whose label contains QUERY "
+                       "(read from search.sqlite; --filter scopes it)",
     )
     lookup.add_argument("query")
     signal = commands.add_parser(
@@ -260,11 +261,17 @@ def _add_index_commands(subparsers: argparse._SubParsersAction) -> None:
     sql.add_argument("--limit", type=int, default=None, help="at most N rows (cap 500)")
     sql.add_argument("--full", action="store_true",
                      help="print each cell whole (the console view shortens long cells)")
-    for command in (search, neighbors, outline, copies, sql):
+    for command in (search, neighbors, outline, copies, sql, lookup):
         command.add_argument("--db", default=None, metavar="PATH",
                              help="a search index built with --out (default: the "
                                   "Dataset's analysis/rag-connector/search.sqlite)")
         command.add_argument("--json", action="store_true", help="print JSON")
+        command.add_argument("--filter", default=None, metavar="JSON",
+                             help="scope every lookup to the chunks this metadata filter "
+                                  "admits: one JSON object in the query(filter=...) "
+                                  "syntax over the chunk columns (task_id, doc_id, "
+                                  "type, ...), e.g. '{\"$or\": [{\"task_id\": {\"$in\": "
+                                  "[\"ID\"]}}, {\"task_id\": {\"$exists\": false}}]}'")
     for command in (prepare, status, lookup, signal, signal_lookup, search_db, search,
                     neighbors, outline, copies, sql):
         command.add_argument("--dataset", required=True, metavar="PATH",
@@ -389,6 +396,57 @@ def _format_sql(result, full: bool = False) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _filter_arg(args: argparse.Namespace) -> dict | None:
+    """``--filter JSON`` as a dict (validated when the index opens)."""
+    raw = getattr(args, "filter", None)
+    if raw is None:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except ValueError as exc:
+        raise ValueError(f"--filter is not JSON: {exc}") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError("--filter takes one JSON object")
+    return parsed
+
+
+def _note_scope(index) -> None:
+    """Say on stderr what a scoped index admits; stdout stays parseable."""
+    if not index.scoped:
+        return
+    summary = index.scope_summary()
+    print(f"scope: {json.dumps(summary['filter'], sort_keys=True)}: {summary['chunks']} "
+          f"of {summary['dataset_chunks']} chunks, {summary['documents']} of "
+          f"{summary['dataset_documents']} documents", file=sys.stderr)
+
+
+def _run_lookup_command(args: argparse.Namespace) -> int:
+    from . import corpus_index, search_index
+
+    folder = Path(args.dataset)
+    filt = _filter_arg(args)
+    try:
+        with search_index.open_index(folder, path=args.db, filter=filt) as index:
+            _note_scope(index)
+            found = index.lookup(args.query)
+    except (search_index.SearchIndexMissing, search_index.StaleSearchIndex) as exc:
+        # Without a usable search index, an unscoped lookup still reads
+        # index.json; a scoped one cannot be answered from it.
+        book = corpus_index.load(folder) if filt is None and args.db is None else None
+        if book is None:
+            if filt is not None or args.db is not None:
+                raise
+            print("no book index for this Dataset; `rag-connector index prepare` builds one")
+            return 1
+        print(f"note: reading index.json ({exc})", file=sys.stderr)
+        found = corpus_index.find(book, args.query)
+    if args.json:
+        _emit_json(found)
+    else:
+        _emit(corpus_index.format_find(found))
+    return 0
+
+
 def _run_search_command(args: argparse.Namespace) -> int:
     from . import search_index
 
@@ -401,7 +459,8 @@ def _run_search_command(args: argparse.Namespace) -> int:
               f"documents, {path.stat().st_size / 1e6:.1f} MB")
         print(f"  {path}")
         return 0
-    with search_index.open_index(folder, path=args.db) as index:
+    with search_index.open_index(folder, path=args.db, filter=_filter_arg(args)) as index:
+        _note_scope(index)
         if args.index_command == "search":
             near = (*args.near, args.within) if args.near else None
             result = index.search(
@@ -463,6 +522,8 @@ def _run_index_command(args: argparse.Namespace) -> int:
         for item in result["failures"][:15]:
             print(f"  failed: {item}", file=sys.stderr)
         return 1 if result["failures"] else 0
+    if args.index_command == "lookup":
+        return _run_lookup_command(args)
     if args.index_command == "signal-lookup":
         payload = signal_index.load(folder)
         if payload is None:
@@ -487,8 +548,7 @@ def _run_index_command(args: argparse.Namespace) -> int:
         print(_search_status(folder))
         print(f"  {corpus_index.analysis_dir(folder)}")
         return 0
-    print(corpus_index.format_find(corpus_index.find(index, args.query)), end="")
-    return 0
+    raise ValueError(f"unknown index command {args.index_command!r}")
 
 
 def _search_status(folder: Path) -> str:

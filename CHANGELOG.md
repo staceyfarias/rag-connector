@@ -4,6 +4,25 @@ Notable changes to rag-connector. Dates are the day the work landed.
 
 ## Unreleased
 
+- **Scoped lookups.** `search_index.open_index(folder, filter=...)` /
+  `SearchIndex(path, filter=...)` take the neutral `query(filter=...)` syntax
+  over the chunk columns (`SCOPE_FIELDS`) and scope every method: search,
+  lookup, neighbors, outline, copies, chunk, modules, id resolution and
+  free-form `sql` (TEMP views shadow `chunks`, `chunks_plain`, `copy_groups`,
+  `overlap_pairs` and the `index_*` tables; `main.<table>` is refused). An
+  unknown field raises `UnsupportedFilterError`; an id outside the scope
+  raises `OutOfScopeError`. `SearchResult.filter`, `SearchIndex.filter` and
+  `scope_summary()` record the scope. CLI: `--filter JSON` on `index search`,
+  `lookup`, `neighbors`, `outline`, `copies` and `sql`.
+  `filters.to_sql_where(filter, columns)` is the translation.
+- **The book index lives in the search index.** `search.sqlite` format
+  version 2 adds `index_entries`, `index_locations`, `index_copies`,
+  `index_sections`, `index_threads` and `index_thread_chunks`;
+  `index lookup` (and `SearchIndex.lookup`, `corpus_index.lookup`) read them,
+  falling back to `index.json` only unscoped when there is no usable search
+  index. A version 1 file is reported stale: rebuild with `index search-db`
+  (or `index prepare`). `index.json` and the letter files are still written.
+
 - **Read-only SQL over the search index.** `SearchIndex.sql(statement, limit=,
   seconds=)` and `rag-connector index sql --dataset DIR "SELECT ..."` run one
   statement on a connection opened read-only and set to `query_only`, with
