@@ -33,7 +33,9 @@ def _inventory(pipeline: RagPipeline) -> dict[str, ChunkInventoryEntry]:
             if (not isinstance(item, ChunkInventoryEntry)
                     or not isinstance(item.chunk_id, str) or not item.chunk_id.strip()
                     or not isinstance(item.doc_id, str) or not item.doc_id.strip()
-                    or type(item.doc_chunk_index) is not int or item.doc_chunk_index < 0):
+                    or not (item.doc_chunk_index is None
+                            or (type(item.doc_chunk_index) is int
+                                and item.doc_chunk_index >= 0))):
                 raise ConnectorContractError("Invalid chunk inventory entry")
             if item.chunk_id in entries:
                 raise ConnectorContractError(f"Duplicate inventory id: {item.chunk_id}")
@@ -115,13 +117,21 @@ def check_dataset(
     else:
         missing = sorted(source.keys() - backend.keys())
         added = sorted(backend.keys() - source.keys())
+        # A None position is unknown: that chunk is compared on document
+        # membership only, never on a guessed position.
         changed = sorted(cid for cid in source.keys() & backend.keys()
-                         if (source[cid].doc_id, source[cid].doc_chunk_index)
-                         != (backend[cid].doc_id, backend[cid].doc_chunk_index))
+                         if source[cid].doc_id != backend[cid].doc_id
+                         or (backend[cid].doc_chunk_index is not None
+                             and source[cid].doc_chunk_index
+                             != backend[cid].doc_chunk_index))
+        unknown = sum(1 for e in backend.values() if e.doc_chunk_index is None)
+        positions = ("known" if not unknown
+                     else "unknown" if unknown == len(backend) else "partial")
         result["structure"] = {
             "status": "checked", "matches": not (missing or added or changed),
             "backend_count": len(backend), "missing_ids": missing, "added_ids": added,
             "changed_ids": changed,
+            "positions": positions, "positions_unknown_count": unknown,
             "dataset_document_counts": dict(sorted(
                 Counter(c.doc_id for c in source.values()).items())),
             "backend_document_counts": dict(sorted(

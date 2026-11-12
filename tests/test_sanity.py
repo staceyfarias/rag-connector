@@ -84,6 +84,60 @@ def test_same_count_different_structure(dataset):
     assert result["structure"]["changed_ids"] == ["1"]
 
 
+def test_known_positions_are_reported(dataset):
+    structure = check_dataset(dataset, Lite(dataset.chunks))["structure"]
+    assert structure["positions"] == "known"
+    assert structure["positions_unknown_count"] == 0
+
+
+class NoPositions(Lite):
+    """A backend that lists ids and documents but not positions."""
+
+    def list_chunk_inventory(self, *, cursor=None, limit=1000):
+        page = super().list_chunk_inventory(cursor=cursor, limit=limit)
+        return ChunkInventoryPage(
+            [replace(e, doc_chunk_index=None) for e in page.items], page.next_cursor)
+
+
+def test_unknown_positions_compare_document_membership_only(dataset):
+    chunks = list(dataset.chunks)
+    chunks[1] = replace(chunks[1], doc_chunk_index=99)   # not judged: unknown
+    chunks[2] = replace(chunks[2], doc_id="b.md")        # still a change
+    chunks[0] = replace(chunks[0], chunk_id="new")
+    structure = check_dataset(dataset, NoPositions(chunks))["structure"]
+    assert structure["positions"] == "unknown"
+    assert structure["positions_unknown_count"] == 10
+    assert structure["changed_ids"] == ["2"]
+    assert structure["missing_ids"] == ["0"]
+    assert structure["added_ids"] == ["new"]
+    assert not structure["matches"]
+    json.dumps(structure)
+
+
+def test_unknown_positions_can_match(dataset):
+    structure = check_dataset(dataset, NoPositions(dataset.chunks))["structure"]
+    assert structure["matches"]
+    assert structure["positions"] == "unknown"
+
+
+def test_partly_unknown_positions_judge_the_known_ones(dataset):
+    chunks = list(dataset.chunks)
+    chunks[1] = replace(chunks[1], doc_chunk_index=99)
+    chunks[3] = replace(chunks[3], doc_chunk_index=98)
+
+    class Partial(Lite):
+        def list_chunk_inventory(self, *, cursor=None, limit=1000):
+            page = super().list_chunk_inventory(cursor=cursor, limit=limit)
+            return ChunkInventoryPage(
+                [replace(e, doc_chunk_index=None) if e.chunk_id == "1" else e
+                 for e in page.items], page.next_cursor)
+
+    structure = check_dataset(dataset, Partial(chunks))["structure"]
+    assert structure["positions"] == "partial"
+    assert structure["positions_unknown_count"] == 1
+    assert structure["changed_ids"] == ["3"]
+
+
 def test_sampling_is_replayable_and_compares_exact_text(dataset):
     pipeline = Lite(dataset.chunks)
     first = check_dataset(dataset, pipeline, sample_percent=20, seed=7)["text_sample"]
@@ -148,13 +202,15 @@ def test_backend_error_is_not_unsupported_or_a_match(dataset):
         check_dataset(dataset, Broken(dataset.chunks))
 
 
-@pytest.mark.parametrize("kind", ["duplicate", "cursor", "invalid"])
+@pytest.mark.parametrize("kind", ["duplicate", "cursor", "invalid", "bool", "str"])
 def test_invalid_inventory_is_refused(dataset, kind):
+    bad = {"invalid": -1, "bool": True, "str": "0"}
+
     class Broken(Lite):
         def list_chunk_inventory(self, **kwargs):
             if kind == "cursor":
                 return ChunkInventoryPage([], "repeat")
-            item = ChunkInventoryEntry("x", "a", -1 if kind == "invalid" else 0)
+            item = ChunkInventoryEntry("x", "a", bad.get(kind, 0))
             return ChunkInventoryPage([item, item] if kind == "duplicate" else [item])
 
     with pytest.raises(ConnectorContractError):

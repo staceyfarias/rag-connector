@@ -136,6 +136,9 @@ construct positionally.)
 
 `doc_chunk_index` stays required: a store that can return a chunk can almost
 always say where in its document it sits, and no host backfills it.
+(This is the `ChunkRecord` rule. A lite-check `ChunkInventoryEntry` reads no
+payload, so its `doc_chunk_index` may be `None` where the position lives only
+in the payload; see [lite checks](#lite-checks-and-snapshot-validity).)
 
 Optional: `embedding`, `char_start`, `char_end`, `content_module_id`, and a
 `metadata` passthrough. Put `source_fingerprint` in `metadata` where you can —
@@ -460,7 +463,12 @@ configuration rather than a failure.
 protocols. Their `RagPipeline` defaults raise `UnsupportedCapability`; use
 `supports(pipeline, method_name)` to distinguish an override from a base default.
 Count and inventory have the same binding scope as corpus reads and must not
-silently scan full chunk payloads. See [lite checks](dataset-spec.md#lite-sanity-checks)
+silently scan full chunk payloads. An inventory entry's `doc_chunk_index` is
+the real position or `None` (position unknown: the backend lists ids and
+documents without the payload); never a number derived from enumeration
+order. The lite check compares document membership only for a `None` entry
+and reports `positions` (`known` / `unknown` / `partial`) with
+`positions_unknown_count`. See [lite checks](dataset-spec.md#lite-sanity-checks)
 for types, sampling, and the command-line interface.
 
 Text sampling supplements these checks: `check_dataset(..., sample_percent=20)`

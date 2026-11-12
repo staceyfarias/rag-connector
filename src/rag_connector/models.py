@@ -37,11 +37,16 @@ class ChunkPage:
 
 @dataclass(frozen=True, slots=True)
 class ChunkInventoryEntry:
-    """Structure only; IDs must agree with corpus and retrieval reads."""
+    """Structure only; IDs must agree with corpus and retrieval reads.
+
+    ``doc_chunk_index`` is ``None`` when the connector can list ids and
+    documents but not positions without reading the payload: position
+    unknown, never a guessed number.
+    """
 
     chunk_id: str
     doc_id: str
-    doc_chunk_index: int
+    doc_chunk_index: int | None
 
 
 @dataclass(frozen=True, slots=True)
