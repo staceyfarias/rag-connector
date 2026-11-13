@@ -4,6 +4,26 @@ Notable changes to rag-connector. Dates are the day the work landed.
 
 ## Unreleased
 
+- **Per-call filters narrow the open scope.** The reading methods of
+  `SearchIndex` (search, chunk, neighbors, outline, copies, modules,
+  scope_summary, sql, schema, lookup) take `filter=`, applied for that call
+  only and ANDed with the scope the index was opened with: a call's filter
+  never widens it (to read outside the scope, open the index without one).
+  `SearchIndex.narrowed(filter)` is the same as a `with` block. Works after
+  `sql()` left the connection `query_only`.
+- **One error for a missing index, one build command.** Search, lookup and SQL
+  on a Dataset without a search index raise `SearchIndexMissing` naming
+  `rag-connector index prepare` (builds the book and search indexes; no model);
+  a stale one raises `StaleSearchIndex` naming the same command. `index lookup`
+  no longer falls back to `index.json`: rag-connector's lookups read the search
+  index only, and `index.json` stays in the Dataset for other tools.
+- **Index status.** `rag_connector.index_status.index_status(dataset_dir)`
+  reports each index (search, book, signal) as missing, stale or current, the
+  command that builds the search and book indexes when needed, and whether the
+  optional, model-written signal index can be built here (the `llm` extra
+  installed and `ANTHROPIC_API_KEY` set; the key is never read out).
+  `index status` prints it (`--json` for hosts), so a pull step can ask the
+  person whether to build the indexes and say what the signal index needs.
 - **Scoped lookups.** `search_index.open_index(folder, filter=...)` /
   `SearchIndex(path, filter=...)` take the neutral `query(filter=...)` syntax
   over the chunk columns (`SCOPE_FIELDS`) and scope every method: search,
@@ -18,10 +38,9 @@ Notable changes to rag-connector. Dates are the day the work landed.
 - **The book index lives in the search index.** `search.sqlite` format
   version 2 adds `index_entries`, `index_locations`, `index_copies`,
   `index_sections`, `index_threads` and `index_thread_chunks`;
-  `index lookup` (and `SearchIndex.lookup`, `corpus_index.lookup`) read them,
-  falling back to `index.json` only unscoped when there is no usable search
-  index. A version 1 file is reported stale: rebuild with `index search-db`
-  (or `index prepare`). `index.json` and the letter files are still written.
+  `index lookup` (and `SearchIndex.lookup`, `corpus_index.lookup`) read them.
+  A version 1 file is reported stale: rebuild with `index prepare`.
+  `index.json` and the letter files are still written.
 
 - **Read-only SQL over the search index.** `SearchIndex.sql(statement, limit=,
   seconds=)` and `rag-connector index sql --dataset DIR "SELECT ..."` run one

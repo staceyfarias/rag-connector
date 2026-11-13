@@ -50,9 +50,11 @@ import sqlite3
 import unicodedata
 import zlib
 from collections import Counter
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -765,17 +767,18 @@ def open_index(dataset_dir: str | os.PathLike[str], *,
         target = target / SEARCH_DB
     if not target.is_file():
         raise SearchIndexMissing(
-            f"no search index at {target}; `rag-connector index search-db "
-            f"--dataset {folder}` builds one")
+            f"this Dataset has no search index yet (pulling chunks does not build one): "
+            f"`rag-connector index prepare --dataset {folder}` builds it, with the book "
+            f"index; no model is called")
     index = SearchIndex(target, filter=filter)
     index.dataset_dir = folder
     problems = index.stale_reasons(folder)
     if problems and not allow_stale:
         index.close()
         raise StaleSearchIndex(
-            f"the search index at {target} was not built from this Dataset: "
-            + "; ".join(problems) + ". Rebuild it with `rag-connector index "
-            f"search-db --dataset {folder}`.")
+            f"the search index at {target} does not match this Dataset: "
+            + "; ".join(problems) + f". Rebuild it with `rag-connector index prepare "
+            f"--dataset {folder}`.")
     return index
 
 
@@ -864,6 +867,17 @@ class OutOfScopeError(AmbiguousIdError):
     caller that handles an unresolvable id keeps working."""
 
 
+def _call_filter(method: Callable[..., Any]) -> Callable[..., Any]:
+    """Give a method a ``filter=`` argument that narrows the open scope for that
+    call only (:meth:`SearchIndex.narrowed`)."""
+    @wraps(method)
+    def wrapper(self: SearchIndex, *args: Any,
+                filter: Mapping[str, Any] | None = None, **kwargs: Any) -> Any:  # noqa: A002
+        with self.narrowed(filter):
+            return method(self, *args, **kwargs)
+    return wrapper
+
+
 class SearchIndex:
     """A search index file, open read-only.
 
@@ -882,6 +896,12 @@ class SearchIndex:
     name in-scope chunks only. ``heading_before`` and ``copy_rep`` are
     computed over the whole Dataset and may name a heading or a chunk outside
     the scope (labels and ids, never text).
+
+    **Per call.** The reading methods (search, chunk, neighbors, outline,
+    copies, modules, scope_summary, sql, schema, lookup) also take ``filter=``,
+    which narrows the scope for that call only: the open filter AND the call's
+    (:meth:`narrowed`). A call's filter never widens the open scope; to read
+    outside it, open the index without one.
     """
 
     def __init__(self, path: str | os.PathLike[str], *,
@@ -969,7 +989,51 @@ class SearchIndex:
             })
         for name, select in views.items():
             self.conn.execute(f"CREATE TEMP VIEW {name} AS {select}")
+        self._views = list(views)
 
+    def _reinstall_scope(self) -> None:
+        """Replace the TEMP views with ones for the current ``_where`` (none when
+        the index is unscoped). :meth:`sql` leaves the connection ``query_only``,
+        which also refuses TEMP views, so it is lifted for the swap (the file
+        itself stays read-only: it is opened ``mode=ro``) and restored."""
+        query_only = self.conn.execute("PRAGMA query_only").fetchone()[0]
+        self.conn.execute("PRAGMA query_only = OFF")
+        try:
+            for name in getattr(self, "_views", ()):
+                self.conn.execute(f"DROP VIEW IF EXISTS temp.{name}")
+            self._views = []
+            if self._where is not None:
+                self._install_scope()
+        finally:
+            self.conn.execute(f"PRAGMA query_only = {'ON' if query_only else 'OFF'}")
+
+    @contextmanager
+    def narrowed(self, filter: Mapping[str, Any] | None) -> Iterator[SearchIndex]:  # noqa: A002
+        """Narrow the scope for the duration of a ``with`` block: the open scope
+        AND ``filter``. A per-call filter never widens what the index was opened
+        with -- to read outside that scope, open the index without it. ``None``
+        or ``{}`` adds nothing. Every method's ``filter=`` argument uses this."""
+        extra = validate_filter(filter)
+        if not extra:
+            yield self
+            return
+        combined = {"$and": [self._filter, extra]} if self._filter else extra
+        where = to_sql_where(combined, SCOPE_FIELDS, what="the search index")
+        saved = (self._filter, self._where)
+        self._filter, self._where = combined, where
+        try:
+            self._reinstall_scope()
+        except sqlite3.Error as exc:
+            self._filter, self._where = saved
+            self._reinstall_scope()
+            raise SearchIndexError(f"cannot narrow {self.path}: {exc}") from exc
+        try:
+            yield self
+        finally:
+            self._filter, self._where = saved
+            self._reinstall_scope()
+
+    @_call_filter
     def scope_summary(self) -> dict[str, Any]:
         """``filter``, and how many chunks, documents and modules it admits out
         of the Dataset's, for a host to show what a reader is scoped to."""
@@ -1104,6 +1168,7 @@ class SearchIndex:
 
     # -- search ------------------------------------------------------------
 
+    @_call_filter
     def search(self, all: Sequence[str] | str = (), any: Sequence[str] | str = (),  # noqa: A002
                not_: Sequence[str] | str = (), phrase: str | Sequence[str] | None = None,
                near: Sequence[Any] | None = None, regex: str | Sequence[str] | None = None,
@@ -1322,12 +1387,14 @@ class SearchIndex:
 
     # -- reading chunks ------------------------------------------------------
 
+    @_call_filter
     def chunk(self, chunk: str) -> dict[str, Any]:
         """One chunk, whole: every column, with metadata and headings parsed."""
         cid = self.resolve_chunk(chunk)
         row = self.conn.execute("SELECT * FROM chunks WHERE chunk_id = ?", (cid,)).fetchone()
         return _full(row)
 
+    @_call_filter
     def neighbors(self, chunk: str, radius: int = 1) -> list[dict[str, Any]]:
         """The chunk and up to ``radius`` chunks either side in its document,
         in document order, each whole. ``target`` marks the one asked for."""
@@ -1348,6 +1415,7 @@ class SearchIndex:
 
     neighbours = neighbors
 
+    @_call_filter
     def outline(self, doc: str) -> list[dict[str, Any]]:
         """A document's chunks in order: index, label, first heading, the
         heading carried in from earlier chunks, and size. ``doc`` is a doc
@@ -1383,6 +1451,7 @@ class SearchIndex:
             })
         return out
 
+    @_call_filter
     def copies(self, chunk: str) -> dict[str, Any]:
         """The chunk's copies by kind: ``identical`` (same text, whitespace
         aside), ``near`` (same once case, punctuation, accents and encoding
@@ -1437,6 +1506,7 @@ class SearchIndex:
         out["overlap"] = items
         return out
 
+    @_call_filter
     def modules(self) -> list[dict[str, Any]]:
         """Every module (task_id; ``None`` for general) with its chunk count."""
         return [{"task_id": row[0], "chunks": row[1], "documents": row[2]}
@@ -1447,6 +1517,7 @@ class SearchIndex:
 
     # -- read-only SQL -------------------------------------------------------
 
+    @_call_filter
     def sql(self, statement: str, *, limit: int | None = None,
             seconds: float = SQL_SECONDS) -> dict[str, Any]:
         """Run one read-only SQL statement; ``{"columns", "rows", "truncated"}``.
@@ -1489,6 +1560,7 @@ class SearchIndex:
                 "rows": [[_sql_cell(value) for value in row] for row in rows[:cap]],
                 "truncated": len(rows) > cap}
 
+    @_call_filter
     def schema(self) -> str:
         """The CREATE statements of the index's tables and views, plus SQL_NOTES."""
         names = ("chunks", "chunks_plain", "chunks_fts", "chunks_trigram", "copy_groups",
@@ -1506,6 +1578,7 @@ class SearchIndex:
 
     # -- book index ----------------------------------------------------------
 
+    @_call_filter
     def lookup(self, query: str, *, max_locations: int | None = None,
                max_copies: int | None = None) -> dict[str, list]:
         """Book-index entries and threads whose label contains ``query``

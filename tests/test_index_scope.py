@@ -375,13 +375,17 @@ def test_cli_filter_on_every_lookup(built, capsys):
         assert "rag-connector index:" in capsys.readouterr().err
 
 
-def test_cli_lookup_falls_back_to_index_json_only_unscoped(dataset, capsys):
+def test_cli_lookup_reads_only_the_search_index(dataset, capsys):
+    # index.json stays in the Dataset for other tools, but lookups here, scoped or
+    # not, read the search index: without one they fail the same way search does.
     folder = str(dataset)
     assert main(["index", "prepare", "--dataset", folder, "--no-search-db"]) == 0
     capsys.readouterr()
+    for extra in ([], ["--filter", json.dumps({"task_id": MOD_A})]):
+        assert main(["index", "lookup", "--dataset", folder, "Stroke", *extra]) == 1
+        err = capsys.readouterr().err
+        assert "SearchIndexMissing" in err and "index prepare" in err
+    assert main(["index", "search-db", "--dataset", folder]) == 0
+    capsys.readouterr()
     assert main(["index", "lookup", "--dataset", folder, "Stroke"]) == 0
-    captured = capsys.readouterr()
-    assert "c-guide-0" in captured.out and "index.json" in captured.err
-    assert main(["index", "lookup", "--dataset", folder, "Stroke",
-                 "--filter", json.dumps({"task_id": MOD_A})]) == 1
-    assert "search-db" in capsys.readouterr().err
+    assert "c-guide-0" in capsys.readouterr().out

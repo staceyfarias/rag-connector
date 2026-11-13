@@ -523,8 +523,10 @@ def lookup(folder: str | os.PathLike[str], query: str, *,
     chunk columns). Same shape as :func:`find`.
 
     Raises ``SearchIndexMissing`` / ``StaleSearchIndex`` when there is no
-    usable search index: rebuild it (``rag-connector index search-db``), or,
-    unscoped, fall back to :func:`find` over :func:`load`.
+    usable search index; ``rag-connector index prepare`` builds it (no model).
+    ``index.json`` (:func:`load`, :func:`find`) stays in the Dataset for tools
+    that read the files directly; rag-connector's own lookups read the search
+    index only.
     """
     from . import search_index
 
