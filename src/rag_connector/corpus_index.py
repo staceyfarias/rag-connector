@@ -49,6 +49,7 @@ __all__ = [
     "index_dir",
     "index_path",
     "load",
+    "lookup",
     "markdown_path",
     "prepare",
 ]
@@ -321,12 +322,19 @@ def _prefer_primary(chunks: list[dict]) -> dict:
 
 
 def build(chunks: Iterable[ChunkRecord | Mapping[str, Any]], *,
-          stopwords: Iterable[str] = ()) -> dict[str, Any]:
+          stopwords: Iterable[str] = (), limits: bool = True) -> dict[str, Any]:
     """The index body: entries and threads. No dataset files are read.
 
     ``stopwords`` adds capitalized words that name nothing in this corpus (a
     title used on every page, say) to the general list.
+
+    ``limits=False`` keeps every location and copy (no ``MAX_LOCATIONS`` /
+    ``MAX_COPIES`` cut) and adds ``sections``, each chunk's section title: the
+    form the search index stores, so a scoped lookup can cut after scoping.
     """
+    max_locations = MAX_LOCATIONS if limits else None
+    max_copies = MAX_COPIES if limits else None
+    all_sections: dict[str, str] = {}
     stop = _SINGLE_STOP | {word.casefold() for word in stopwords}
     chunks = _rows(chunks)
     leads = numbered_leads((str(c.get("text") or "") for c in chunks), stop)
@@ -381,6 +389,7 @@ def build(chunks: Iterable[ChunkRecord | Mapping[str, Any]], *,
                     }
                     raw_threads.append(current)
             section_of[cid] = current["title"] if current else ""
+        all_sections.update({cid: title for cid, title in section_of.items() if title})
         for thread in raw_threads:
             if thread["doc_id"] == _doc_of(group[0]) and not thread["digest"]:
                 body = "\n".join(str(c.get("text") or "") for c in group
@@ -407,8 +416,8 @@ def build(chunks: Iterable[ChunkRecord | Mapping[str, Any]], *,
                     "source": str(other.get("source_file") or _doc_of(other)),
                 })
             copies.sort(key=lambda item: (item["source"], item["chunk_id"]))
-            loc["copies"] = copies[:MAX_COPIES]
-            loc["copies_omitted"] = max(0, len(copies) - MAX_COPIES)
+            loc["copies"] = copies[:max_copies]
+            loc["copies_omitted"] = len(copies) - len(loc["copies"])
             if index == 0 and human_source(source):
                 add_entry("topic", source, loc, digest)
             for title in _headings(str(chunk.get("text") or "")):
@@ -432,12 +441,12 @@ def build(chunks: Iterable[ChunkRecord | Mapping[str, Any]], *,
         if len(locations) > limit:
             continue
         locations.sort(key=lambda loc: (loc["source"], loc["chunk_id"]))
-        omitted = max(0, len(locations) - MAX_LOCATIONS)
+        kept = locations[:max_locations]
         entries.append({
             "term": entry["term"],
             "kind": entry["kind"],
-            "locations": locations[:MAX_LOCATIONS],
-            "omitted": omitted,
+            "locations": kept,
+            "omitted": len(locations) - len(kept),
         })
     entries.sort(key=lambda entry: (entry["term"].casefold(), entry["kind"]))
 
@@ -470,12 +479,15 @@ def build(chunks: Iterable[ChunkRecord | Mapping[str, Any]], *,
             "doc_id": thread["doc_id"],
             "source": thread["source"],
             "chunk_ids": thread["chunk_ids"],
-            "copies": copies[:MAX_COPIES],
-            "copies_omitted": max(0, len(copies) - MAX_COPIES),
+            "copies": copies[:max_copies],
+            "copies_omitted": len(copies) - len(copies[:max_copies]),
         })
     threads.sort(key=lambda thread: (
         thread["title"].casefold(), thread["source"], thread["doc_id"]))
-    return {"entries": entries, "threads": threads, "documents": n_docs}
+    body = {"entries": entries, "threads": threads, "documents": n_docs}
+    if not limits:
+        body["sections"] = all_sections
+    return body
 
 
 def load(folder: str | os.PathLike[str]) -> dict[str, Any] | None:
@@ -500,6 +512,24 @@ def find(index: dict[str, Any], query: str) -> dict[str, list]:
         "threads": [thread for thread in index.get("threads") or []
                     if needle in thread["title"].casefold()],
     }
+
+
+def lookup(folder: str | os.PathLike[str], query: str, *,
+           filter: Mapping[str, Any] | None = None,  # noqa: A002
+           path: str | os.PathLike[str] | None = None) -> dict[str, list]:
+    """Entries and threads whose label contains ``query``, read from the
+    Dataset's search index (``search.sqlite``, which stores the book index as
+    tables), scoped by ``filter`` (the ``query(filter=...)`` syntax over the
+    chunk columns). Same shape as :func:`find`.
+
+    Raises ``SearchIndexMissing`` / ``StaleSearchIndex`` when there is no
+    usable search index: rebuild it (``rag-connector index search-db``), or,
+    unscoped, fall back to :func:`find` over :func:`load`.
+    """
+    from . import search_index
+
+    with search_index.open_index(folder, path=path, filter=filter) as index:
+        return index.lookup(query)
 
 
 def _place(loc: dict[str, Any]) -> str:

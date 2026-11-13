@@ -823,6 +823,58 @@ A connector written before this keyword does not accept it and keeps
 working unchanged: `supported_filter_operators` is empty for it, so a host
 never sends one.
 
+### Scoped lookups (search index and book index)
+
+A host reading a Dataset through its search index (`search.sqlite`, which
+also holds the book index) can scope every lookup with **the same filter
+syntax as query filters**: `search_index.open_index(folder, filter={...})`
+(or `SearchIndex(path, filter={...})`, `corpus_index.lookup(folder, query,
+filter={...})`, CLI `rag-connector index search|lookup|outline|neighbors|copies|sql
+... --filter JSON`). Typical use: a case sets the scope once, e.g. the
+content modules a member could see on that turn plus channel general
+information, `{"$or": [{"task_id": {"$in": [...]}}, {"task_id": {"$exists":
+false}}]}`, so everything an agent reads from the Dataset is in scope.
+
+- **Applied on top of the Dataset**, never in place of it: the Dataset stays
+  the whole corpus; the scope only narrows what one reader sees.
+- **Fields** are the chunk columns of the search index
+  (`search_index.SCOPE_FIELDS`): `chunk_id`, `doc_id`, `doc_chunk_index`
+  (a number), `source`, `source_file`, `chunk_label`, `task_id`, `step_id`,
+  `source_scope`, `resource_type`, `type`, `content_module_id`, each text
+  except `doc_chunk_index`. A number or bool compared with a text field is
+  compared by its text form (`str(value)`), as the index stores it. A missing
+  value is NULL and follows MongoDB: `$ne` / `$nin` match it, `$exists:
+  false` matches only it.
+- **Never ignored.** A field outside those, a range operator on a text
+  field, or a non-number compared with `doc_chunk_index` raises
+  `UnsupportedFilterError` when the index is opened; a malformed filter
+  raises `InvalidFilterError`. `filters.to_sql_where(filter, columns)` is the
+  translation.
+- **Every method** is scoped: `search`, `lookup`, `neighbors`, `outline`,
+  `copies`, `chunk`, `modules`, the id resolvers, and free-form `sql`. An id
+  that exists outside the scope raises `OutOfScopeError` (a subclass of
+  `AmbiguousIdError`) saying so.
+- **SQL**: TEMP views named `chunks`, `chunks_plain`, `copy_groups`,
+  `overlap_pairs` and `index_*` shadow the file's tables on that connection,
+  so an unqualified name reads scoped rows. Reading the file's own tables
+  through `main.` (or the file's own `main.chunks_plain` view) is refused, as
+  is creating, dropping or setting anything. The FTS tables are not scoped:
+  joined to `chunks` they are; alone they give rowids, counts and their
+  encoded index pages, never chunk text.
+- **Split documents.** A filter on module or document keeps documents whole.
+  A filter that splits a document keeps only its in-scope chunks:
+  `neighbors`, `outline` and the book index's `prev` / `next` step over the
+  rest (`doc_chunk_index` shows the gap). `heading_before` and `copy_rep` are
+  computed over the whole Dataset and may name a heading or a chunk outside
+  the scope (labels and ids, never text). A book-index location whose chunk
+  is out of scope gives way to an in-scope identical copy, if any; a label in
+  too many documents of the whole Dataset is not in the book index, scoped
+  or not.
+- **Record what was applied.** `SearchIndex.filter` is the effective filter,
+  `SearchResult.filter` (and `to_dict()["filter"]`) carries it, and
+  `SearchIndex.scope_summary()` counts the chunks, documents and modules in
+  scope against the Dataset's. The CLI prints the scope on stderr.
+
 ## Reserved surface
 
 The following are exported from `rag_connector` but are **not yet produced,

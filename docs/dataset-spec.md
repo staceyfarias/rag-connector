@@ -345,7 +345,8 @@ core gets no index, and the next build replaces the area as a whole.
 
 ##### `search.sqlite` — the search index
 
-Format `rag-connector-search-index`, version `1`. Written to a temporary file
+Format `rag-connector-search-index`, version `2` (version 2 added the book
+index tables; a reader reports a version 1 file stale, to be rebuilt). Written to a temporary file
 beside the target and moved into place, so a reader never sees half of one.
 `build(..., out=)` (CLI `--out`) writes it anywhere else instead, leaving the
 Dataset folder untouched.
@@ -359,6 +360,20 @@ Dataset folder untouched.
 | `chunks_trigram` | FTS5, contentless, tokenizer `trigram`, `detail=none`, column `plain`. A candidate filter for case-insensitive substrings of 3+ characters: match every trigram of the needle (`"$54" AND "549"`), then confirm the needle in `chunks_plain.plain`. |
 | `copy_groups(group_id, kind, chunk_id)` | Copy groups of two or more chunks. `identical` (`I<n>`): the same text once whitespace is collapsed. `near` (`N<n>`): the same words once case, punctuation, accents, Markdown escapes and UTF-8-read-as-cp1252 damage are ignored; listed only when its members are not all one identical text. `overlap` (`O<n>`): the same passage chunked differently or lightly reworded (below). A chunk is in at most one group of each kind. |
 | `overlap_pairs(chunk_a, chunk_b, shared_shingles, containment, containment_larger)` | Every overlapping pair, between `copy_rep` chunks (`chunk_a < chunk_b`): `containment` is the shared shingles over the smaller chunk's, `containment_larger` over the larger chunk's. |
+| `index_entries(entry_id, term, kind)` | The book index's labels: `topic` (a document title or heading) or `entity` (a name). Built from the same chunks with the stopwords `index.json` records (`meta.book_index_stopwords`); a label in too many documents is left out, as in `index.json`. |
+| `index_locations(entry_id, position, chunk_id)` | Every chunk an entry points at, one per distinct text (not cut to 12 as `index.json` is, so a scoped lookup cuts after scoping). |
+| `index_copies(chunk_id, copy_chunk_id)` | Identical copies of a location's chunk in other documents. |
+| `index_sections(chunk_id, section)` | The heading section each chunk sits in (chunks with none are absent). |
+| `index_threads(thread_id, title)`, `index_thread_chunks(thread_id, part, position, chunk_id)` | Threads: a heading and the chunks it runs over. `part` 0 is the thread; `part` n its nth identical copy in another document. |
+
+`rag-connector index lookup` and `SearchIndex.lookup(query)` read these tables
+(joined to `chunks` for documents, order and scope) and return what
+`corpus_index.find` returns over `index.json`. `index prepare` still writes
+`index.json` and the letter files.
+
+A reader may open the file with a scope filter (the contract's
+[Scoped lookups](contract.md#scoped-lookups-search-index-and-book-index)):
+TEMP views of the same names then hold only the chunks in scope.
 
 Overlap: words as for `near`, shingles of 8 words; two chunks overlap when
 at least 0.8 of the smaller chunk's shingles are in the other. Chunks under
@@ -896,9 +911,11 @@ from rag_connector import search_index
 
 | Function | Does |
 | --- | --- |
-| `search_index.build(folder, out=None, *, dataset=None)` | Verifies the Dataset and writes `search.sqlite` into `analysis/rag-connector/` (listing it in the envelope), or to `out` (a file or a directory) without writing the Dataset folder. Returns the path. |
-| `search_index.write_search_db(chunks, path, *, meta=None)` | The writer underneath, from `ChunkRecord`s or chunk-row mappings; reads no Dataset. |
-| `search_index.open_index(folder, *, path=None, allow_stale=False)` | Opens the index read-only. Raises `SearchIndexMissing`, or `StaleSearchIndex` when it was built from another core. |
+| `search_index.build(folder, out=None, *, dataset=None, stopwords=None)` | Verifies the Dataset and writes `search.sqlite` into `analysis/rag-connector/` (listing it in the envelope), or to `out` (a file or a directory) without writing the Dataset folder. Returns the path. The book-index tables use `stopwords`, by default those `index.json` records. |
+| `search_index.write_search_db(chunks, path, *, meta=None, stopwords=())` | The writer underneath, from `ChunkRecord`s or chunk-row mappings; reads no Dataset. |
+| `search_index.open_index(folder, *, path=None, allow_stale=False, filter=None)` | Opens the index read-only, scoped by `filter` when given ([Scoped lookups](contract.md#scoped-lookups-search-index-and-book-index)). Raises `SearchIndexMissing`, or `StaleSearchIndex` when it was built from another core or by an older version (no book-index tables). |
+| `SearchIndex(path, *, filter=None)`, `.filter`, `.scoped`, `.scope_summary()`, `.has_book_index` | The file itself; the effective scope and what it admits. An id outside the scope raises `OutOfScopeError` (an `AmbiguousIdError`). |
+| `SearchIndex.lookup(query, *, max_locations=None, max_copies=None)`, `corpus_index.lookup(folder, query, *, filter=None, path=None)` | Book-index entries and threads whose label contains `query`, from the tables, scoped; the shape `corpus_index.find` returns. |
 | `SearchIndex.search(all=, any=, not_=, phrase=, near=(a, b, ..., N), regex=, substring=, word=True, modules=, general_only=False, docs=, exclude_docs=, types=, titles=False, limit=None)` | A `SearchResult`: `total`, `hits` (all of them unless `limit`), `by_doc`, `by_module`. Each hit has the chunk's ids and metadata columns, `heading`, `snippet`, `score` (bm25, higher is better, for word queries) and `copies`. Module, chunk and doc ids accept an unambiguous prefix; an ambiguous one raises `AmbiguousIdError`. |
 | `SearchIndex.neighbors(chunk, radius=1)`, `.outline(doc)`, `.copies(chunk)`, `.chunk(chunk)`, `.modules()` | Chunks around one in its document; a document's chunks in order with their headings; a chunk's identical, near and overlap copies; one chunk whole; every module with its counts. |
 
@@ -933,7 +950,7 @@ from rag_connector.sync import sync_dataset, list_syncs
 # The corpus index, in analysis/rag-connector/ (no model call):
 rag-connector index prepare --dataset ./my-dataset [--stopword WORD ...]
 rag-connector index status --dataset ./my-dataset
-rag-connector index lookup --dataset ./my-dataset "Port St. Joe"
+rag-connector index lookup --dataset ./my-dataset "Port St. Joe" [--filter JSON] [--json]
 
 # The signal index (llm extra and ANTHROPIC_API_KEY; resumes where it stopped):
 rag-connector index signal --dataset ./my-dataset [--model ...] [--limit N] [--workers N]
@@ -948,6 +965,9 @@ rag-connector index search --dataset ./my-dataset [--db PATH] [--term T ...] [--
 rag-connector index neighbors --dataset ./my-dataset CHUNK [--radius N] [--json]
 rag-connector index outline --dataset ./my-dataset DOC_OR_CHUNK [--json]
 rag-connector index copies --dataset ./my-dataset CHUNK [--json]
+rag-connector index sql --dataset ./my-dataset "SELECT ..." [--json] [--full] [--limit N]
+# search, lookup, neighbors, outline, copies and sql take --filter JSON: one object in the
+# query(filter=...) syntax over the chunk columns, scoping everything they read.
 ```
 
 ```bash

@@ -20,6 +20,19 @@ that changes nothing, so readers use ``COALESCE(plain, text)`` or the
 ``chunks_plain`` view. ``text`` is the chunk text exactly as the Dataset
 holds it.
 
+The file also holds the book index (:mod:`rag_connector.corpus_index`) as
+tables, so :meth:`SearchIndex.lookup` joins it to the chunks.
+
+**Scoped lookups.** ``open_index(..., filter=...)`` (or
+``SearchIndex(path, filter=...)``) takes the neutral metadata filter
+``query(filter=...)`` takes (:mod:`rag_connector.filters`) over the chunk
+columns in :data:`SCOPE_FIELDS`. Every method then sees only the chunks the
+filter admits: TEMP views named ``chunks``, ``chunks_plain``,
+``copy_groups``, ``overlap_pairs`` and ``index_*`` shadow the file's tables
+on this connection, so free-form :meth:`SearchIndex.sql` is scoped too, and
+reading the file's own tables through a ``main.`` qualifier is refused. A
+filter is never ignored: an unknown field raises ``UnsupportedFilterError``.
+
 The file is evidence about the corpus, not corpus (spec rule 4): every row is
 keyed by the Dataset's own ``chunk_id``, and the ``meta`` table records the
 ``core_sha256`` it was built from. Standard library only; the layout is
@@ -45,11 +58,14 @@ from typing import Any
 
 from .base import ChunkRecord
 from .dataset import CHUNKS_FILE, MANIFEST_FILE, Dataset, read_dataset_folder
+from .filters import SQL_INTEGER, SQL_TEXT, to_sql_where, validate_filter
 
 __all__ = [
     "AmbiguousIdError",
     "FORMAT",
     "FORMAT_VERSION",
+    "OutOfScopeError",
+    "SCOPE_FIELDS",
     "SEARCH_DB",
     "SearchIndex",
     "SearchIndexError",
@@ -63,7 +79,8 @@ __all__ = [
 ]
 
 FORMAT = "rag-connector-search-index"
-FORMAT_VERSION = "1"
+#: 2: the book index is stored as ``index_*`` tables (lookups read it here).
+FORMAT_VERSION = "2"
 SEARCH_DB = "search.sqlite"
 
 #: Overlap copies: word shingles of this many words.
@@ -86,8 +103,65 @@ OVERLAP_SAMPLE = 4
 #: to find candidates.
 OVERLAP_MAX_POSTING = 1000
 
+#: The chunk columns a scope filter may name, and how each is compared. Every
+#: value is stored as text except ``doc_chunk_index``.
+SCOPE_FIELDS: dict[str, str] = {
+    "chunk_id": SQL_TEXT, "doc_id": SQL_TEXT, "doc_chunk_index": SQL_INTEGER,
+    "source": SQL_TEXT, "source_file": SQL_TEXT, "chunk_label": SQL_TEXT,
+    "task_id": SQL_TEXT, "step_id": SQL_TEXT, "source_scope": SQL_TEXT,
+    "resource_type": SQL_TEXT, "type": SQL_TEXT, "content_module_id": SQL_TEXT,
+}
+
+#: Tables holding chunk rows (or rows about chunks) that a scope shadows with a
+#: TEMP view of the same name.
+_SCOPED_TABLES = ("chunks", "copy_groups", "overlap_pairs", "index_entries",
+                  "index_locations", "index_copies", "index_sections", "index_threads",
+                  "index_thread_chunks")
+#: The book-index tables (absent from a version 1 file).
+_BOOK_TABLES = ("index_entries", "index_locations", "index_copies", "index_sections",
+                "index_threads", "index_thread_chunks")
+
 SNIPPET_BEFORE = 100
 SNIPPET_AFTER = 200
+
+#: ``SearchIndex.sql`` limits: rows returned, seconds of work, characters per cell.
+SQL_ROW_CAP = 500
+SQL_SECONDS = 20
+SQL_CELL_CHARS = 2000
+
+#: What ``SearchIndex.sql`` users most often need to know about the schema.
+SQL_NOTES = """Read-only SQL over the search index (one statement; at most 500 rows, 20 s).
+- chunks: one row per chunk. chunk_id, doc_id, doc_chunk_index (position in its
+  document), source (document title), task_id (module), step_id, resource_type, type
+  (content | faq | general_info), text, plain (NULL for most chunks), heading_before,
+  headings (JSON list), copy_rep, metadata (JSON).
+- chunks_plain(n, chunk_id, plain): plain text for every chunk; search this, not chunks.plain.
+- chunks_fts (words) is an FTS5 table with no stored text: join on rowid = chunks.n, e.g.
+    SELECT c.chunk_id, c.source FROM chunks_fts JOIN chunks c ON c.n = chunks_fts.rowid
+    WHERE chunks_fts MATCH 'NEAR("tuition assistance" spouse, 10)'
+    ORDER BY bm25(chunks_fts) LIMIT 20
+  MATCH takes FTS5 syntax: AND OR NOT, "phrases", prefix*, NEAR(...). Quote terms with
+  punctuation ("10-10d") or use contains().
+- Fragments, punctuation, numbers ($18, 41.5, BE-FAST): contains(plain, '...') or
+  plain REGEXP '...' over chunks_plain (a full scan, fast at this size). chunks_trigram
+  backs `index search --substring`; it keeps no positions, so it takes no phrase queries.
+- copy_groups(group_id, kind identical|near|overlap, chunk_id); overlap_pairs(chunk_a, chunk_b,
+  shared_shingles, containment, containment_larger).
+- Book index (names, titles, headings -> chunks; `index lookup` reads these):
+  index_entries(entry_id, term, kind topic|entity); index_locations(entry_id, position,
+  chunk_id); index_copies(chunk_id, copy_chunk_id): identical text elsewhere;
+  index_sections(chunk_id, section); index_threads(thread_id, title);
+  index_thread_chunks(thread_id, part (0 = the thread, n = its nth copy), position, chunk_id).
+- Functions: regexp(pattern, value) / value REGEXP pattern (case-insensitive),
+  contains(value, needle) (case-insensitive substring, punctuation included).
+"""
+
+#: Added to the notes when the index is opened with a scope filter.
+SQL_SCOPE_NOTES = """- SCOPED: chunks, chunks_plain, copy_groups, overlap_pairs and index_* are
+  views holding only the chunks in scope ({filter}). main.<table> is refused.
+  chunks_fts / chunks_trigram are not scoped: join them to chunks (as above) to stay in
+  scope; alone they give rowids, never text.
+"""
 
 
 class SearchIndexError(ValueError):
@@ -448,6 +522,19 @@ CREATE TABLE overlap_pairs (
   chunk_a TEXT NOT NULL, chunk_b TEXT NOT NULL, shared_shingles INTEGER NOT NULL,
   containment REAL NOT NULL, containment_larger REAL NOT NULL,
   PRIMARY KEY (chunk_a, chunk_b));
+CREATE TABLE index_entries (entry_id INTEGER PRIMARY KEY, term TEXT NOT NULL,
+  kind TEXT NOT NULL);
+CREATE TABLE index_locations (entry_id INTEGER NOT NULL, position INTEGER NOT NULL,
+  chunk_id TEXT NOT NULL, PRIMARY KEY (entry_id, position));
+CREATE INDEX index_locations_chunk ON index_locations (chunk_id);
+CREATE TABLE index_copies (chunk_id TEXT NOT NULL, copy_chunk_id TEXT NOT NULL,
+  PRIMARY KEY (chunk_id, copy_chunk_id));
+CREATE TABLE index_sections (chunk_id TEXT PRIMARY KEY, section TEXT NOT NULL);
+CREATE TABLE index_threads (thread_id INTEGER PRIMARY KEY, title TEXT NOT NULL);
+CREATE TABLE index_thread_chunks (thread_id INTEGER NOT NULL, part INTEGER NOT NULL,
+  position INTEGER NOT NULL, chunk_id TEXT NOT NULL,
+  PRIMARY KEY (thread_id, part, position));
+CREATE INDEX index_thread_chunks_chunk ON index_thread_chunks (chunk_id);
 """
 
 
@@ -465,14 +552,22 @@ def _tool_version() -> str:
 
 def write_search_db(chunks: Iterable[ChunkRecord | Mapping[str, Any]],
                     path: str | os.PathLike[str], *,
-                    meta: Mapping[str, Any] | None = None) -> Path:
+                    meta: Mapping[str, Any] | None = None,
+                    stopwords: Iterable[str] = ()) -> Path:
     """Write a search index over ``chunks`` to ``path`` and return the path.
 
     The low-level writer: no Dataset is read, and ``meta`` is recorded as
-    given (:func:`build` passes the Dataset's identity). The file is written
-    beside ``path`` and moved into place when complete, so a reader never sees
-    half an index, and a rebuild replaces it whole.
+    given (:func:`build` passes the Dataset's identity). The book index is
+    built from the same chunks with ``stopwords`` (recorded in ``meta`` as
+    ``book_index_stopwords``) and stored as the ``index_*`` tables. The file
+    is written beside ``path`` and moved into place when complete, so a
+    reader never sees half an index, and a rebuild replaces it whole.
     """
+    from . import corpus_index
+
+    chunks = list(chunks)
+    stop = sorted({str(word).casefold() for word in stopwords})
+    book = corpus_index.build(chunks, stopwords=stop, limits=False)
     rows = [_row(chunk) for chunk in chunks]
     seen: set[str] = set()
     for row in rows:
@@ -525,6 +620,7 @@ def write_search_db(chunks: Iterable[ChunkRecord | Mapping[str, Any]],
                          (n, row["plain"]))
         conn.executemany("INSERT INTO copy_groups VALUES (?,?,?)", memberships)
         conn.executemany("INSERT INTO overlap_pairs VALUES (?,?,?,?,?)", pairs)
+        _write_book_index(conn, book)
         info = {
             "format": FORMAT,
             "format_version": FORMAT_VERSION,
@@ -533,6 +629,8 @@ def write_search_db(chunks: Iterable[ChunkRecord | Mapping[str, Any]],
             "tool_version": _tool_version(),
             "sqlite_version": sqlite3.sqlite_version,
             "chunk_count": str(len(rows)),
+            "book_index_version": str(corpus_index.VERSION),
+            "book_index_stopwords": json.dumps(stop),
             "document_count": str(len({r["doc_id"] for r in rows})),
             "word_tokenizer": "unicode61 remove_diacritics 2",
             "substring_tokenizer": "trigram",
@@ -550,7 +648,7 @@ def write_search_db(chunks: Iterable[ChunkRecord | Mapping[str, Any]],
         conn.commit()
         conn.execute("INSERT INTO chunks_fts (chunks_fts) VALUES ('optimize')")
         conn.execute("INSERT INTO chunks_trigram (chunks_trigram) VALUES ('optimize')")
-        conn.execute("PRAGMA user_version = 1")
+        conn.execute(f"PRAGMA user_version = {int(FORMAT_VERSION)}")
         conn.commit()
         conn.execute("ANALYZE")
         conn.commit()
@@ -563,6 +661,28 @@ def write_search_db(chunks: Iterable[ChunkRecord | Mapping[str, Any]],
     return target
 
 
+def _write_book_index(conn: sqlite3.Connection, book: Mapping[str, Any]) -> None:
+    """The book index body (``corpus_index.build(..., limits=False)``) as tables."""
+    copies: set[tuple[str, str]] = set()
+    for entry_id, entry in enumerate(book["entries"], 1):
+        conn.execute("INSERT INTO index_entries VALUES (?,?,?)",
+                     (entry_id, entry["term"], entry["kind"]))
+        for position, loc in enumerate(entry["locations"]):
+            conn.execute("INSERT INTO index_locations VALUES (?,?,?)",
+                         (entry_id, position, loc["chunk_id"]))
+            copies.update((loc["chunk_id"], copy["chunk_id"]) for copy in loc["copies"])
+    conn.executemany("INSERT INTO index_copies VALUES (?,?)", sorted(copies))
+    conn.executemany("INSERT INTO index_sections VALUES (?,?)",
+                     sorted(book.get("sections", {}).items()))
+    for thread_id, thread in enumerate(book["threads"], 1):
+        conn.execute("INSERT INTO index_threads VALUES (?,?)", (thread_id, thread["title"]))
+        parts = [thread["chunk_ids"]] + [copy["chunk_ids"] for copy in thread["copies"]]
+        for part, ids in enumerate(parts):
+            conn.executemany("INSERT INTO index_thread_chunks VALUES (?,?,?,?)",
+                             [(thread_id, part, position, cid)
+                              for position, cid in enumerate(ids)])
+
+
 def search_db_path(dataset_dir: str | os.PathLike[str]) -> Path:
     """``<dataset>/analysis/rag-connector/search.sqlite``."""
     from .corpus_index import analysis_dir
@@ -570,7 +690,8 @@ def search_db_path(dataset_dir: str | os.PathLike[str]) -> Path:
 
 
 def build(dataset_dir: str | os.PathLike[str], out: str | os.PathLike[str] | None = None,
-          *, dataset: Dataset | None = None) -> Path:
+          *, dataset: Dataset | None = None,
+          stopwords: Iterable[str] | None = None) -> Path:
     """Build the search index for a Dataset and return the file's path.
 
     Without ``out`` the file goes in the Dataset's analysis area,
@@ -579,6 +700,10 @@ def build(dataset_dir: str | os.PathLike[str], out: str | os.PathLike[str] | Non
     as for the book index). With ``out`` (a file path, or a directory to hold
     ``search.sqlite``) nothing in the Dataset folder is written. The core is
     never written. ``dataset`` skips re-reading a Dataset already read.
+
+    The book-index tables use ``stopwords``; ``None`` takes the ones the
+    Dataset's ``index.json`` (``index prepare --stopword``) records, so the
+    two agree.
     """
     from . import corpus_index
 
@@ -600,7 +725,10 @@ def build(dataset_dir: str | os.PathLike[str], out: str | os.PathLike[str] | Non
         "chunk_inventory_sha256": ds.chunk_inventory_sha256,
         "chunks_file_bytes": (folder / CHUNKS_FILE).stat().st_size,
     }
-    path = write_search_db(ds.chunks, target, meta=meta)
+    if stopwords is None:
+        recorded = corpus_index.load(folder)
+        stopwords = (recorded or {}).get("stopwords") or ()
+    path = write_search_db(ds.chunks, target, meta=meta, stopwords=stopwords)
     if out is None:
         corpus_index.write_envelope(folder)
     return path
@@ -617,7 +745,8 @@ def _connect_ro(path: Path) -> sqlite3.Connection:
 
 def open_index(dataset_dir: str | os.PathLike[str], *,
                path: str | os.PathLike[str] | None = None,
-               allow_stale: bool = False) -> SearchIndex:
+               allow_stale: bool = False,
+               filter: Mapping[str, Any] | None = None) -> SearchIndex:  # noqa: A002
     """Open a Dataset's search index read-only.
 
     ``path`` reads an index built elsewhere (``build(..., out=)``); it is still
@@ -626,6 +755,9 @@ def open_index(dataset_dir: str | os.PathLike[str], *,
     ``core_sha256`` (or the size of ``data/chunks.jsonl``) differs from what
     the index was built from, unless ``allow_stale``. The check reads the
     manifest, not the whole core; :meth:`SearchIndex.verify` re-reads it.
+
+    ``filter`` scopes every lookup on the returned index (see
+    :class:`SearchIndex`).
     """
     folder = Path(dataset_dir)
     target = Path(path) if path is not None else search_db_path(folder)
@@ -635,7 +767,7 @@ def open_index(dataset_dir: str | os.PathLike[str], *,
         raise SearchIndexMissing(
             f"no search index at {target}; `rag-connector index search-db "
             f"--dataset {folder}` builds one")
-    index = SearchIndex(target)
+    index = SearchIndex(target, filter=filter)
     index.dataset_dir = folder
     problems = index.stale_reasons(folder)
     if problems and not allow_stale:
@@ -708,6 +840,8 @@ class SearchResult:
     by_doc: list[dict[str, Any]]
     by_module: list[dict[str, Any]]
     query: dict[str, Any] = field(default_factory=dict)
+    #: The scope filter the index was opened with (``{}``: the whole Dataset).
+    filter: dict[str, Any] = field(default_factory=dict)
 
     @property
     def truncated(self) -> bool:
@@ -715,7 +849,8 @@ class SearchResult:
 
     def to_dict(self) -> dict[str, Any]:
         return {"total": self.total, "shown": len(self.hits), "query": self.query,
-                "by_module": self.by_module, "by_doc": self.by_doc, "hits": self.hits}
+                "filter": self.filter, "by_module": self.by_module, "by_doc": self.by_doc,
+                "hits": self.hits}
 
 
 _HIT_COLUMNS = ("n", "chunk_id", "doc_id", "doc_chunk_index", "chunk_label", "source",
@@ -723,12 +858,39 @@ _HIT_COLUMNS = ("n", "chunk_id", "doc_id", "doc_chunk_index", "chunk_label", "so
                 "COALESCE(plain, text) AS plain", "heading_before", "headings")
 
 
-class SearchIndex:
-    """A search index file, open read-only."""
+class OutOfScopeError(AmbiguousIdError):
+    """An id names a chunk or document that exists but is outside the scope
+    the index was opened with. A subclass of :class:`AmbiguousIdError`, so a
+    caller that handles an unresolvable id keeps working."""
 
-    def __init__(self, path: str | os.PathLike[str]):
+
+class SearchIndex:
+    """A search index file, open read-only.
+
+    ``filter`` (the neutral syntax of ``query(filter=...)``, over the columns
+    in :data:`SCOPE_FIELDS`) scopes every method for the life of the object:
+    search, lookup, neighbors, outline, copies, chunk, modules, the id
+    resolvers and :meth:`sql` see only the chunks it admits. It is set once,
+    validated here, and never ignored: a field outside :data:`SCOPE_FIELDS`
+    raises ``UnsupportedFilterError``, a malformed filter
+    ``InvalidFilterError``.
+
+    A filter that keeps or drops whole documents (on ``task_id``, ``doc_id``,
+    ``step_id``, ...) keeps documents whole. One that splits a document keeps
+    only its in-scope chunks: ``neighbors`` and ``outline`` step over the
+    rest (``doc_chunk_index`` shows the gap), book-index ``prev``/``next``
+    name in-scope chunks only. ``heading_before`` and ``copy_rep`` are
+    computed over the whole Dataset and may name a heading or a chunk outside
+    the scope (labels and ids, never text).
+    """
+
+    def __init__(self, path: str | os.PathLike[str], *,
+                 filter: Mapping[str, Any] | None = None):  # noqa: A002
         self.path = Path(path)
         self.dataset_dir: Path | None = None
+        self._filter = validate_filter(filter)
+        self._where = (to_sql_where(self._filter, SCOPE_FIELDS, what="the search index")
+                       if self._filter else None)
         self.conn = _connect_ro(self.path)
         self.conn.row_factory = sqlite3.Row
         self.conn.create_function("regexp", 2, _regexp, deterministic=True)
@@ -742,6 +904,102 @@ class SearchIndex:
         if self.meta.get("format") != FORMAT:
             self.conn.close()
             raise SearchIndexError(f"{self.path} is not a {FORMAT} file")
+        self._tables = {row[0] for row in self.conn.execute(
+            "SELECT name FROM main.sqlite_master WHERE type IN ('table', 'view')")}
+        if self._where is not None:
+            try:
+                self._install_scope()
+            except sqlite3.Error as exc:
+                self.conn.close()
+                raise SearchIndexError(f"cannot scope {self.path}: {exc}") from exc
+
+    # -- scope ---------------------------------------------------------------
+
+    @property
+    def filter(self) -> dict[str, Any]:
+        """The scope filter (normalized; ``{}`` when the whole Dataset is seen)."""
+        return json.loads(json.dumps(self._filter))
+
+    @property
+    def scoped(self) -> bool:
+        return self._where is not None
+
+    @property
+    def has_book_index(self) -> bool:
+        """The file holds the book-index tables (format version 2 and later)."""
+        return all(name in self._tables for name in _BOOK_TABLES)
+
+    def _install_scope(self) -> None:
+        """TEMP views that shadow every table holding chunk rows. An unqualified
+        name resolves to the temp schema first, so every query on this
+        connection (the methods' and :meth:`sql`'s) reads the scoped rows."""
+        in_scope = "SELECT chunk_id FROM temp.chunks"
+        views = {
+            "chunks": f"SELECT * FROM main.chunks WHERE {self._where}",
+            "chunks_plain": "SELECT n, chunk_id, COALESCE(plain, text) AS plain "
+                            "FROM temp.chunks",
+            "copy_groups": f"SELECT * FROM main.copy_groups WHERE chunk_id IN ({in_scope})",
+            # Pairs are between copy_rep chunks, which stand for their near
+            # group: a pair stays when both groups have a member in scope.
+            "overlap_pairs": "SELECT * FROM main.overlap_pairs WHERE "
+                             "chunk_a IN (SELECT copy_rep FROM temp.chunks) AND "
+                             "chunk_b IN (SELECT copy_rep FROM temp.chunks)",
+        }
+        if self.has_book_index:
+            views.update({
+                "index_locations": f"SELECT * FROM main.index_locations "
+                                   f"WHERE chunk_id IN ({in_scope})",
+                "index_copies": f"SELECT * FROM main.index_copies WHERE chunk_id IN "
+                                f"({in_scope}) AND copy_chunk_id IN ({in_scope})",
+                "index_sections": f"SELECT * FROM main.index_sections "
+                                  f"WHERE chunk_id IN ({in_scope})",
+                "index_thread_chunks": f"SELECT * FROM main.index_thread_chunks "
+                                       f"WHERE chunk_id IN ({in_scope})",
+                # A label is in scope when one of its chunks (or an identical
+                # copy of one) is.
+                "index_entries": "SELECT * FROM main.index_entries e WHERE EXISTS ("
+                                 "SELECT 1 FROM main.index_locations l WHERE "
+                                 "l.entry_id = e.entry_id AND (l.chunk_id IN "
+                                 f"({in_scope}) OR EXISTS (SELECT 1 FROM main.index_copies"
+                                 " k WHERE k.chunk_id = l.chunk_id AND k.copy_chunk_id IN "
+                                 f"({in_scope}))))",
+                "index_threads": "SELECT * FROM main.index_threads t WHERE EXISTS ("
+                                 "SELECT 1 FROM main.index_thread_chunks x WHERE "
+                                 f"x.thread_id = t.thread_id AND x.chunk_id IN ({in_scope}))",
+            })
+        for name, select in views.items():
+            self.conn.execute(f"CREATE TEMP VIEW {name} AS {select}")
+
+    def scope_summary(self) -> dict[str, Any]:
+        """``filter``, and how many chunks, documents and modules it admits out
+        of the Dataset's, for a host to show what a reader is scoped to."""
+        def counts(table: str) -> tuple[int, int, int]:
+            row = self.conn.execute(
+                f"SELECT COUNT(*), COUNT(DISTINCT doc_id), COUNT(DISTINCT task_id) "
+                f"FROM {table}").fetchone()
+            return int(row[0]), int(row[1]), int(row[2])
+        chunks, docs, modules = counts("chunks")
+        all_chunks, all_docs, all_modules = counts("main.chunks")
+        general = self.conn.execute(
+            "SELECT COUNT(*) FROM chunks WHERE task_id IS NULL").fetchone()[0]
+        return {"filter": self.filter, "chunks": chunks, "documents": docs,
+                "modules": modules, "general_chunks": int(general),
+                "dataset_chunks": all_chunks, "dataset_documents": all_docs,
+                "dataset_modules": all_modules}
+
+    def _out_of_scope(self, column: str, value: str, what: str) -> AmbiguousIdError:
+        """The error for an id that resolves to nothing in scope: say so when
+        it exists outside the scope."""
+        value = str(value).strip()
+        if self.scoped and value:
+            hit = self.conn.execute(
+                f"SELECT {column} FROM main.chunks WHERE {column} >= ? AND {column} < ? "
+                f"LIMIT 2", (value, value + "\U0010ffff")).fetchall()
+            if hit:
+                return OutOfScopeError(
+                    f"{what} {value!r} exists but is outside the scope "
+                    f"{json.dumps(self._filter, sort_keys=True)}")
+        return AmbiguousIdError(_ambiguity(what, value, []))
 
     def close(self) -> None:
         self.conn.close()
@@ -761,6 +1019,9 @@ class SearchIndex:
         if self.meta.get("format_version") != FORMAT_VERSION:
             problems.append(f"format version {self.meta.get('format_version')!r}, "
                             f"this reader reads {FORMAT_VERSION!r}")
+        if not self.has_book_index:
+            problems.append("no book-index tables (index_entries, index_threads, ...): "
+                            "built by an older rag-connector")
         try:
             manifest = json.loads((folder / MANIFEST_FILE).read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
@@ -805,6 +1066,8 @@ class SearchIndex:
     def resolve_chunk(self, chunk: str) -> str:
         """A chunk id from an id or an unambiguous prefix of one."""
         found = self._by_prefix("chunk_id", "chunks", chunk, "chunk")
+        if not found:
+            raise self._out_of_scope("chunk_id", chunk, "chunk")
         if len(found) != 1:
             raise AmbiguousIdError(_ambiguity("chunk", chunk, found))
         return found[0]
@@ -812,6 +1075,8 @@ class SearchIndex:
     def resolve_module(self, module: str) -> str:
         """A module (``task_id``) from an id or an unambiguous prefix of one."""
         found = self._by_prefix("task_id", "chunks", module, "module")
+        if not found:
+            raise self._out_of_scope("task_id", module, "module")
         if len(found) != 1:
             raise AmbiguousIdError(_ambiguity("module", module, found))
         return found[0]
@@ -827,6 +1092,14 @@ class SearchIndex:
             "ORDER BY doc_id", (str(doc).strip(),))]
         if titled:
             return titled
+        if not found:
+            if self.scoped and self.conn.execute(
+                    "SELECT 1 FROM main.chunks WHERE source = ? COLLATE NOCASE LIMIT 1",
+                    (str(doc).strip(),)).fetchone():
+                raise OutOfScopeError(
+                    f"document {str(doc).strip()!r} exists but is outside the scope "
+                    f"{json.dumps(self._filter, sort_keys=True)}")
+            raise self._out_of_scope("doc_id", doc, "document")
         raise AmbiguousIdError(_ambiguity("document", doc, found))
 
     # -- search ------------------------------------------------------------
@@ -1008,7 +1281,7 @@ class SearchIndex:
                                                           d["doc_id"])),
             by_module=[{"task_id": task, "hits": count} for task, count in
                        sorted(by_module.items(), key=lambda kv: (-kv[1], kv[0] or ""))],
-            query=query)
+            query=query, filter=dict(self.filter))
 
     def _rows_by_n(self, order: list[int]) -> list[sqlite3.Row]:
         found: dict[int, sqlite3.Row] = {}
@@ -1038,9 +1311,13 @@ class SearchIndex:
                     "SELECT group_id, COUNT(*) AS size FROM copy_groups "
                     f"WHERE group_id IN ({_marks(batch)}) GROUP BY group_id", batch):
                 sizes[row["group_id"]] = row["size"]
-        for kinds in out.values():
-            for info in kinds.values():
+        for cid, kinds in list(out.items()):
+            for kind, info in list(kinds.items()):
                 info["size"] = sizes.get(info["group"], 0)
+                if info["size"] < 2:    # the rest of its group is out of scope
+                    del kinds[kind]
+            if not kinds:
+                del out[cid]
         return out
 
     # -- reading chunks ------------------------------------------------------
@@ -1077,8 +1354,15 @@ class SearchIndex:
         id, an unambiguous prefix, an exact title, or a chunk id in it."""
         try:
             doc_ids = self.resolve_doc(doc)
-        except AmbiguousIdError:
-            cid = self.resolve_chunk(doc)
+        except AmbiguousIdError as doc_error:
+            try:
+                cid = self.resolve_chunk(doc)
+            except AmbiguousIdError as chunk_error:
+                if isinstance(chunk_error, OutOfScopeError):
+                    raise
+                if isinstance(doc_error, OutOfScopeError):
+                    raise doc_error from None
+                raise
             doc_ids = [self.conn.execute("SELECT doc_id FROM chunks WHERE chunk_id = ?",
                                          (cid,)).fetchone()[0]]
         if len(doc_ids) != 1:
@@ -1159,6 +1443,247 @@ class SearchIndex:
                 for row in self.conn.execute(
                     "SELECT task_id, COUNT(*), COUNT(DISTINCT doc_id) FROM chunks "
                     "GROUP BY task_id ORDER BY task_id")]
+
+
+    # -- read-only SQL -------------------------------------------------------
+
+    def sql(self, statement: str, *, limit: int | None = None,
+            seconds: float = SQL_SECONDS) -> dict[str, Any]:
+        """Run one read-only SQL statement; ``{"columns", "rows", "truncated"}``.
+
+        The file is opened read-only and the connection set to ``query_only``,
+        so a statement that would write fails; ATTACH and DETACH are refused.
+        At most ``SQL_ROW_CAP`` rows (or ``limit``, if lower) come back, the
+        statement is stopped after ``seconds``, and a cell longer than
+        ``SQL_CELL_CHARS`` is shortened (blobs show their size). ``regexp`` and
+        ``contains`` are available as functions. Errors raise SearchIndexError.
+
+        Under a scope filter the statement reads the scoped TEMP views (an
+        unqualified ``chunks`` is the view); naming the file's own tables
+        through ``main.`` is refused, as is creating or dropping anything.
+        """
+        import time
+
+        text = (statement or "").strip().rstrip(";").strip()
+        if not text:
+            raise SearchIndexError("sql: empty statement")
+        conn = self.conn
+        conn.execute("PRAGMA query_only = ON")
+        deadline = time.monotonic() + seconds
+        conn.set_progress_handler(lambda: 1 if time.monotonic() > deadline else 0, 10_000)
+        conn.set_authorizer(_scoped_sql_authorizer if self.scoped else _sql_authorizer)
+        cap = min(int(limit), SQL_ROW_CAP) if limit else SQL_ROW_CAP
+        try:
+            cursor = conn.execute(text)
+            columns = [d[0] for d in cursor.description or []]
+            rows = cursor.fetchmany(cap + 1)
+        except sqlite3.Error as exc:  # including the time limit ("interrupted")
+            reason = f"stopped after {seconds:g} s" if time.monotonic() > deadline else str(exc)
+            raise SearchIndexError(f"sql: {reason}") from exc
+        except ValueError as exc:      # e.g. more than one statement
+            raise SearchIndexError(f"sql: {exc}") from exc
+        finally:
+            conn.set_progress_handler(None, 0)
+            conn.set_authorizer(None)
+        return {"columns": columns,
+                "rows": [[_sql_cell(value) for value in row] for row in rows[:cap]],
+                "truncated": len(rows) > cap}
+
+    def schema(self) -> str:
+        """The CREATE statements of the index's tables and views, plus SQL_NOTES."""
+        names = ("chunks", "chunks_plain", "chunks_fts", "chunks_trigram", "copy_groups",
+                 "overlap_pairs", *_BOOK_TABLES, "meta")
+        rows = self.conn.execute(
+            f"SELECT name, sql FROM main.sqlite_master WHERE name IN ({_marks(names)})",
+            names).fetchall()
+        found = {row[0]: row[1] for row in rows}
+        statements = [found[name].strip() + ";" for name in names if found.get(name)]
+        notes = SQL_NOTES
+        if self.scoped:
+            notes += SQL_SCOPE_NOTES.format(
+                filter=json.dumps(self._filter, sort_keys=True))
+        return "\n".join(statements) + "\n\n" + notes
+
+    # -- book index ----------------------------------------------------------
+
+    def lookup(self, query: str, *, max_locations: int | None = None,
+               max_copies: int | None = None) -> dict[str, list]:
+        """Book-index entries and threads whose label contains ``query``
+        (case-insensitive), in the shape :func:`rag_connector.corpus_index.find`
+        returns, so ``corpus_index.format_find`` prints it.
+
+        Under a scope, a location or thread whose chunk is out of scope is
+        replaced by an in-scope identical copy when there is one (the titled
+        document first, as the book index chooses), else dropped, and an entry
+        or thread left with nothing is dropped. ``prev``/``next`` and
+        ``doc_chunks`` count in-scope chunks of the document. Locations are cut
+        to ``max_locations`` (default the book index's 12) and copies to
+        ``max_copies`` (8) after scoping, with the rest counted in
+        ``omitted`` / ``copies_omitted``. A label found in too many documents
+        of the whole Dataset is not in the book index, scoped or not.
+        """
+        from . import corpus_index
+
+        if not self.has_book_index:
+            raise SearchIndexError(
+                f"{self.path} has no book-index tables (built by an older rag-connector); "
+                "rebuild it with `rag-connector index search-db`")
+        max_locations = corpus_index.MAX_LOCATIONS if max_locations is None else max_locations
+        max_copies = corpus_index.MAX_COPIES if max_copies is None else max_copies
+        needle = " ".join(str(query).split()).casefold()
+        if not needle:
+            return {"entries": [], "threads": []}
+        info = _ChunkInfo(self.conn)
+
+        entries = []
+        for entry_id, term, kind in self.conn.execute(
+                "SELECT entry_id, term, kind FROM main.index_entries ORDER BY entry_id"
+                ).fetchall():
+            if needle not in term.casefold():
+                continue
+            locations = []
+            for (cid,) in self.conn.execute(
+                    "SELECT chunk_id FROM main.index_locations WHERE entry_id = ? "
+                    "ORDER BY position", (entry_id,)).fetchall():
+                copies = [row[0] for row in self.conn.execute(
+                    "SELECT copy_chunk_id FROM main.index_copies WHERE chunk_id = ?",
+                    (cid,))]
+                group = info.rows([cid, *copies])
+                if not group:
+                    continue
+                chosen = (group[0] if group[0]["chunk_id"] == cid
+                          else min(group, key=_primary_rank))
+                others = sorted((row for row in group if row is not chosen),
+                                key=lambda row: (row["src"], row["chunk_id"]))
+                prev_id, next_id, size = info.around(chosen)
+                kept = others[:max_copies]
+                locations.append({
+                    "chunk_id": chosen["chunk_id"], "doc_id": chosen["doc_id"],
+                    "source": chosen["src"], "section": info.section(chosen["chunk_id"]),
+                    "prev": prev_id, "next": next_id, "doc_chunks": size,
+                    "copies": [{"chunk_id": row["chunk_id"], "doc_id": row["doc_id"],
+                                "source": row["src"]} for row in kept],
+                    "copies_omitted": len(others) - len(kept),
+                })
+            if not locations:
+                continue
+            locations.sort(key=lambda loc: (loc["source"], loc["chunk_id"]))
+            entries.append({"term": term, "kind": kind,
+                            "locations": locations[:max_locations],
+                            "omitted": max(0, len(locations) - max_locations)})
+
+        threads = []
+        for thread_id, title in self.conn.execute(
+                "SELECT thread_id, title FROM main.index_threads ORDER BY thread_id"
+                ).fetchall():
+            if needle not in title.casefold():
+                continue
+            parts: dict[int, list[str]] = {}
+            for part, cid in self.conn.execute(
+                    "SELECT part, chunk_id FROM main.index_thread_chunks WHERE thread_id = ? "
+                    "ORDER BY part, position", (thread_id,)):
+                parts.setdefault(part, []).append(cid)
+            kept_parts = []
+            for _part, ids in sorted(parts.items()):
+                rows = info.rows(ids)
+                if rows:
+                    kept_parts.append({"doc_id": rows[0]["doc_id"], "source": rows[0]["src"],
+                                       "chunk_ids": [row["chunk_id"] for row in rows]})
+            if not kept_parts:
+                continue
+            first, rest = kept_parts[0], kept_parts[1:]
+            threads.append({"title": title, **first, "copies": rest[:max_copies],
+                            "copies_omitted": max(0, len(rest) - max_copies)})
+        threads.sort(key=lambda t: (t["title"].casefold(), t["source"], t["doc_id"]))
+        return {"entries": entries, "threads": threads}
+
+
+_DENIED = {sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH}
+
+
+def _sql_authorizer(action: int, *_args: Any) -> int:
+    return sqlite3.SQLITE_DENY if action in _DENIED else sqlite3.SQLITE_OK
+
+
+#: Under a scope: everything a single SELECT needs, nothing that changes a schema.
+_SCOPED_ALLOWED = {sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ, sqlite3.SQLITE_FUNCTION,
+                   getattr(sqlite3, "SQLITE_RECURSIVE", 33)}
+
+
+def _scoped_sql_authorizer(action: int, arg1: Any, _arg2: Any, db: Any, view: Any) -> int:
+    if action == sqlite3.SQLITE_PRAGMA:
+        # Reading a pragma is harmless (FTS5 reads data_version); setting one
+        # (query_only = OFF, say) is refused.
+        return sqlite3.SQLITE_OK if _arg2 is None else sqlite3.SQLITE_DENY
+    if action not in _SCOPED_ALLOWED:
+        return sqlite3.SQLITE_DENY
+    # A file table read directly (``main.chunks``, or through the file's own
+    # view ``main.chunks_plain``) bypasses the scope. The scope's TEMP views
+    # are the only way in: SQLite names the innermost view reading a table,
+    # and those views carry the scoped tables' names, which the file uses for
+    # tables only (the TEMP ``chunks_plain`` reads ``temp.chunks``).
+    if action == sqlite3.SQLITE_READ and db == "main" and arg1 in _SCOPED_TABLES \
+            and view not in _SCOPED_TABLES:
+        return sqlite3.SQLITE_DENY
+    return sqlite3.SQLITE_OK
+
+
+def _primary_rank(row: Mapping[str, Any]) -> tuple:
+    """The book index's choice among identical copies: a titled document first."""
+    from .corpus_index import human_source
+    return (0 if human_source(row["src"]) else 1, row["src"],
+            int(row["doc_chunk_index"] or 0), row["chunk_id"])
+
+
+class _ChunkInfo:
+    """In-scope chunk rows and document order, cached for one lookup."""
+
+    def __init__(self, conn: sqlite3.Connection):
+        self.conn = conn
+        self._rows: dict[str, dict[str, Any] | None] = {}
+        self._docs: dict[str, list[str]] = {}
+        self._sections: dict[str, str] = {}
+
+    def rows(self, ids: Sequence[str]) -> list[dict[str, Any]]:
+        """The in-scope rows of ``ids``, in the order given."""
+        missing = [cid for cid in dict.fromkeys(ids) if cid not in self._rows]
+        for start in range(0, len(missing), 500):
+            batch = missing[start:start + 500]
+            for cid in batch:
+                self._rows[cid] = None
+            for row in self.conn.execute(
+                    "SELECT chunk_id, doc_id, doc_chunk_index, "
+                    "COALESCE(NULLIF(source_file, ''), doc_id) AS src FROM chunks "
+                    f"WHERE chunk_id IN ({_marks(batch)})", batch):
+                self._rows[row["chunk_id"]] = dict(row)
+        return [row for row in (self._rows[cid] for cid in ids) if row is not None]
+
+    def around(self, row: Mapping[str, Any]) -> tuple[str, str, int]:
+        """(previous, next, count) among the document's in-scope chunks."""
+        doc = row["doc_id"]
+        if doc not in self._docs:
+            self._docs[doc] = [r[0] for r in self.conn.execute(
+                "SELECT chunk_id FROM chunks WHERE doc_id = ? "
+                "ORDER BY COALESCE(doc_chunk_index, 0), chunk_id", (doc,))]
+        ids = self._docs[doc]
+        at = ids.index(row["chunk_id"])
+        return (ids[at - 1] if at else "", ids[at + 1] if at + 1 < len(ids) else "",
+                len(ids))
+
+    def section(self, chunk_id: str) -> str:
+        if chunk_id not in self._sections:
+            found = self.conn.execute("SELECT section FROM main.index_sections "
+                                      "WHERE chunk_id = ?", (chunk_id,)).fetchone()
+            self._sections[chunk_id] = found[0] if found else ""
+        return self._sections[chunk_id]
+
+
+def _sql_cell(value: Any) -> Any:
+    if isinstance(value, bytes):
+        return f"<{len(value)} bytes>"
+    if isinstance(value, str) and len(value) > SQL_CELL_CHARS:
+        return value[:SQL_CELL_CHARS] + f"... (+{len(value) - SQL_CELL_CHARS} chars)"
+    return value
 
 
 def _marks(values: Sequence[Any]) -> str:
