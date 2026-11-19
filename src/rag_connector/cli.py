@@ -169,7 +169,10 @@ def _add_index_commands(subparsers: argparse._SubParsersAction) -> None:
                               "repeatable, recorded in the index")
     prepare.add_argument("--no-search-db", action="store_true",
                          help="write only the book index, not search.sqlite")
-    status = commands.add_parser("status", help="how big the indexes are")
+    status = commands.add_parser(
+        "status", help="which indexes exist, whether they match the Dataset, what builds "
+                       "them, and whether the (model-written) signal index can be built here")
+    status.add_argument("--json", action="store_true", help="print the status as JSON")
     lookup = commands.add_parser(
         "lookup", help="print book-index entries and threads whose label contains QUERY "
                        "(read from search.sqlite; --filter scopes it)",
@@ -425,21 +428,12 @@ def _run_lookup_command(args: argparse.Namespace) -> int:
 
     folder = Path(args.dataset)
     filt = _filter_arg(args)
-    try:
-        with search_index.open_index(folder, path=args.db, filter=filt) as index:
-            _note_scope(index)
-            found = index.lookup(args.query)
-    except (search_index.SearchIndexMissing, search_index.StaleSearchIndex) as exc:
-        # Without a usable search index, an unscoped lookup still reads
-        # index.json; a scoped one cannot be answered from it.
-        book = corpus_index.load(folder) if filt is None and args.db is None else None
-        if book is None:
-            if filt is not None or args.db is not None:
-                raise
-            print("no book index for this Dataset; `rag-connector index prepare` builds one")
-            return 1
-        print(f"note: reading index.json ({exc})", file=sys.stderr)
-        found = corpus_index.find(book, args.query)
+    # Lookups read only the search index. index.json stays in the Dataset for other
+    # tools; here every lookup, scoped or not, goes through the same tables, and a
+    # missing or stale index is the same typed error as for search.
+    with search_index.open_index(folder, path=args.db, filter=filt) as index:
+        _note_scope(index)
+        found = index.lookup(args.query)
     if args.json:
         _emit_json(found)
     else:
@@ -531,38 +525,44 @@ def _run_index_command(args: argparse.Namespace) -> int:
             return 1
         print(signal_index.format_hits(signal_index.find(payload, args.query)), end="")
         return 0
-    index = corpus_index.load(folder)
-    if index is None:
-        print("no book index for this Dataset; `rag-connector index prepare` builds one")
-        return 1
     if args.index_command == "status":
-        counts = index["counts"]
-        print(f"book index: {counts['documents']} documents, {counts['chunks']} chunks, "
-              f"{counts['entries']} entries, {counts['threads']} threads "
-              f"(built {index['built_at']})")
-        signal = signal_index.load(folder)
-        if signal is not None:
-            subjects = sum(len(d.get("subjects") or []) for d in signal["documents"])
-            print(f"signal index: {len(signal['documents'])} documents, {subjects} subjects "
-                  f"(built {signal['built_at']}, {', '.join(signal['models'])})")
-        print(_search_status(folder))
-        print(f"  {corpus_index.analysis_dir(folder)}")
+        from .index_status import index_status
+
+        status = index_status(folder)
+        if args.json:
+            _emit_json(status)
+        else:
+            _emit(_format_index_status(status))
         return 0
     raise ValueError(f"unknown index command {args.index_command!r}")
 
 
-def _search_status(folder: Path) -> str:
-    from . import search_index
+def _format_index_status(status: dict) -> str:
+    def line(name: str, item: dict) -> str:
+        extra = ""
+        if item["state"] == "current":
+            parts = [f"{item['chunks']} chunks" if item.get("chunks") is not None else "",
+                     f"{item['documents']} documents" if item.get("documents") is not None else "",
+                     f"built {item['built_at']}" if item.get("built_at") else "",
+                     ", ".join(item.get("models") or [])]
+            extra = ", ".join(p for p in parts if p)
+        elif item["state"] == "stale":
+            extra = "; ".join(item.get("reasons") or [])
+        return f"{name}: {item['state']}" + (f" ({extra})" if extra else "")
 
-    try:
-        with search_index.open_index(folder) as index:
-            meta = index.meta
-    except search_index.SearchIndexMissing:
-        return "search index: none (`rag-connector index search-db` builds one)"
-    except search_index.SearchIndexError as exc:
-        return f"search index: not usable: {exc}"
-    return (f"search index: {meta['chunk_count']} chunks (built {meta['built_at']}, "
-            f"{search_index.search_db_path(folder).stat().st_size / 1e6:.1f} MB)")
+    lines = [line("search index", status["search_index"]),
+             line("book index", status["book_index"]),
+             line("signal index", status["signal_index"])]
+    if status["build"]:
+        lines.append(f"to build the search and book indexes (no model): {status['build']}")
+    signal = status["signal"]
+    if status["signal_index"]["state"] != "current":
+        if signal["buildable"]:
+            lines.append(f"the signal index (optional; calls a model, costs credits): "
+                         f"{signal['command']}")
+        else:
+            lines.append(f"the signal index (optional) cannot be built here: {signal['reason']}")
+    return "\n".join(lines) + "\n"
 
 
 def _add_datasets_dir_command(subparsers: argparse._SubParsersAction) -> None:

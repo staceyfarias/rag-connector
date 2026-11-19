@@ -94,10 +94,44 @@ reader can see the corpus is not the whole collection. Records that are not
 servable content at all (internal bookkeeping a query can never return) may be
 excluded on the same terms.
 
+### A chunk is what the system returns, not what it searches
+
+A **chunk** in this contract is a unit of content the system can return for a
+query: an id and the text served under it. The corpus read lists those
+returnable units, and a Dataset freezes them. `query()` returns them.
+
+The contract says nothing about how the system finds a chunk. In a naive RAG
+the two coincide: each chunk's text is embedded, the vector is searched, and
+the chunk whose vector matched is returned. That is one design, not the
+definition. A system may match on something else and return the chunk: a
+summary or a question written for it, a smaller span inside it, a keyword
+index, a graph, a database lookup. It may use no vectors at all.
+
+So:
+
+- **The corpus read returns the units the system returns**, with the text it
+  serves, never the text or records it searches. Where the two differ, the
+  search-side records (embedded summaries, questions, sentence windows) are
+  not chunks and are not in the corpus.
+- **Nobody may assume a chunk is a search vector.** A host must not assume
+  that a chunk has a vector, that there is one vector per chunk, that a vector
+  was computed from the chunk's `text`, or that vector search was used.
+  Everything about vectors is an optional capability describing a system that
+  has them: `ChunkRecord.embedding`, `get_chunk_vectors`, `describe_space`,
+  `embed_queries`, `info()["embedding_fingerprint"]`. A connector for a system
+  without them leaves them out and is complete.
+- **A score is the system's relevance for the returned unit**, whatever
+  produced it. `retrieval_mode` says how far it can be relied on.
+- **What is checked is identity, not mechanism:** every id `query()` returns
+  as a chunk exists in the corpus read ([Chunk identity](#chunk-identity)).
+  A result whose served text is not the corpus chunk's text is declared as a
+  [derived result](#derived-results).
+
 ### `info()` keys hosts read
 
 `retrieval_mode` is required (the base default supplies it). `embedding_fingerprint`
-— provider, model and dimensions — is strongly recommended: hosts persist it with
+— provider, model and dimensions — is strongly recommended for a system that
+searches by embedding (leave it out otherwise): hosts persist it with
 the frozen corpus to detect that the embedding model changed underneath an
 existing answer key. `distance` may name the backend metric; it is informational
 only and never implies a score direction. `internal_filters` may disclose filters
@@ -115,7 +149,7 @@ them.
 | `doc_id` | Document identity. |
 | `source_file` | Human-readable document name. |
 | `doc_chunk_index` | Ordinal within its document, counting `0, 1, 2, …` with no gaps or repeats. |
-| `text` | Non-blank chunk text. |
+| `text` | Non-blank chunk text: what the system serves for this chunk, which need not be the text it embeds or searches. |
 
 `global_index` — the corpus-wide ordinal — is **legally `None`** and is *not* in
 the required set. A total order over the whole corpus is something a paged or
@@ -712,6 +746,12 @@ retrieval looks perfect while every calibrated threshold quietly stops meaning
 what it was calibrated to mean. Re-embedding the text would test the embedder
 against itself and pass even when the index is stale or was written in a
 different embedding space.
+
+This capability describes a system that searches one vector per chunk. The
+vector is the one the system searches for that chunk; nothing says it was
+computed from the chunk's `text` (see [A chunk is what the system returns, not
+what it searches](#a-chunk-is-what-the-system-returns-not-what-it-searches)).
+A system with no such vector leaves the capability unsupported.
 
 - Missing ids are simply **absent** from the returned dict — never a placeholder
   and never a zero vector. A fabricated vector is worse than a gap, because

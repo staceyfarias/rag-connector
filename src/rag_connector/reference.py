@@ -27,6 +27,23 @@ exercises the exact same code path a production connector would -- so it doubles
 the template for writing one. Embedding lives entirely inside this connector; the
 harness core never sees vectors (the interface is embedding-agnostic).
 
+**The Reference RAG is a naive RAG, and that is a property of this system, not
+of the contract.** Here each chunk's text is embedded as it is, that vector is
+what Chroma searches, and the chunk whose vector matched is what ``query``
+returns. So in this one implementation the chunk a Dataset freezes, the text
+that was embedded and the unit that is returned are the same thing. The
+contract only fixes the last of the three: a chunk is the unit a system
+RETURNS for a query (``docs/contract.md``, "A chunk is what the system
+returns, not what it searches"). A system may match on other text (a summary,
+a question, a smaller span), on a keyword index, or with no vectors at all,
+and its connector is no less conforming. When you copy this file, copy the
+contract patterns (shared ids, canonical scores, typed failures, complete
+corpus read); do not copy the assumption that a chunk is a search vector.
+Everything here that touches vectors (``get_chunk_vectors``,
+``describe_space``, ``embed_queries``, ``ChunkRecord.embedding``, the
+``embedding_fingerprint`` in ``info()``) is an optional capability this system
+happens to be able to offer.
+
 **Store lifecycle.** Chroma 1.5.0 publishes no durability primitive -- no
 ``close``, ``flush``, ``persist`` or ``checkpoint`` on the client, the
 collection, or the Rust ``Bindings`` behind them -- and it caches one engine
@@ -351,7 +368,11 @@ def _corpus_order(chunk: ChunkRecord) -> tuple:
 
 
 class ReferenceRagConnector(RagPipeline):
-    """Built-in reference RAG (FastEmbed + Chroma) behind the black-box interface."""
+    """Built-in reference RAG (FastEmbed + Chroma) behind the black-box interface.
+
+    A naive RAG: each chunk is embedded as it is and returned when its vector
+    matches. The contract does not require that; see the module docstring.
+    """
 
     name = "reference-fastembed"
 
@@ -506,6 +527,10 @@ class ReferenceRagConnector(RagPipeline):
               answer_metadata=None, filter=None) -> list[RetrievedChunk]:  # noqa: A002
         """Ranked retrieval: embed the query, search Chroma, map to RetrievedChunks.
 
+        Embedding the query and searching chunk vectors is how THIS system
+        finds chunks. The contract asks only for the returned chunks, their
+        ids and their scores; another system may find them any other way.
+
         The reference pattern for the two rules that matter: ``chunk_id`` comes
         from the stored metadata (the SAME logical id ``pull_all_chunks``
         returns, not a raw store id), and ``score`` is CANONICAL -- Chroma
@@ -559,6 +584,13 @@ class ReferenceRagConnector(RagPipeline):
 
     def pull_all_chunks(self) -> list[ChunkRecord]:
         """Rebuild the full contract from store metadata, then sort + validate.
+
+        The corpus is the set of chunks this system can RETURN. Here those are
+        also the records the vector store searches, so one ``get`` reads both;
+        a system that searches something else lists its returned units, with
+        the text it serves, and not its search records. The embeddings read
+        here are an optional extra (``ChunkRecord.embedding``); a Dataset does
+        not keep them.
 
         The reference pattern for corpus enumeration: contract fields are
         reconstructed from what ``_metadata`` persisted (a round-trip through

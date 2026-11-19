@@ -436,7 +436,7 @@ def test_metadata_as_a_python_literal_string(tmp_path):
 def test_cli_build_search_and_browse(dataset, capsys):
     folder = str(dataset)
     assert main(["index", "search", "--dataset", folder, "--term", "face"]) == 1
-    assert "search-db" in capsys.readouterr().err
+    assert "index prepare" in capsys.readouterr().err
     assert main(["index", "search-db", "--dataset", folder]) == 0
     assert "15 chunks" in capsys.readouterr().out
 
@@ -483,7 +483,7 @@ def test_cli_prepare_builds_both_unless_told_not_to(dataset, capsys):
     assert si.search_db_path(dataset).is_file()
     capsys.readouterr()
     assert main(["index", "status", "--dataset", str(dataset)]) == 0
-    assert "search index: 15 chunks" in capsys.readouterr().out
+    assert "search index: current (15 chunks" in capsys.readouterr().out
 
 
 # ---------------------------------------------------------------------------

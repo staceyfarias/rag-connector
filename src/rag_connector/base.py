@@ -1,8 +1,11 @@
 """
 The RagPipeline port: the contract every RAG "black box" must satisfy.
 
-A host never needs to know *how* a pipeline chunks, embeds, or retrieves. It
-only needs two capabilities:
+A host never needs to know *how* a pipeline chunks, embeds, or retrieves, or
+whether it embeds at all. A chunk here is a unit of content the pipeline
+RETURNS for a query; it is not assumed to be the text that was embedded or
+searched, and vector search is not assumed (docs/contract.md, "A chunk is what
+the system returns, not what it searches"). A host only needs two capabilities:
 
   * ``query(text, top_k)``      -- run retrieval and get back ranked chunks.
   * ``pull_all_chunks()``       -- enumerate the whole corpus with metadata,
@@ -57,6 +60,12 @@ _CORPUS_PAGE_SIZE = 1000
 class ChunkRecord:
     """One chunk in the corpus, with the metadata every downstream stage needs.
 
+    A chunk is a unit of content the system returns for a query, and ``text``
+    is the text it serves. In a naive RAG that text is also what was embedded
+    and searched; the contract does not assume so. ``embedding`` is optional
+    and, when present, is the vector the system searches for this chunk, which
+    need not have been computed from ``text``.
+
     Required fields are the contract; optional fields are best-effort enrichments
     (a connector that can't supply them should leave them ``None``).
 
@@ -87,8 +96,8 @@ class ChunkRecord:
     source_file: str                    # human-readable document name
     doc_chunk_index: int                # ordinal within its document (for +/-N neighbors)
     global_index: int | None            # corpus-wide ordinal; None = host assigns it
-    text: str                           # the chunk text
-    embedding: list[float] | None = None
+    text: str                           # the chunk text, as the system serves it
+    embedding: list[float] | None = None  # optional; never assumed to exist
     char_start: int | None = None    # offset into source doc (best-effort)
     char_end: int | None = None
     content_module_id: str | None = None  # product module/channel (stubbed in dev)
@@ -253,6 +262,10 @@ def refuse_threshold_for_mode(retrieval_mode: str,
 class RetrievedChunk:
     """One result from a retrieval query, in rank order (rank 0 = best).
 
+    It is what the system returned, however the system found it (vector
+    search, keyword search, expansion around a match, a lookup). ``chunk_id``
+    names the corpus chunk it is; ``text`` is what was served.
+
     ``score`` is canonical: **higher is always better**, in the score's native
     scale (see the conversion utilities above). ``raw_score`` preserves the
     store-native value when a conversion was applied -- evidence stays
@@ -391,6 +404,11 @@ class RagPipeline(ABC):
 
     def pull_all_chunks(self) -> list[ChunkRecord]:
         """Return every chunk in the corpus with the metadata contract satisfied.
+
+        The chunks are the units the system RETURNS for a query, with the text
+        it serves. They are not the system's search records: where a system
+        matches on other text (a summary, a question, a smaller span) or uses
+        no vectors, list what it returns, not what it searches.
 
         The corpus is the WHOLE collection this connector is configured for.
         Apply only the filters that define the search space (the static
@@ -570,6 +588,11 @@ class RagPipeline(ABC):
         The default here raises :class:`UnsupportedCapability`, so a connector
         that cannot read its own index says so out loud instead of returning an
         empty dict a caller would mistake for "verified, nothing wrong".
+
+        It describes a system that searches one vector per chunk. A system
+        that does not (it searches other records, or no vectors) leaves this
+        unsupported. The vector is the one the system searches for the chunk;
+        nothing says it was computed from the chunk's ``text``.
 
         Three rules make this method worth having:
 

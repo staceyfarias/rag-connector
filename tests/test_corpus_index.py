@@ -302,11 +302,12 @@ def test_a_failed_call_leaves_its_documents_for_the_next_run(dataset):
 
 def test_cli_prepare_status_lookup(dataset, capsys):
     assert main(["index", "lookup", "--dataset", str(dataset), "Portmere"]) == 1
-    assert "index prepare" in capsys.readouterr().out
+    assert "index prepare" in capsys.readouterr().err
     assert main(["index", "prepare", "--dataset", str(dataset)]) == 0
     assert "indexed 4 documents" in capsys.readouterr().out
     assert main(["index", "status", "--dataset", str(dataset)]) == 0
-    assert "book index: 4 documents" in capsys.readouterr().out
+    status = capsys.readouterr().out
+    assert "book index: current" in status and "4 documents" in status
     assert main(["index", "lookup", "--dataset", str(dataset), "Portmere"]) == 0
     assert "fares.md:chunk-0" in capsys.readouterr().out
 
