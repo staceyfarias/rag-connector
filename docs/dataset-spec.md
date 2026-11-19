@@ -632,6 +632,14 @@ checks a frozen Dataset against independently optional backend operations:
   values and an opaque `next_cursor` (`None` at the end). Positions must come
   from the backend, never enumeration order. Per-document counts are derived
   from this inventory; no separate "chunk n of m" field is required.
+  `doc_chunk_index` may be `None`: position unknown, for a backend that can
+  list ids and their documents but holds positions only in the payload (text
+  or full metadata) the inventory must not read. A `None` is never a guess;
+  for such a chunk the comparison checks presence and document membership
+  only (an id under a different `doc_id` is still in `changed_ids`; a
+  position difference is not judged). The `structure` section says so:
+  `positions` is `known` (every entry has one), `unknown` (none has) or
+  `partial`, and `positions_unknown_count` counts the `None` entries.
 - An optional uniform random sample fetches chunks by ID using `get_chunks`
   and compares their exact text. Sampling requires a direct implementation of
   `get_chunks`; the base method's full-corpus fallback is never called.

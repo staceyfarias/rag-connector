@@ -183,7 +183,7 @@ Implement these methods independently when the backend can answer them:
 | Method | Return | Backend requirement |
 | --- | --- | --- |
 | `count_chunks()` | Nonnegative `int` | Payload-free count for exactly the bound corpus. |
-| `list_chunk_inventory(*, cursor=None, limit=1000)` | `ChunkInventoryPage` | Complete pagination of real `ChunkInventoryEntry(chunk_id, doc_id, doc_chunk_index)` values, excluding text and vectors. |
+| `list_chunk_inventory(*, cursor=None, limit=1000)` | `ChunkInventoryPage` | Complete pagination of real `ChunkInventoryEntry(chunk_id, doc_id, doc_chunk_index)` values, excluding text and vectors. `doc_chunk_index=None` when the position can only be read with the payload (unknown, never guessed); the lite check then compares document membership only. |
 | `get_chunks(chunk_ids)` | `dict[str, ChunkRecord]` | Direct fetch of selected IDs for optional text sampling. Missing IDs are absent. |
 | `check_snapshot(snapshot_at)` | `SnapshotValidity` | Authoritative corpus mutation history since an ISO 8601 timestamp with timezone. |
 
@@ -191,7 +191,8 @@ Implement these methods independently when the backend can answer them:
 from `rag_connector`, as are their value types. Count and inventory must use
 the same namespace, collection, filters, and identity mapping as corpus reads.
 Do not return an index-wide count for a narrower binding, or derive document
-positions from page order. The inventory cursor is opaque; `None` terminates
+positions from page order: a position the backend cannot give without the
+payload is `None`. The inventory cursor is opaque; `None` terminates
 enumeration. A backend failure must raise rather than masquerade as an empty
 or complete page.
 

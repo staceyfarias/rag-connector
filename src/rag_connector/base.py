@@ -530,7 +530,10 @@ class RagPipeline(ABC):
         """Page through IDs, document IDs and within-document positions.
 
         Independently optional; must not hydrate text or vectors or fall back
-        to a full corpus read. Return real fields, never guessed positions.
+        to a full corpus read. Return real fields, never guessed positions:
+        when a position cannot be read without the payload, its
+        ``doc_chunk_index`` is ``None`` (unknown) and the lite check compares
+        document membership only for that chunk.
         Cursors are opaque, and None terminates enumeration. A backend failure
         raises rather than returning an empty or truncated inventory.
         """
