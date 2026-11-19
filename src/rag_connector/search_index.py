@@ -1548,7 +1548,9 @@ class SearchIndex:
             cursor = conn.execute(text)
             columns = [d[0] for d in cursor.description or []]
             rows = cursor.fetchmany(cap + 1)
-        except sqlite3.Error as exc:  # including the time limit ("interrupted")
+        # sqlite3.Warning is not an sqlite3.Error: Python 3.10 and 3.11 raise
+        # it for more than one statement (3.12 raises ProgrammingError).
+        except (sqlite3.Error, sqlite3.Warning) as exc:  # and the time limit ("interrupted")
             reason = f"stopped after {seconds:g} s" if time.monotonic() > deadline else str(exc)
             raise SearchIndexError(f"sql: {reason}") from exc
         except ValueError as exc:      # e.g. more than one statement

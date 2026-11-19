@@ -8,7 +8,9 @@ Notable changes to rag-connector. Dates are the day the work landed.
   later statement on the same index failed with `not authorized`: the
   statement guard was cleared with `set_authorizer(None)`, which Python
   supports only from 3.11. An allow-all authorizer is installed instead.
-  Python 3.11 and later were not affected.
+  Python 3.11 and later were not affected. More than one statement now
+  raises `SearchIndexError` on 3.10 as well, where sqlite3 reports it as a
+  `sqlite3.Warning`.
 
 - **Docs: a chunk is what the system returns, not what it searches.** The
   contract, author guide, Dataset spec and README now say that corpus chunks
