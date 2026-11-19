@@ -28,7 +28,13 @@ from rag_connector.registry import ConnectorSpec
 
 
 class TemplateRagConnector(RagPipeline):
-    """Skeleton adapter around an external RAG system."""
+    """Skeleton adapter around an external RAG system.
+
+    A chunk is a unit of content your system RETURNS for a query. It does not
+    have to be what your system embeds or searches, and your system does not
+    have to use vector search. ``pull_all_chunks`` lists the returned units
+    with the text served; ``query`` returns them under the same ids.
+    """
 
     name = "template-rag"
     retrieval_mode = "scored"
@@ -75,6 +81,10 @@ class TemplateRagConnector(RagPipeline):
 
     def pull_all_chunks(self) -> list[ChunkRecord]:
         """Return a complete, stable corpus snapshot.
+
+        List the units your system returns, with the text it serves. If it
+        searches something else (summaries, questions, sentence windows),
+        those search records are not chunks and do not belong here.
 
         A partial pull is an operational failure, not a smaller successful
         corpus. ``doc_chunk_index`` must count from zero without gaps inside

@@ -11,9 +11,18 @@ without either of them knowing how that pipeline is built.
   source-grounded answers (Evidence Extracts), improving them as queries repeat.
 
 Both need the same things from the pipeline underneath: ask it a question and
-get ranked chunks back, read its corpus, know which embedding space and
-retrieval mode produced a score, and cite a chunk by an id that means the same
-thing to both. RAG Connector defines that once. A pipeline that implements the
+get ranked chunks back, read its corpus, know which retrieval mode (and, where
+there is one, which embedding space) produced a score, and cite a chunk by an
+id that means the same thing to both. RAG Connector defines that once.
+
+**A chunk is what the pipeline returns, not what it searches.** The chunks a
+connector's corpus read lists, and a Dataset freezes, are the units of content
+the pipeline can return for a query. In a naive RAG those are also the texts
+that were embedded and searched, but nothing here assumes it: a pipeline may
+match on something else (a summary, a question, a keyword index) and may use
+no vector search at all. Everything about embeddings and vectors is an
+optional capability. See the
+[contract](https://github.com/staceyfarias/rag-connector/blob/main/docs/contract.md#a-chunk-is-what-the-system-returns-not-what-it-searches). A pipeline that implements the
 contract — or is wrapped by a connector that does — can be measured by RAGauge
 and curated by Pelorus Query, and a chunk one of them cites resolves to the
 same text in the other. The bundled demo corpus and its frozen chunk set exist
@@ -39,7 +48,9 @@ It defines:
   deliberately outside the read-only connector contract.
 
 The bundled Reference RAG is a known-good development and learning
-implementation, not a production service.
+implementation, not a production service. It is a naive RAG: each chunk is
+embedded as it is and returned when its vector matches. That is how this one
+system works, not something the contract requires of yours.
 
 ## Status
 

@@ -4,6 +4,15 @@ Notable changes to rag-connector. Dates are the day the work landed.
 
 ## Unreleased
 
+- **Docs: a chunk is what the system returns, not what it searches.** The
+  contract, author guide, Dataset spec and README now say that corpus chunks
+  are the units a system returns for a query; that they need not be the
+  embedded or searched text; and that vector search is not assumed (every
+  vector and embedding member is an optional capability). The same is said
+  in the docstrings of `base.py`, the Reference RAG (a naive RAG, where the
+  three happen to coincide) and the connector template. No behaviour or
+  validator change.
+
 - **Per-call filters narrow the open scope.** The reading methods of
   `SearchIndex` (search, chunk, neighbors, outline, copies, modules,
   scope_summary, sql, schema, lookup) take `filter=`, applied for that call

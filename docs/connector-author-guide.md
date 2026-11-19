@@ -29,6 +29,13 @@ reads as truth:
   its best *k* matches cannot abstain on an unanswerable question, and that is
   a finding about the system worth reporting, not a gap to paper over;
 - the stable id carried on every returned chunk;
+- what the system searches and what it returns, which are not always the same
+  thing. A chunk in this contract is the unit **returned**. In a naive RAG that
+  unit is also what is embedded and searched; a system may instead match on a
+  summary, a question, a smaller span or a keyword index, or use no vectors at
+  all. The corpus read lists the returned units with the text served, never
+  the search-side records (see [contract](contract.md), "A chunk is what the
+  system returns, not what it searches");
 - whether the text it returns is the frozen chunk text or presentation text
   assembled for display.
 
@@ -70,7 +77,8 @@ whole collection".
 
 `info()` is **not** required: the base default returns `name`, `type` and
 `retrieval_mode`. Override it to add anything a host should freeze as run
-metadata, such as `embedding_fingerprint`.
+metadata, such as `embedding_fingerprint` when the system searches by
+embedding.
 
 Retrieval IDs must be stable across query and corpus pulls, ranks must be
 zero-based, and scores must follow the declared retrieval mode.

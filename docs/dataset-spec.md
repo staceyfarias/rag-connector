@@ -5,6 +5,12 @@ list of source documents they came from, and a small manifest saying what the
 folder holds and how it was split. Any tool can read one, and any tool can add
 its own work to one without disturbing the others.
 
+The chunks are units of content a RAG system returns for a query. A Dataset
+holds no vectors and says nothing about how the chunks are searched: they may
+be embedded as they are, matched through other text, or found without vector
+search (see the [contract](contract.md), "A chunk is what the system returns,
+not what it searches").
+
 This page is normative. It is implemented by `rag_connector.dataset`, which
 imports no optional extras. The spec is versioned **independently** of the
 `rag-connector` package and of the [connector contract](contract.md): spec id
