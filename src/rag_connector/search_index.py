@@ -1555,7 +1555,10 @@ class SearchIndex:
             raise SearchIndexError(f"sql: {exc}") from exc
         finally:
             conn.set_progress_handler(None, 0)
-            conn.set_authorizer(None)
+            # Not set_authorizer(None): clearing with None needs Python 3.11.
+            # On 3.10 it installs a broken callback and every later
+            # statement on the connection fails with "not authorized".
+            conn.set_authorizer(_allow_all_authorizer)
         return {"columns": columns,
                 "rows": [[_sql_cell(value) for value in row] for row in rows[:cap]],
                 "truncated": len(rows) > cap}
@@ -1672,6 +1675,11 @@ class SearchIndex:
 
 
 _DENIED = {sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH}
+
+
+def _allow_all_authorizer(*_args: Any) -> int:
+    """The authorizer left in place once :meth:`SearchIndex.sql` returns."""
+    return sqlite3.SQLITE_OK
 
 
 def _sql_authorizer(action: int, *_args: Any) -> int:
