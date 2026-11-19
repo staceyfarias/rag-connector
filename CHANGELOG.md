@@ -2,7 +2,13 @@
 
 Notable changes to rag-connector. Dates are the day the work landed.
 
-## Unreleased
+## 0.3.0a2 — 2026-11-19
+
+- **Fix: `SearchIndex.sql` on Python 3.10.** After one `sql()` call every
+  later statement on the same index failed with `not authorized`: the
+  statement guard was cleared with `set_authorizer(None)`, which Python
+  supports only from 3.11. An allow-all authorizer is installed instead.
+  Python 3.11 and later were not affected.
 
 - **Docs: a chunk is what the system returns, not what it searches.** The
   contract, author guide, Dataset spec and README now say that corpus chunks
